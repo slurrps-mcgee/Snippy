@@ -9,7 +9,7 @@ import sequelize from './config/sequelize';
 
 dotenv.config();
 
-const PORT = process.env.API_PORT || 3000;
+const PORT = process.env.PORT || 3000;
 
 const app = express();
 
@@ -18,7 +18,7 @@ app.use(helmet());
 
 //CORS setup — allow only your frontend
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4200',
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
