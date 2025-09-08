@@ -1,0 +1,35 @@
+    {
+        "compilerOptions": {
+            "target": "es2018",
+            "module": "commonjs",
+            "lib": [
+                "es2018"
+            ],
+            "esModuleInterop": true,
+            "forceConsistentCasingInFileNames": true,
+            "outDir": "./dist",
+            "rootDir": "./src",
+            "experimentalDecorators": true,
+            "emitDecoratorMetadata": true,
+            // Style Options
+            // "noImplicitReturns": true,
+            // "noImplicitOverride": true,
+            // "noUnusedLocals": true,
+            // "noUnusedParameters": true,
+            // "noFallthroughCasesInSwitch": true,
+            // "noPropertyAccessFromIndexSignature": true,
+            "strict": true,
+            "jsx": "react-jsx",
+            "verbatimModuleSyntax": false,
+            "isolatedModules": true,
+            "noUncheckedSideEffectImports": true,
+            "moduleDetection": "force",
+            "skipLibCheck": true,
+        },
+        "include": [
+            "src/**/*.ts"
+        ],
+        "exclude": [
+            "node_modules"
+        ]
+    }

@@ -1,0 +1,43 @@
+/api/v1/invite/generate:
+    post:
+        tags:
+            - Invite
+        summary: Generate Invite
+        requestBody:
+            description: Generate Invite
+            required: true
+            content: 
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/generateInvite'
+        responses: 
+            201:
+                description: 'OK'
+            400: 
+                description: 'Bad Request'
+            409: 
+                description: 'Conflict'
+            500:
+                description: 'Internal server error'
+
+/api/v1/invite/validate:
+    post:
+        tags:
+            - Invite
+        summary: Validate Invite
+        requestBody:
+            description: Validate Invite
+            required: true
+            content: 
+                application/json:
+                    schema:
+                        $ref: '#/components/schemas/validateInvite'
+        responses: 
+            201:
+                description: 'OK'
+            400: 
+                description: 'Bad Request'
+            409: 
+                description: 'Conflict'
+            500:
+                description: 'Internal server error'
