@@ -5,7 +5,7 @@ import router from './routes/routes';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from "express-rate-limit";
-import sequelize from './config/sequelize';
+import connectWithRetry from './config/sequelize';
 
 dotenv.config();
 
@@ -19,7 +19,6 @@ app.use(helmet());
 //CORS setup — allow only your frontend
 app.use(cors({
   origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4200',
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -43,15 +42,10 @@ setupSwaggerDocs(app);
 
 const startServer = async () => {
   try {
-    // Test the database connection
-    await sequelize.authenticate()
+    // Connect to the database
+    await connectWithRetry()
       .then(() => console.log('Database connection established.'))
       .catch((err) => console.error('Unable to connect to the database:', err));
-
-    // Sync all models with the database (create tables if they don't exist)
-    // await sequelize.sync({ force: true }) // Use `alter: true` to update the database schema without losing data
-    //   .then(() => console.log('All models were synchronized successfully.'))
-    //   .catch((err) => console.error('Sequelize sync error:', err));
 
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);

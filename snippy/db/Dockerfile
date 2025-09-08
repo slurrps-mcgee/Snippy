@@ -1,17 +1,14 @@
-FROM mcr.microsoft.com/mssql/server:2022-latest
+# Use official MySQL image
+FROM mysql:8.0
 
-ENV ACCEPT_EULA=Y
-ENV MSSQL_PID=Developer
-
+# Set working directory (optional)
 WORKDIR /usr/src/app
 
-# Become root so we can copy and set permissions
-USER root
+# Copy initialization script
+COPY init.sh /docker-entrypoint-initdb.d
 
-COPY init.sh /usr/src/app/init.sh
-RUN chmod 755 /usr/src/app/init.sh
+# Expose MySQL default port
+EXPOSE 3306
 
-# Switch back to default user
-USER mssql
-
-CMD ["/bin/bash", "/usr/src/app/init.sh"]
+# No need to switch user; the official MySQL image handles permissions internally
+# The entrypoint will automatically execute /docker-entrypoint-initdb.d/init.sh

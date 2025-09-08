@@ -9,6 +9,7 @@ import { Comments } from '../models/comment.model';
 
 dotenv.config();
 
+// Initialize Sequelize with MySQL configuration
 const sequelize = new Sequelize({
   database: process.env.DB_NAME || 'database',
   username: process.env.DB_USER || 'username',
@@ -20,14 +21,21 @@ const sequelize = new Sequelize({
   models: [Users, Invites, Snippets, Snippet_Files, Favorites, Comments], // Register models for syncing
 });
 
-// Optional: Test the database connection
-sequelize.authenticate()
-  .then(() => console.log('Database connection established.'))
-  .catch((err) => console.error('Unable to connect to the database:', err));
+// Function to connect to the database with retry logic
+async function connectWithRetry() {
+  let connected = false;
+  while (!connected) {
+    try {
+      await sequelize.authenticate();
+      connected = true;
+      console.log("Database connected!");
+      await sequelize.sync({ alter: true }); // Sync models with the database
+      console.log("All models were synchronized successfully.");
+    } catch (err) {
+      console.log("Database not ready, retrying in 3s...");
+      await new Promise(res => setTimeout(res, 3000));
+    }
+  }
+}
 
-// Optional: Sync all models with the database
-sequelize.sync({ alter: true }) // Updates tables without losing data
-  .then(() => console.log('All models were synchronized successfully.'))
-  .catch((err) => console.error('Sequelize sync error:', err));
-
-export default sequelize;
+export default connectWithRetry;
