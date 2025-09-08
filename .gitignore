@@ -1,2 +1,4 @@
 .env
-./backend/node_modules
+
+snippy/backend/node_modules
+snippy/backend/dist

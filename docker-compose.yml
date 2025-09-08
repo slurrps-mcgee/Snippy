@@ -30,5 +30,16 @@ services:
         condition: service_healthy
     command: npm start
 
+  # frontend:
+  #   container_name: snippy-frontend
+  #   build: ./snippy/frontend
+  #   ports:
+  #     - "4200:4200"
+  #   environment:
+  #     - API_URL=http://api:3000
+  #   depends_on:
+  #     - api
+  #   command: npm start
+
 volumes:
   mysql-data:
