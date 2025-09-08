@@ -5,8 +5,6 @@ services:
     container_name: snippy-db
     env_file:
       - ./.env
-    ports:
-      - "3306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
       - ./snippy/db/init.sh:/docker-entrypoint-initdb.d/init.sh
@@ -21,7 +19,7 @@ services:
     container_name: snippy-api
     build: ./snippy/backend
     ports:
-      - "3000:3000"
+      - "${API_PORT:-3000}:3000"
     env_file:
       - ./.env
     restart: unless-stopped
