@@ -1,7 +1,7 @@
 {
   "name": "snippy_api",
-  "version": "1.0.0",
-  "main": "index.js",
+  "version": "0.1.7",
+  "main": "./src/index.js",
   "scripts": {
     "start": "node dist/index.js",
     "dev": "nodemon --exec ts-node src/index.ts",
@@ -13,6 +13,7 @@
   "description": "",
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cockatiel": "^3.2.1",
     "cors": "^2.8.5",
     "dotenv": "^17.2.1",
     "express": "^5.1.0",

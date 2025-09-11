@@ -37,7 +37,7 @@ export class Snippet_Files extends Model<Snippet_Files> {
     type: DataType.STRING,
     allowNull: false,
   })
-  file_type!: string; // html, css, javascript, python, etc.
+  file_type!: string; // html, css, js
 
   @Column({
     type: DataType.TEXT,

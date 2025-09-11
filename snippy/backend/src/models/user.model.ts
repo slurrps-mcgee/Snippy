@@ -1,4 +1,4 @@
-import { Table, Column, Model, PrimaryKey, Default, DataType, HasMany, AutoIncrement } from 'sequelize-typescript';
+import { Table, Column, Model, PrimaryKey, DataType, HasMany, AutoIncrement, BeforeCreate, Default } from 'sequelize-typescript';
 import { Snippets } from './snippet.model';
 import { Favorites } from './favorite.model';
 import { Comments } from './comment.model';
@@ -18,6 +18,19 @@ export class Users extends Model<Users> {
   @Column({ 
     type: DataType.STRING, 
     allowNull: false, 
+    unique: "user_username_unique" 
+  })
+  user_name!: string;
+
+  @Column({ 
+    type: DataType.STRING, 
+    allowNull: false, 
+  })
+  display_name!: string;
+
+  @Column({ 
+    type: DataType.STRING, 
+    allowNull: false, 
     unique: "user_email_unique" 
   })
   email!: string;
@@ -29,6 +42,20 @@ export class Users extends Model<Users> {
   })
   auth0Id!: string;
 
+  @Column({ 
+    type: DataType.TEXT, 
+    allowNull: false, 
+  })
+  bio!: string;
+
+  @Default(false)
+  @Column({ 
+    type: DataType.BOOLEAN, 
+    allowNull: false, 
+  })
+  is_admin!: boolean;
+
+  // Relations
   @HasMany(() => Snippets, { 
     foreignKey: 'auth0Id', 
     sourceKey: 'auth0Id',
@@ -49,4 +76,18 @@ export class Users extends Model<Users> {
     constraints: false,
   })
   comments!: Comments[];
+
+  /**
+   * Before creating a user, auto-generate a username if not provided
+   */
+  @BeforeCreate
+  static async setDefaultUsername(user: Users) {
+    if (!user.user_name) {
+      const randomSuffix = Math.floor(Math.random() * 10000);
+      const baseName = user.display_name
+        ? user.display_name.replace(/\s+/g, '').toLowerCase()
+        : 'user';
+      user.user_name = `${baseName}${randomSuffix}`;
+    }
+  }
 }

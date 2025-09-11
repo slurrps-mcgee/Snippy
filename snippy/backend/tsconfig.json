@@ -25,6 +25,7 @@
             "noUncheckedSideEffectImports": true,
             "moduleDetection": "force",
             "skipLibCheck": true,
+            "resolveJsonModule": true
         },
         "include": [
             "src/**/*.ts"

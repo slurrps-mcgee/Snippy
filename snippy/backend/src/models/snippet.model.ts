@@ -40,10 +40,15 @@ export class Snippets extends Model<Snippet_Files> {
   })
   user!: Users;
 
+  // @Column({
+  //   type: DataType.STRING,
+  //   allowNull: false,
+  // })
+  // snippet_type!: string; // Web, Python, etc.
+
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    unique: "snippet_name_unique"
   })
   name!: string;
 
@@ -53,6 +58,30 @@ export class Snippets extends Model<Snippet_Files> {
   })
   description!: string;
 
+  @Column({
+    type: DataType.STRING,
+    allowNull: true,
+    get() {
+      const raw = this.getDataValue('tags');
+      return raw ? raw.split(',').map((t: string) => t.trim()) : [];
+    },
+    set(value: string[] | string) {
+      if (Array.isArray(value)) {
+        this.setDataValue('tags', value.join(','));
+      } else {
+        this.setDataValue('tags', value);
+      }
+    },
+  })
+  tags?: string[];
+
+  @Column({ 
+    type: DataType.INTEGER, 
+    defaultValue: 0 
+  })
+  view_count!: number;
+
+  // Relations
   @HasMany(() => Snippet_Files, { 
     foreignKey: 'snippetId', 
     sourceKey: 'snippetId',

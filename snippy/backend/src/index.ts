@@ -6,6 +6,9 @@ import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from "express-rate-limit";
 import connectWithRetry from './config/sequelize';
+import { errorHandler } from './utils/error-handler';
+import { version } from '../package.json';
+import logger from './utils/logger';
 
 dotenv.config();
 
@@ -40,18 +43,20 @@ app.use('/api/v1', router);
 // Swagger setup
 setupSwaggerDocs(app);
 
+app.use(errorHandler);
+
 const startServer = async () => {
   try {
     // Connect to the database
     await connectWithRetry()
-      .then(() => console.log('Database connection established.'))
-      .catch((err) => console.error('Unable to connect to the database:', err));
+      .then(() => logger.info('Database connection established.'))
+      .catch((err) => logger.info('Unable to connect to the database:', err));
 
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
+      logger.info(`🚀 Snippy API v${version} starting on port ${process.env.API_PORT || 3000}`);
     });
   } catch (error) {
-    console.error('Unable to connect to the database or start server:', error);
+    logger.info('Unable to connect to the database or start server:', error);
   }
 };
 

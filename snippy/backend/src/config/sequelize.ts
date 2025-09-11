@@ -6,6 +6,8 @@ import { Snippets } from '../models/snippet.model';
 import { Snippet_Files } from '../models/snippet_file.model';
 import { Favorites } from '../models/favorite.model';
 import { Comments } from '../models/comment.model';
+import { defaultPolicy } from '../utils/resiliance';
+import logger from '../utils/logger';
 
 dotenv.config();
 
@@ -23,18 +25,17 @@ const sequelize = new Sequelize({
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {
-  let connected = false;
-  while (!connected) {
-    try {
-      await sequelize.authenticate();
-      connected = true;
-      console.log("Database connected!");
-      await sequelize.sync({ alter: true }); // Sync models with the database
-      console.log("All models were synchronized successfully.");
-    } catch (err) {
-      console.log("Database not ready, retrying in 3s...");
-      await new Promise(res => setTimeout(res, 3000));
-    }
+  try{
+    await defaultPolicy.execute(async () => {
+    logger.info('⏳ Trying DB connection...');
+    await sequelize.authenticate();
+    logger.info('✅ Database connected.');
+    await sequelize.sync({ alter: true }); // Sync models with the database
+    logger.info('✅ Models synced.');
+    });
+  } catch (error) {
+    logger.error('❌ Unable to connect to the database:', error);
+    throw error;
   }
 }
 
