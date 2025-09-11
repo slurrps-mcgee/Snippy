@@ -23,18 +23,22 @@ jobs:
 
       - name: Extract version from package.json
         id: version
+        shell: bash
         run: |
+          # Get API version
           API_VERSION=$(node -p "require('./snippy/backend/package.json').version")
           echo "API_VERSION=$API_VERSION" >> $GITHUB_ENV
           echo "Using API version: $API_VERSION"
 
-          # Optional: if DB has its own package.json
+          # Get DB version if package.json exists, else default to latest
           if [ -f "./snippy/db/package.json" ]; then
             DB_VERSION=$(node -p "require('./snippy/db/package.json').version")
-            echo "DB_VERSION=$DB_VERSION" >> $GITHUB_ENV
-            echo "Using DB version: $DB_VERSION"
           else
-            echo "DB_VERSION=latest" >> $GITHUB_ENV
+            DB_VERSION="latest"
+          fi
+          echo "DB_VERSION=$DB_VERSION" >> $GITHUB_ENV
+          echo "Using DB version: $DB_VERSION"
+
 
       - name: Log in to Docker Hub
         uses: docker/login-action@v2
