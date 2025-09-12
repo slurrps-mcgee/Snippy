@@ -20,13 +20,24 @@ jobs:
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
 
-    - name: Read API version from package.json
-      id: get_api_version
-      run: echo "API_VERSION=$(jq -r .version snippy/backend/package.json)" >> $GITHUB_ENV
+    - name: Extract version from package.json
+      id: version
+      shell: bash
+      run: |
+        # Get API version
+        API_VERSION=$(node -p "require('./snippy/backend/package.json').version")
+        echo "API_VERSION=$API_VERSION" >> $GITHUB_ENV
+        echo "Using API version: $API_VERSION"
 
-    - name: Read DB version (if package.json exists)
-      id: get_db_version
-      run: echo "API_VERSION=$(jq -r .version snippy/db/package.json)" >> $GITHUB_ENV
+        # Get DB version if package.json exists, else default to latest
+        if [ -f "./snippy/db/package.json" ]; then
+          DB_VERSION=$(node -p "require('./snippy/db/package.json').version")
+        else
+          DB_VERSION="latest"
+        fi
+        echo "DB_VERSION=$DB_VERSION" >> $GITHUB_ENV
+        echo "Using DB version: $DB_VERSION"
+
 
     - name: Build and push API image
       uses: docker/build-push-action@v5
