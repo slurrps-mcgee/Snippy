@@ -34,8 +34,8 @@ jobs:
         context: ./snippy/backend
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/snippy-api:${{ env.API_VERSION }}
-          ${{ secrets.DOCKERHUB_USERNAME }}/snippy-api:latest
+          kennyl777/snippy-api:${{ env.API_VERSION }}
+          kennyl777/snippy-api:latest
 
     - name: Build and push DB image
       uses: docker/build-push-action@v5
@@ -43,5 +43,5 @@ jobs:
         context: ./snippy/db
         push: true
         tags: |
-          ${{ secrets.DOCKERHUB_USERNAME }}/snippy-db:${{ env.DB_VERSION }}
-          ${{ secrets.DOCKERHUB_USERNAME }}/snippy-db:latest
+          kennyl777/snippy-db:${{ env.DB_VERSION }}
+          kennyl777/snippy-db:latest
