@@ -2,9 +2,9 @@ components:
     schemas:
         generateInvite:
             type: object
-            required: 
+            required:
                 - email
-            properties:                  
+            properties:             
                 email:
                     type: string
                     example: email@example.com

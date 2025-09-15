@@ -1,5 +1,4 @@
 import { Invites } from '../../models/invite.model';
-import { Invite } from '../../interfaces/invite.interface';
 import { Users } from '../../models/user.model';
 
 class InviteRepo {

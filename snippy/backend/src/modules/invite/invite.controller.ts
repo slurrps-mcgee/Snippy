@@ -3,7 +3,6 @@ import { generateInviteService, markInviteUsedService, validateInviteService } f
 import jwtCheck from '../../middleware/jwt.service';
 
 export const generateInvite = [
-    jwtCheck,
     async (req: Request, res: Response, next: NextFunction,): Promise<void> => {
         try {
             const { email } = req.body;
@@ -21,7 +20,6 @@ export const generateInvite = [
 
 // Protected endpoint example
 export const validateInvite = [
-    jwtCheck, // this will verify the token before reaching the handler
     async (req: Request, res: Response, next: NextFunction) => {
         try {
             // At this point, jwtCheck has verified the token

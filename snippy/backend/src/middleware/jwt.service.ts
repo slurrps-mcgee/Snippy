@@ -1,11 +1,14 @@
 const express = require('express');
 const app = express();
 const { auth } = require('express-oauth2-jwt-bearer');
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 // Replace with your Auth0 domain and audience
 const jwtCheck = auth({
-  audience: 'http://localhost:3000',
-  issuerBaseURL: 'https://dev-4ev7py4uqxc7prli.us.auth0.com/',
+  audience: process.env.AUTH0_AUDIENCE,
+  issuerBaseURL: process.env.AUTH0_DOMAIN,
   tokenSigningAlg: 'RS256'
 });
 

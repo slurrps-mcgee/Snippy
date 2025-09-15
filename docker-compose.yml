@@ -18,6 +18,9 @@ services:
   api:
     container_name: snippy-api
     build: ./snippy/backend
+    working_dir: /backend
+    volumes:
+      - ./snippy/backend:/backend
     ports:
       - "${API_PORT:-3000}:3000"
     env_file:
@@ -26,7 +29,6 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: npm start
 
 volumes:
   mysql-data:

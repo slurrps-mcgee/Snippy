@@ -1,5 +1,4 @@
 import e from "express";
-import { Invite } from "../../interfaces/invite.interface";
 import InviteRepo from "./invite.repo";
 
 export const generateInviteService = async (email: string) => {

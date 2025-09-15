@@ -13,8 +13,8 @@ dotenv.config();
 
 // Initialize Sequelize with MySQL configuration
 const sequelize = new Sequelize({
-  database: process.env.DB_NAME || 'database',
-  username: process.env.DB_USER || 'username',
+  database: process.env.DB_NAME || 'snippy',
+  username: process.env.DB_USER || 'snippy_api',
   password: process.env.DB_PASS || 'password',
   host: process.env.DB_HOST || 'db',
   port: Number(process.env.DB_PORT) || 3306, // MySQL default port
