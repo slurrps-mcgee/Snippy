@@ -19,7 +19,7 @@ This project uses Auth0 for user management, MYSQL for DB, NODE.JS for API, and 
 Make sure you have the following installed:
 - [Docker](https://www.docker.com/)
 - [Docker Compose](https://docs.docker.com/compose/)
-- [Auth0 Account] (https://auth0.com/)
+- [Auth0] (https://auth0.com/) an account is needed and setup which will go over in detail in the usage section
 
 ## Getting Started
 Clone the repository:
@@ -31,22 +31,40 @@ cd your-repo
 
 ## Usage
 
-Here is an example of the variables needed in your .env to run on docker-compose
+First setup an Auth0 account if you don't already have one.
+
+You will need several things from there to have this work
+Create an application EX URL: http://localhost:4200
+- Set the callback URL to which ever URL you are using for the url/userhome
+- Set the logout URL url/home
+- Set the web origins url
+
+Use the Domain and ClientID in the FrontEnd section of the .env
+
+Create an API EX URL: http://localhost:3000
+- Set the URL here to the one of your API URL you have setup
+and use the identifier you used for your API in the audience section of the .env the domain should be the same as the FrontEnd
+
+
+
+Here is an example of the variables needed in your .env to run on docker-compose replacing descriptions with values
 
 ```env
 # DB
 # OPTIONAL
-DB_HOST=
-DB_PORT=
+DB_HOST= This is the host URL this can be left blank if using docker compose
+DB_PORT= This is the host port default is 3306
+DB_NAME= This is the name of the database
+DB_USER= This is the name of the user for the DB from the API
 # Required
-DB_NAME=
-DB_USER=
-DB_PASS=
-MYSQL_ROOT_PASSWORD=
+DB_PASS= This is the user password to the DB
+MYSQL_ROOT_PASSWORD= This is the root password for the DB
 
 # API
+# OPTIONAL
 PORT=
 NODE_ENV=
+# Required
 FRONTEND_ORIGIN=
 AUTH0_DOMAIN=
 AUTH0_AUDIENCE=
@@ -123,7 +141,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    command: npm run dev
 
 volumes:
   mysql-data:
 ```
+Run the following docker commands when testing
+
+docker compose down -v - if needing to remove mysql data
+docker compose up 

@@ -1,9 +1,6 @@
 const express = require('express');
 const app = express();
 const { auth } = require('express-oauth2-jwt-bearer');
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 // Replace with your Auth0 domain and audience
 const jwtCheck = auth({

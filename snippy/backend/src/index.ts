@@ -22,7 +22,7 @@ app.use(helmet());
 
 //CORS setup — allow only your frontend
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'http://localhost:4200',
+  origin: process.env.FRONTEND_ORIGIN || 'frontedn',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -44,8 +44,10 @@ app.use('/api/v1', router);
 // Swagger setup
 setupSwaggerDocs(app);
 
+// Error handling middleware should be the last middleware
 app.use(errorHandler);
 
+// Start the server after ensuring DB connection
 const startServer = async () => {
   try {
     // Connect to the database
@@ -61,4 +63,5 @@ const startServer = async () => {
   }
 };
 
+// Invoke the function to start the server
 startServer();
