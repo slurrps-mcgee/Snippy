@@ -1,16 +1,20 @@
 import { NextFunction, Request, Response } from 'express';
-import { generateInviteService, markInviteUsedService, validateInviteService } from './invite.service';
+import { 
+    generateInviteService, 
+    markInviteUsedService, 
+    validateInviteService 
+} from './invite.service';
 import jwtCheck from '../../middleware/jwt.service';
 
 export const generateInvite = [
-    async (req: Request, res: Response, next: NextFunction,): Promise<void> => {
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
             const { email } = req.body;
             const response = await generateInviteService(email);
 
             res.status(201).json({
-                message: 'Successfully invited user',
-                data: response.message
+                success: true,
+                message: response.message,
             });
         } catch (error) {
             next(error);
@@ -18,30 +22,34 @@ export const generateInvite = [
     }
 ];
 
-// Protected endpoint example
 export const validateInvite = [
-    async (req: Request, res: Response, next: NextFunction) => {
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            // At this point, jwtCheck has verified the token
-            const { code } = req.body; // destructure code from body
-            const reponse = await validateInviteService(code);
-            res.status(200).json({ message: 'Invite token is valid' })
+            const { code } = req.body;
+            const response = await validateInviteService(code);
+
+            res.status(200).json({
+                success: true,
+                message: response.message,
+                data: response.invite, // includes invite details if needed
+            });
         } catch (error) {
             next(error);
         }
-
     }
 ];
 
 export const markInviteUsed = [
-    jwtCheck, // this will verify the token before reaching the handler
-    async (req: Request, res: Response, next: NextFunction) => {
+    jwtCheck,
+    async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
-            // At this point, jwtCheck has verified the token
-            const { email, code } = req.body; // destructure code from body
-            // Call the service to mark the invite as used
-            const reponse = await markInviteUsedService(email, code);
-            res.status(200).json({ message: 'Invite token is valid' })
+            const { email, code } = req.body;
+            const response = await markInviteUsedService(email, code);
+
+            res.status(200).json({
+                success: true,
+                message: response.message,
+            });
         } catch (error) {
             next(error);
         }

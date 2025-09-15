@@ -1,3 +1,4 @@
+import path from 'path';
 import swaggerJSDoc from 'swagger-jsdoc';
 
 const options = {
@@ -5,11 +6,14 @@ const options = {
     openapi: '3.0.0',
     info: {
       title: 'Snippy API',
-      version: '1.0.0',
+      version: '0.1.94',
       description: 'API documentation for Snippy',
     },
   },
-  apis: ['./src/docs/*.yaml', './src/docs/schema/*.yaml'], // Path to the API docs
+  apis: [
+    path.resolve(__dirname, '../docs/*.yaml'),
+    path.resolve(__dirname, '../docs/schema/*.yaml'),
+  ], // Path to the API docs
 };
 
 const swaggerSpec = swaggerJSDoc(options);

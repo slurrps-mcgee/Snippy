@@ -9,7 +9,6 @@ import connectWithRetry from './config/sequelize';
 import { errorHandler } from './utils/error-handler';
 import { version } from '../package.json';
 import logger from './utils/logger';
-import jwtCheck from './middleware/jwt.service';
 
 dotenv.config();
 
@@ -35,9 +34,6 @@ const limiter = rateLimit({
 app.use(limiter);
 
 app.use(express.json());
-
-//Add JWT Middleware here by Auth0
-app.use(jwtCheck); // Uncomment and configure as needed
 
 // Routes
 app.use('/api/v1', router);

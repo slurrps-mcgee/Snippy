@@ -3,50 +3,47 @@ import { Users } from '../../models/user.model';
 
 class InviteRepo {
     static async generateInvite(email: string): Promise<boolean> {
-        try {
-            var user = await Users.findOne({ where: { email: email } });
+        const user = await Users.findOne({ where: { email } });
 
-            console.log(user);
-            if (user)
-                return false;
-
-            // Insert a new invite using the Invites model
-            const result = await Invites.create({
-                email: email,
-                used: false,
-                used_at: null,
-            } as any);
-
-            return (result) ? true : false;
-        } catch (error) { 
-            console.error('Error generating invite:', error);
+        if (user) {
+            // Repo shouldn't decide on conflict — let service handle this
             return false;
         }
+
+        const result = await Invites.create({
+            email,
+            used: false,
+            used_at: null,
+        } as any);
+
+        if (!result) {
+            throw new Error('Failed to create invite record');
+        }
+
+        return true;
     }
 
     static async validateInvite(code: string): Promise<Invites | null> {
-        try {
-            const invite = await Invites.findOne({ where: { code:code, used: false } });
+        const invite = await Invites.findOne({ where: { code, used: false } });
 
-            return invite ? invite : null;
-        } catch (error) {
-            console.error('Error validating invite:', error);
-            return null;
+        if (!invite) {
+            return null; // service decides whether it's "invalid" or "expired"
         }
+
+        return invite;
     }
 
     static async markInviteUsed(email: string, code: string): Promise<boolean> {
-        try {
-            const result = await Invites.update(
-                { used: true, used_at: new Date() },
-                { where: { email: email, code: code } }
-            );
+        const [updatedCount] = await Invites.update(
+            { used: true, used_at: new Date() },
+            { where: { email, code, used: false } }
+        );
 
-            return (result[0] > 0) ? true : false;
-        } catch (error) {
-            console.error('Error marking invite as used:', error);
-            return false;
+        if (updatedCount === 0) {
+            throw new Error('Failed to mark invite as used');
         }
+
+        return true;
     }
 }
 

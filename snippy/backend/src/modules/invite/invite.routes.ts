@@ -6,9 +6,9 @@ import jwtCheck from '../../middleware/jwt.service';
 const inviteRouter = express.Router();
 
 //Add checkadmin to generate invite route
-inviteRouter.post('/generate', generateInvite);
+inviteRouter.post('/generate', jwtCheck, generateInvite);
 
-inviteRouter.post('/validate', validateInvite);
-inviteRouter.post('/mark-used', markInviteUsed);
+inviteRouter.post('/validate', jwtCheck, validateInvite);
+inviteRouter.post('/mark-used', jwtCheck, markInviteUsed);
 
 export default inviteRouter;
