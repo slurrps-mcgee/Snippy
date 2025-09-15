@@ -32,6 +32,8 @@ cd your-repo
 ## Usage
 
 Here is an example of the variables needed in your .env to run on docker-compose
+
+```env
 # DB
 # OPTIONAL
 DB_HOST=
@@ -48,6 +50,7 @@ NODE_ENV=
 FRONTEND_ORIGIN=
 AUTH0_DOMAIN=
 AUTH0_AUDIENCE=
+```
 
 ```yaml
 version: '3.8'
