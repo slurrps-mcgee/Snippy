@@ -1,4 +1,4 @@
-import express, { application } from 'express';
+import express from 'express';
 import cors from "cors";
 import { setupSwaggerDocs } from './utils/swaggerDocs';
 import router from './routes/routes';
@@ -11,6 +11,7 @@ import { version } from '../package.json';
 import logger from './utils/logger';
 import jwtCheck from './middleware/jwt.service';
 
+// Load environment variables from .env file
 dotenv.config();
 
 const PORT = process.env.PORT || 3000;
@@ -25,7 +26,7 @@ app.use(helmet());
 
 //CORS setup — allow only your frontend
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'frontedn',
+  origin: process.env.FRONTEND_ORIGIN || 'frontend',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
@@ -44,7 +45,6 @@ app.use(jwtCheck);
 
 // Routes
 app.use('/api/v1', router);
-
 
 // Error handling middleware should be the last middleware
 app.use(errorHandler);
