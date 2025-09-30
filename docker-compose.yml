@@ -31,18 +31,18 @@ services:
         condition: service_healthy
     command: npm run dev
 
-  frontend:
-    container_name: snippy-frontend
-    build: ./snippy/frontend
-    volumes:
-      - ./snippy/frontend:/frontend
-    ports:
-      - "${FRONTEND_PORT:-8080}:80"
-    env_file:
-      - ./.env
-    restart: unless-stopped
-    depends_on:
-      - api
+  # frontend:
+  #   container_name: snippy-frontend
+  #   build: ./snippy/frontend
+  #   volumes:
+  #     - ./snippy/frontend:/frontend
+  #   ports:
+  #     - "${FRONTEND_PORT:-8080}:80"
+  #   env_file:
+  #     - ./.env
+  #   restart: unless-stopped
+  #   depends_on:
+  #     - api
 
 volumes:
   mysql-data:
