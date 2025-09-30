@@ -7,12 +7,12 @@ import { Users } from "../models/user.model";
  */
 export async function checkAdmin(req: Request, res: Response, next: NextFunction) {
   try {
-    const auth0Id = req.auth?.payload?.sub;
-    if (!auth0Id) return res.status(401).json({ error: "Unauthorized" });
+    const userId = req.auth?.payload?.sub;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
 
-    console.log("Auth0 ID:", auth0Id);
+    console.log("Auth0 ID:", userId);
 
-    const user = await Users.findOne({ where: { auth0Id } });
+    const user = await Users.findOne({ where: { userId } });
     if (!user) return res.status(404).json({ error: "User not found" });
 
     if (!user.is_admin) {

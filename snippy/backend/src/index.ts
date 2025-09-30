@@ -41,7 +41,8 @@ app.use(limiter);
 
 app.use(express.json());
 
-app.use(jwtCheck);
+// JWT Middleware to protect routes
+//app.use(jwtCheck);
 
 // Routes
 app.use('/api/v1', router);

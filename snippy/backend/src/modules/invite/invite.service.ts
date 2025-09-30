@@ -1,42 +1,14 @@
-import InviteRepo from "./invite.repo";
-import { CustomError } from "../../utils/custom-error";
+import { CustomError } from '../../utils/custom-error';
+import { createInvite } from './invite.repo';
+import { findByEmail } from '../user/user.repo';
 
-/**
- * Generate an invite for a given email
- */
 export const generateInviteService = async (email: string) => {
-    const success = await InviteRepo.generateInvite(email);
+    const user = await findByEmail(email);
+    if (user) throw new CustomError('Invite already exists', 409);
 
-    if (!success) {
-        throw new CustomError('User already exists or invite could not be created', 409);
-    }
+    const created = await createInvite(email);
+    if (!created) throw new CustomError('Could not create invite', 500);
 
-    // TODO: send email invite here with code
-    return { message: 'Invite sent successfully' };
-};
-
-/**
- * Validate an invite token
- */
-export const validateInviteService = async (code: string) => {
-    const invite = await InviteRepo.validateInvite(code);
-
-    if (!invite) {
-        throw new CustomError('Invalid or expired invite token', 400);
-    }
-
-    return { message: 'Invite is valid', invite };
-};
-
-/**
- * Mark an invite as used
- */
-export const markInviteUsedService = async (email: string, code: string) => {
-    const success = await InviteRepo.markInviteUsed(email, code);
-
-    if (!success) {
-        throw new CustomError('Invite not found or already used', 409);
-    }
-
-    return { message: 'Invite marked as used' };
+    // TODO: enqueue/send email with invite code
+    return { message: 'Invite sent successfully', invite: created };
 };

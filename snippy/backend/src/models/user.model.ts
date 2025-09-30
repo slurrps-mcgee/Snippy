@@ -1,7 +1,8 @@
-import { Table, Column, Model, PrimaryKey, DataType, HasMany, AutoIncrement, BeforeCreate, Default } from 'sequelize-typescript';
+import { Table, Column, Model, PrimaryKey, DataType, HasMany, BeforeCreate, Default } from 'sequelize-typescript';
 import { Snippets } from './snippet.model';
 import { Favorites } from './favorite.model';
 import { Comments } from './comment.model';
+import { UUIDV4 } from 'sequelize';
 
 @Table({ 
   tableName: 'users', 
@@ -11,9 +12,8 @@ import { Comments } from './comment.model';
 })
 export class Users extends Model<Users> {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  userId!: number;
+  @Column({ type: DataType.UUID, defaultValue: UUIDV4 })
+  userId!: string;
 
   @Column({ 
     type: DataType.STRING, 
@@ -38,9 +38,14 @@ export class Users extends Model<Users> {
   @Column({ 
     type: DataType.STRING, 
     allowNull: false, 
-    unique: "user_auth0_unique" 
   })
-  auth0Id!: string;
+  password!: string;
+
+  @Column({ 
+    type: DataType.STRING, 
+    allowNull: false, 
+  })
+  salt!: string;
 
   @Column({ 
     type: DataType.TEXT, 
@@ -57,22 +62,22 @@ export class Users extends Model<Users> {
 
   // Relations
   @HasMany(() => Snippets, { 
-    foreignKey: 'auth0Id', 
-    sourceKey: 'auth0Id',
+    foreignKey: 'userId', 
+    sourceKey: 'userId',
     constraints: false,
   })
   snippets!: Snippets[];
 
   @HasMany(() => Favorites, { 
-    foreignKey: 'auth0Id', 
-    sourceKey: 'auth0Id',
+    foreignKey: 'userId', 
+    sourceKey: 'userId',
     constraints: false,
   })
   favorites!: Favorites[];
 
   @HasMany(() => Comments, { 
-    foreignKey: 'auth0Id', 
-    sourceKey: 'auth0Id',
+    foreignKey: 'userId', 
+    sourceKey: 'userId',
     constraints: false,
   })
   comments!: Comments[];

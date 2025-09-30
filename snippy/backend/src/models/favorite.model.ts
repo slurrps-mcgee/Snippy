@@ -25,11 +25,11 @@ export class Favorites extends Model<Favorites> {
 
     @ForeignKey(() => Users)
     @Column(DataType.INTEGER)
-    auth0Id!: number;
+    userId!: number;
 
     @BelongsTo(() => Users, {
-        foreignKey: 'auth0Id',
-        targetKey: 'auth0Id',
+        foreignKey: 'userId',
+        targetKey: 'userId',
         constraints: false,
     })
     users!: Users;

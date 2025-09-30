@@ -31,11 +31,11 @@ export class Snippets extends Model<Snippet_Files> {
     type: DataType.STRING,
     allowNull: false,
   })
-  auth0Id!: string;
+  userId!: string;
 
   @BelongsTo(() => Users, {
-    foreignKey: 'auth0Id',
-    targetKey: 'auth0Id',
+    foreignKey: 'userId',
+    targetKey: 'userId',
     constraints: false,
   })
   user!: Users;

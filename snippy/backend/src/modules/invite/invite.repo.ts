@@ -1,50 +1,18 @@
 import { Invites } from '../../models/invite.model';
-import { Users } from '../../models/user.model';
 
-class InviteRepo {
-    static async generateInvite(email: string): Promise<boolean> {
-        const user = await Users.findOne({ where: { email } });
+export const createInvite = async (email: string) => {
+    return Invites.create({ email, used: false, used_at: null } as any);
+};
 
-        if (user) {
-            // Repo shouldn't decide on conflict — let service handle this
-            return false;
-        }
+export const findInviteByCode = async (code: string) => {
+    return Invites.findOne({ where: { code, used: false } });
+};
 
-        const result = await Invites.create({
-            email,
-            used: false,
-            used_at: null,
-        } as any);
+export const markInviteUsed = async (email: string, code: string, options: any = {}) => {
+    const [updatedCount] = await Invites.update(
+        { used: true, used_at: new Date() },
+        { where: { email, code, used: false }, ...options }
+    );
 
-        if (!result) {
-            throw new Error('Failed to create invite record');
-        }
-
-        return true;
-    }
-
-    static async validateInvite(code: string): Promise<Invites | null> {
-        const invite = await Invites.findOne({ where: { code, used: false } });
-
-        if (!invite) {
-            return null; // service decides whether it's "invalid" or "expired"
-        }
-
-        return invite;
-    }
-
-    static async markInviteUsed(email: string, code: string): Promise<boolean> {
-        const [updatedCount] = await Invites.update(
-            { used: true, used_at: new Date() },
-            { where: { email, code, used: false } }
-        );
-
-        if (updatedCount === 0) {
-            throw new Error('Failed to mark invite as used');
-        }
-
-        return true;
-    }
-}
-
-export default InviteRepo;
+    return updatedCount > 0;
+};
