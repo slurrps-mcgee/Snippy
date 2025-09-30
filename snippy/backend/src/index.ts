@@ -26,7 +26,7 @@ app.use(helmet());
 
 //CORS setup — allow only your frontend
 app.use(cors({
-  origin: process.env.FRONTEND_ORIGIN || 'frontend',
+  origin: '*',
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 }));
