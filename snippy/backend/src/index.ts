@@ -42,7 +42,17 @@ app.use(limiter);
 app.use(express.json());
 
 // JWT Middleware to protect routes
-//app.use(jwtCheck);
+// Apply jwtCheck to most routes but allow a small whitelist (public endpoints)
+const jwtWhitelist: Array<{ method: string; path: string }> = [
+  { method: 'POST', path: '/api/v1/auth/register' },
+  // add other public endpoints here if needed
+];
+
+app.use((req, res, next) => {
+  const isWhitelisted = jwtWhitelist.some(w => w.method === req.method && w.path === req.path);
+  if (isWhitelisted) return next();
+  return jwtCheck(req as any, res as any, next as any);
+});
 
 // Routes
 app.use('/api/v1', router);

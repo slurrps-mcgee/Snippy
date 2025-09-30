@@ -16,8 +16,6 @@ export default function jwtCheck(req: Request, res: Response, next: NextFunction
     const token = parts[1];
     const payload = jwt.verify(token, JWT_SECRET) as Record<string, any>;
 
-    console.log('JWT payload:', payload);
-
     // ensure req.auth exists and attach payload similar to express-oauth2-jwt-bearer
     (req as any).auth = (req as any).auth || {};
     (req as any).auth.payload = payload;

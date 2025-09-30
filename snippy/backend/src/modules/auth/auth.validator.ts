@@ -4,10 +4,7 @@ import { CustomError } from '../../utils/custom-error';
 const registerSchema = Joi.object({
 	email: Joi.string().email().required(),
 	password: Joi.string().min(6).required(),
-	user_name: Joi.string().alphanum().min(3).max(30).optional(),
-	display_name: Joi.string().min(1).max(100).optional(),
-	bio: Joi.string().max(1000).optional(),
-    inviteCode: Joi.string().required(),
+    inviteCode: Joi.string().optional(),
 });
 
 const loginSchema = Joi.object({

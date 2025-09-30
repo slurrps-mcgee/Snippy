@@ -12,3 +12,4 @@ export const generateInviteService = async (email: string) => {
     // TODO: enqueue/send email with invite code
     return { message: 'Invite sent successfully', invite: created };
 };
+

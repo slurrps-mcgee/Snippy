@@ -1,11 +1,20 @@
 import { Users } from '../../models/user.model';
 
+export const haveUsers = async () => {
+    const count = await Users.count();
+    return count > 0;
+}
+
 export const findByEmail = async (email: string) => {
 	return Users.findOne({ where: { email } });
 };
 
 export const findByUsername = async (user_name: string) => {
 	return Users.findOne({ where: { user_name } });
+};
+
+export const findByDisplayName = async (display_name: string) => {
+	return Users.findOne({ where: { display_name } });
 };
 
 export const findById = async (id: string) => {

@@ -5,6 +5,6 @@ import jwtCheck from '../../middleware/jwt.service';
 const router = express.Router();
 
 router.post('/register', register);
-router.post('/login', jwtCheck, login);
+router.post('/login', login);
 
 export default router;

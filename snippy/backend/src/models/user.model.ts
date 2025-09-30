@@ -24,7 +24,7 @@ export class Users extends Model<Users> {
 
   @Column({ 
     type: DataType.STRING, 
-    allowNull: false, 
+    allowNull: true, 
   })
   display_name!: string;
 
@@ -49,7 +49,7 @@ export class Users extends Model<Users> {
 
   @Column({ 
     type: DataType.TEXT, 
-    allowNull: false, 
+    allowNull: true, 
   })
   bio!: string;
 
