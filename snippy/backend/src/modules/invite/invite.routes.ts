@@ -1,5 +1,5 @@
 import express from 'express';
-import { generateInvite,} from './invite.controller';
+import { generateInvite } from './invite.controller';
 import { checkAdmin } from '../../middleware/checkAdmin.service';
 
 const inviteRouter = express.Router();

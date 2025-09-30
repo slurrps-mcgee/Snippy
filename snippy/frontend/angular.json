@@ -3,7 +3,7 @@
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "Snippy": {
+    "snippy-frontend": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -64,10 +64,10 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "configurations": {
             "production": {
-              "buildTarget": "Snippy:build:production"
+              "buildTarget": "snippy-frontend:build:production"
             },
             "development": {
-              "buildTarget": "Snippy:build:development"
+              "buildTarget": "snippy-frontend:build:development"
             }
           },
           "defaultConfiguration": "development"

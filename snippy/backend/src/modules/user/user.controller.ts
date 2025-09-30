@@ -1,10 +1,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { updateUserService } from './user.service';
 import { findById } from './user.repo';
+import { validateUpdateUser } from './user.validator';
 
 export const updateUser = [
     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
         try {
+            validateUpdateUser(req.body);
+            
             let id = req.params.id;
 
             // Ensure authenticated user exists
