@@ -6,19 +6,19 @@ export const haveUsers = async () => {
 }
 
 export const findByEmail = async (email: string) => {
-	return Users.findOne({ where: { email } });
+	return await Users.findOne({ where: { email } });
 };
 
 export const findByUsername = async (user_name: string) => {
-	return Users.findOne({ where: { user_name } });
+	return await Users.findOne({ where: { user_name } });
 };
 
 export const findByDisplayName = async (display_name: string) => {
-	return Users.findOne({ where: { display_name } });
+	return await Users.findOne({ where: { display_name } });
 };
 
 export const findById = async (id: string) => {
-	return Users.findByPk(id);
+	return await Users.findByPk(id);
 };
 
 export const updateUser = async (id: string, patch: Partial<Users>) => {
@@ -28,5 +28,5 @@ export const updateUser = async (id: string, patch: Partial<Users>) => {
 
 export const createUser = async (userData: Partial<Users>, options: any = {}) => {
 	// options may contain { transaction }
-	return Users.create(userData as any, options);
+	return await Users.create(userData as any, options);
 };

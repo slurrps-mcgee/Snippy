@@ -52,22 +52,26 @@ Here is an example of the variables needed in your .env to run on docker-compose
 ```env
 # DB
 # OPTIONAL
-DB_HOST= This is the host URL this can be left blank if using docker compose
-DB_PORT= This is the host port default is 3306
-DB_NAME= This is the name of the database
-DB_USER= This is the name of the user for the DB from the API
-# Required
-DB_PASS= This is the user password to the DB
-MYSQL_ROOT_PASSWORD= This is the root password for the DB
+DB_HOST=
+DB_PORT=
+DB_NAME=
+DB_USER=
+# REQUIRED
+DB_PASS= Mcgee7089!?@
+MYSQL_ROOT_PASSWORD= Mcgee7089!?@
 
 # API
 # OPTIONAL
-PORT=
-NODE_ENV=
-# Required
-FRONTEND_ORIGIN=
-AUTH0_DOMAIN=
-AUTH0_AUDIENCE=
+API_PORT=3000
+FRONTEND_ORIGIN=frontend
+INVITE_ONLY=true
+# REQUIRED
+JWT_SECRET=secret
+
+# FRONTEND
+# OPTIONAL
+FRONTEND_PORT=4200
+# REQUIRED
 ```
 
 ```yaml
@@ -142,6 +146,19 @@ services:
       db:
         condition: service_healthy
     command: npm run dev
+
+  frontend:
+    container_name: snippy-frontend
+    build: ./snippy/frontend
+    volumes:
+      - ./snippy/frontend:/frontend
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    env_file:
+      - ./.env
+    restart: unless-stopped
+    depends_on:
+      - api
 
 volumes:
   mysql-data:

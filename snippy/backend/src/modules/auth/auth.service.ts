@@ -29,6 +29,10 @@ export const registerService = async (payload: any) => {
 		const invite = await findInviteByCode(inviteCode);
 		if (!invite) throw new CustomError('Invalid or expired invite token', 400);
 
+        if(invite.email.toLowerCase() !== email.toLowerCase()) {
+            throw new CustomError('Invite code does not match the provided email', 400);
+        }
+
 		// Use transaction to create user and mark invite used atomically
 		const sequelize = (await import('../../models/user.model')).Users.sequelize;
 		if (!sequelize) throw new CustomError('DB not initialized', 500);
@@ -76,8 +80,6 @@ export const registerService = async (payload: any) => {
 			salt,
             is_admin: usersExist ? false : true
 		} as any);
-
-        console.log('Created user:', created);
 
 		if (!created) throw new CustomError('Failed to create user', 500);
 

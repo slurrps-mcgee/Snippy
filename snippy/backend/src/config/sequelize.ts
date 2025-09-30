@@ -1,6 +1,6 @@
 import { Sequelize } from 'sequelize-typescript';
 import { Users } from '../models/user.model'; // Adjust the import path as necessary
-import { Invites } from '../models/invite.model';
+import { Invite } from '../models/invite.model';
 import { Snippets } from '../models/snippet.model';
 import { Snippet_Files } from '../models/snippet_file.model';
 import { Favorites } from '../models/favorite.model';
@@ -17,7 +17,7 @@ const sequelize = new Sequelize({
   port: Number(process.env.DB_PORT) || 3306,
   dialect: 'mysql',
   logging: false,
-  models: [Users, Invites, Snippets, Snippet_Files, Favorites, Comments], // Register models for syncing
+  models: [Users, Invite, Snippets, Snippet_Files, Favorites, Comments], // Register models for syncing
 });
 
 // Function to connect to the database with retry logic

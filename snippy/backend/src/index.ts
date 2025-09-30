@@ -45,6 +45,7 @@ app.use(express.json());
 // Apply jwtCheck to most routes but allow a small whitelist (public endpoints)
 const jwtWhitelist: Array<{ method: string; path: string }> = [
   { method: 'POST', path: '/api/v1/auth/register' },
+  { method: 'POST', path: '/api/v1/auth/login' },
   // add other public endpoints here if needed
 ];
 

@@ -6,7 +6,7 @@ import { Table, Column, Model, DataType, PrimaryKey, Default, AutoIncrement } fr
   createdAt: 'created_at',
   updatedAt: 'updated_at',
 })
-export class Invites extends Model<Invites> {
+export class Invite extends Model<Invite> {
   @PrimaryKey
   @AutoIncrement
   @Column({
