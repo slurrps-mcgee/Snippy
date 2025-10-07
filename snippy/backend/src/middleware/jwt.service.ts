@@ -7,16 +7,17 @@ const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 // and attaches the decoded payload to req.auth.payload to match existing usage.
 export default function jwtCheck(req: Request, res: Response, next: NextFunction) {
   try {
-    const authHeader = req.headers.authorization || '';
-    const parts = authHeader.split(' ');
-    if (parts.length !== 2 || parts[0].toLowerCase() !== 'bearer') {
-      return res.status(401).json({ error: 'Missing or invalid Authorization header' });
+    // Read token from cookie instead of Authorization header
+    const token = req.cookies?.accessToken;
+    if (!token) {
+      return res.status(401).json({ error: 'Missing token cookie' });
     }
 
-    const token = parts[1];
     const payload = jwt.verify(token, JWT_SECRET) as Record<string, any>;
 
-    // ensure req.auth exists and attach payload similar to express-oauth2-jwt-bearer
+    console.log('JWT payload:', payload);
+
+    // attach payload to req.auth.payload
     (req as any).auth = (req as any).auth || {};
     (req as any).auth.payload = payload;
 

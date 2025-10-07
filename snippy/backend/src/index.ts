@@ -10,6 +10,7 @@ import { errorHandler } from './utils/error-handler';
 import { version } from '../package.json';
 import logger from './utils/logger';
 import jwtCheck from './middleware/jwt.service';
+import cookie from 'cookie-parser';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -17,9 +18,12 @@ dotenv.config();
 const PORT = process.env.PORT || 3000;
 
 const app = express();
+app.set('trust proxy', 1);
 
 // Swagger setup
 setupSwaggerDocs(app);
+
+app.use(cookie());
 
 //Security middleware
 app.use(helmet());
@@ -46,6 +50,7 @@ app.use(express.json());
 const jwtWhitelist: Array<{ method: string; path: string }> = [
   { method: 'POST', path: '/api/v1/auth/register' },
   { method: 'POST', path: '/api/v1/auth/login' },
+  { method: 'POST', path: '/api/v1/auth/refresh' },
   // add other public endpoints here if needed
 ];
 

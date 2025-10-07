@@ -21,17 +21,3 @@ export const generateInvite = [
         }
     },
 ];
-
-// export const validateInviteCode = [
-//     async (req: Request, res: Response, next: NextFunction): Promise<void> => {
-//         try {
-//             validateCode;(req.body);
-//             const { code } = req.body;
-//             const response = await validateInviteService(code);
-
-//             res.status(200).json({ success: true, message: 'Valid invite code' });
-//         } catch (error) {
-//             next(error);
-//         }
-//     }
-// ];

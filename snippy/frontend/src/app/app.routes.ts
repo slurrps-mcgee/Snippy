@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
 import { HomeComponent } from './core/pages/home/home.component';
 import { UserHomeComponent } from './core/pages/user-home/user-home.component';
-import { AuthGuard } from './shared/services/auth.guard';
+import { AuthGuard } from './shared/services/auth/auth.guard';
 
 export const routes: Routes = [
 // {path: '', redirectTo: '/home', pathMatch: 'full' },

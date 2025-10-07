@@ -5,7 +5,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { LocalAuthService } from './auth.service';
 
 export type ApiOptions = {
     path: string; // path under /api/v1
@@ -19,7 +18,7 @@ export type ApiOptions = {
 export class ApiService {
     private base: string;
 
-    constructor(private http: HttpClient, private auth: LocalAuthService) {
+    constructor(private http: HttpClient) {
         // Prefer runtime-injected env (assets/env.js sets window.__env) when available
         // window.__env is written by the container entrypoint at /assets/env.js
         const win: any = window as any;
@@ -35,11 +34,9 @@ export class ApiService {
     request<T = any>(opts: ApiOptions): Observable<T> {
         const url = `${this.base}${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
 
-        let headers = new HttpHeaders(opts.headers || {});
-        const token = this.auth.getToken();
-        if (token) {
-            headers = headers.set('Authorization', `Bearer ${token}`);
-        }
+        // Use caller-provided headers but do not attach Authorization here.
+        // Authorization is handled centrally by the HTTP interceptor.
+        const headers = new HttpHeaders(opts.headers || {});
 
         let params = new HttpParams();
         if (opts.params) {
@@ -53,15 +50,15 @@ export class ApiService {
 
         switch (method) {
             case 'GET':
-                return this.http.get<T>(url, { headers, params });
+                return this.http.get<T>(url, { headers, params, withCredentials: true });
             case 'POST':
-                return this.http.post<T>(url, opts.body, { headers, params });
+                return this.http.post<T>(url, opts.body, { headers, params, withCredentials: true });
             case 'PUT':
-                return this.http.put<T>(url, opts.body, { headers, params });
+                return this.http.put<T>(url, opts.body, { headers, params, withCredentials: true });
             case 'PATCH':
-                return this.http.patch<T>(url, opts.body, { headers, params });
+                return this.http.patch<T>(url, opts.body, { headers, params, withCredentials: true });
             case 'DELETE':
-                return this.http.delete<T>(url, { headers, params });
+                return this.http.delete<T>(url, { headers, params, withCredentials: true });
             default:
                 throw new Error(`Unsupported method ${method}`);
         }

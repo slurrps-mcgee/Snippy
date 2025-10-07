@@ -6,6 +6,7 @@ import { createUniqueUsername } from '../../utils/helper';
 import { findInviteByCode, markInviteUsed } from '../invite/invite.repo';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
+const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'secret';
 const SALT_ROUNDS = 10;
 
 //Exported functions
@@ -19,7 +20,7 @@ export const registerService = async (payload: any) => {
 
 	if (existingEmail) throw new CustomError('Email already in use', 409);
 
-	// Derive base from email local part
+	// Derive base from email local par35:0
     let finalUserName = await createUniqueUsername(base);
 
 	if (inviteOnly && usersExist) {
@@ -61,9 +62,9 @@ export const registerService = async (payload: any) => {
 			await t.commit();
 
 			const user = sanitizeUser(created);
-			const token = jwt.sign({ sub: created.userId, email: created.email }, JWT_SECRET, { expiresIn: '7d' });
+			const { accessToken, refreshToken } = createTokens({ sub: created.userId, email: created.email });
 
-			return { user, token };
+			return { user, accessToken, refreshToken };
 		} catch (err) {
 			await t.rollback();
 			throw err;
@@ -84,9 +85,9 @@ export const registerService = async (payload: any) => {
 		if (!created) throw new CustomError('Failed to create user', 500);
 
 		const user = sanitizeUser(created);
-		const token = jwt.sign({ sub: created.userId, email: created.email }, JWT_SECRET, { expiresIn: '7d' });
+		const { accessToken, refreshToken } = createTokens({ sub: created.userId, email: created.email });
 
-		return { user, token };
+		return { user, accessToken, refreshToken };
 	}
 };
 
@@ -99,10 +100,31 @@ export const loginService = async (payload: any) => {
 	if (!match) throw new CustomError('Invalid credentials', 401);
 
 	const sanitized = sanitizeUser(user);
-	const token = jwt.sign({ sub: user.userId, email: user.email }, JWT_SECRET, { expiresIn: '7d' });
+	const { accessToken, refreshToken } = createTokens({ sub: user.userId, email: user.email });
 
-	return { user: sanitized, token };
+	return { user: sanitized, accessToken, refreshToken };
 };
+
+export const refreshService = async (refreshToken: string) => {
+	const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
+	if (typeof decoded !== 'object' || decoded === null || !('sub' in decoded) || !('email' in decoded)) {
+		throw new CustomError('Invalid refresh token payload', 401);
+	}
+
+	const { accessToken, refreshToken: newRefresh } = createTokens({ sub: (decoded as any).sub, email: (decoded as any).email });
+	
+	return { accessToken, refreshToken: newRefresh };
+}
+
+const createTokens = (payload: any) => {
+	const ACCESS_TOKEN_EXPIRES = '15m';
+	const REFRESH_TOKEN_EXPIRES = '7d';
+
+	const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES });
+  	const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES });
+
+  	return { accessToken, refreshToken };
+}
 
 const sanitizeUser = (user: any) => {
 	if (!user) return null;
