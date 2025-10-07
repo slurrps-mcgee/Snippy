@@ -1,4 +1,3 @@
-(The file `/mnt/Artimus Disk/01 Programming/01 - Github/Snippy/README.md` exists, but is empty)
 # Snippy
 
 This is a Codepen.io clone that can be hosted locally by anyone and is opensource.
@@ -37,13 +36,13 @@ DB_PORT=
 DB_NAME=
 DB_USER=
 # REQUIRED
-DB_PASS=changeme
-MYSQL_ROOT_PASSWORD=changeme
+DB_PASS=
+MYSQL_ROOT_PASSWORD=
 
 # API
 # OPTIONAL
-API_PORT=3000
-FRONTEND_ORIGIN=frontend
+API_PORT=
+FRONTEND_ORIGIN=
 # If setting up invite only mode you will need to setup SMTP settings as well
 INVITE_ONLY=
 SMTP_HOST=
@@ -54,25 +53,25 @@ SMTP_FROM=
 SMTP_SECURE=
 
 # REQUIRED
-JWT_SECRET=secret
-
-# OPTIONAL
-FRONTEND_ORIGIN=
+JWT_SECRET=
 
 # FRONTEND
 # OPTIONAL
-FRONTEND_PORT=4200
-API_BASE=
+FRONTEND_PORT=
 # REQUIRED
 ```
 
 Notes: Not all of these variables are needed as most have defaults
 
-## Run downloaded application locally
+## Development
+
+### Run downloaded application locally
 
 Notes: You will need to create a .env file in the root of the folder next to the docker-compost.yml file
 
-```docker-compose
+### Docker Compose File Example
+
+```yaml
 version: '3.8'
 services:
   db:
@@ -121,11 +120,15 @@ volumes:
   mysql-data:
 ```
 
-## Run the full stack using docker compose pulling from dockerhub
+## SETUP
+
+### Run the full stack using docker compose pulling from dockerhub
 
 Notes: this assumes you are using portainer to setup .env variables. If not you can update to just use a .env file from the options in the [ENV](#env-file) section
 
-```docker-compose
+### Docker Compose File Example
+
+```yaml
 version: '3.8'
 services:
   db:
