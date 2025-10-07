@@ -8,6 +8,7 @@ on:
 
 jobs:
   build-and-deploy:
+    if: github.actor == 'slurrps-mcgee' # Only run for specific user
     runs-on: ubuntu-latest
 
     steps:
@@ -38,6 +39,10 @@ jobs:
         echo "DB_VERSION=$DB_VERSION" >> $GITHUB_ENV
         echo "Using DB version: $DB_VERSION"
 
+        # Get FrontEnd version
+        API_VERSION=$(node -p "require('./snippy/frontend/package.json').version")
+        echo "FE_VERSION=$FE_VERSION" >> $GITHUB_ENV
+        echo "Using FE version: $FE_VERSION"
 
     - name: Build and push API image
       uses: docker/build-push-action@v5
@@ -56,3 +61,12 @@ jobs:
         tags: |
           kennyl777/snippy-db:${{ env.DB_VERSION }}
           kennyl777/snippy-db:latest
+
+    - name: Build and push FrontEnd image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./snippy/frontend
+        push: true
+        tags: |
+          kennyl777/snippy-api:${{ env.FE_VERSION }}
+          kennyl777/snippy-api:latest
