@@ -31,6 +31,7 @@ export class ApiService {
         }
     }
 
+    // Generic API request method
     request<T = any>(opts: ApiOptions): Observable<T> {
         const url = `${this.base}${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
 

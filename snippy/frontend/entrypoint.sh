@@ -12,7 +12,7 @@ mkdir -p "$ASSETS_PATH"
 
 cat > "$CONFIG_FILE" <<EOF
 {
-  "api_base": "api/v1",
+  "api_base": "${API_BASE:-api/v1}"
 }
 EOF
 
