@@ -68,4 +68,4 @@ jobs:
         context: ./snippy/frontend
         push: true
         tags: |
-          kennyl777/snippy-api:latest
+          kennyl777/snippy-frontend:latest
