@@ -40,7 +40,7 @@ jobs:
         echo "Using DB version: $DB_VERSION"
 
         # Get FrontEnd version
-        API_VERSION=$(node -p "require('./snippy/frontend/package.json').version")
+        FE_VERSION=$(node -p "require('./snippy/frontend/package.json').version")
         echo "FE_VERSION=$FE_VERSION" >> $GITHUB_ENV
         echo "Using FE version: $FE_VERSION"
 
