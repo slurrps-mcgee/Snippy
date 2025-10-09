@@ -4,9 +4,9 @@ import {
   Model,
   DataType,
   PrimaryKey,
-  AutoIncrement,
   ForeignKey,
   BelongsTo,
+  Default,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
 
@@ -18,20 +18,13 @@ import { Snippets } from "./snippet.model";
 })
 export class Snippet_Files extends Model<Snippet_Files> {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  snippet_fileId!: number;
+  @Default(DataType.UUIDV4)
+  @Column({ type: DataType.UUID })
+  snippet_fileId!: string;
 
   @ForeignKey(() => Snippets)
-  @Column(DataType.INTEGER)
-  snippetId!: number;
-
-  @BelongsTo(() => Snippets, {
-    foreignKey: 'snippetId',
-    targetKey: 'snippetId',
-    constraints: false,
-  })
-  snippet!: Snippets;
+  @Column(DataType.UUID)
+  snippetId!: string;
 
   @Column({
     type: DataType.STRING,
@@ -41,7 +34,15 @@ export class Snippet_Files extends Model<Snippet_Files> {
 
   @Column({
     type: DataType.TEXT,
-    allowNull: false,
+    allowNull: true,
   })
-  content!: string;
+  content!: string | null;
+
+  // Relations
+   @BelongsTo(() => Snippets, {
+    foreignKey: 'snippetId',
+    targetKey: 'snippetId',
+    constraints: false,
+  })
+  snippet!: Snippets;
 }

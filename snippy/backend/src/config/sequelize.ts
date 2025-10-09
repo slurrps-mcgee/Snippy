@@ -22,13 +22,13 @@ const sequelize = new Sequelize({
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {
-  try{
+  try {
     await defaultPolicy.execute(async () => {
-    logger.info('⏳ Trying DB connection...');
-    await sequelize.authenticate(); // Test the connection
-    logger.info('✅ Database connected.');
-    await sequelize.sync({ force: false }); // Sync models with the database only if tables do not exist
-    logger.info('✅ Models synced.');
+      logger.info('⏳ Trying DB connection...');
+      await sequelize.authenticate(); // Test the connection
+      logger.info('✅ Database connected.');
+      await sequelize.sync({ force: false }); // Sync models with the database only if tables do not exist
+      logger.info('✅ Models synced.');
     });
   } catch (error) {
     logger.error('❌ Unable to connect to the database:', error);

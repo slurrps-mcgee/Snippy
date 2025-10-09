@@ -1,4 +1,4 @@
-import { Table, Column, Model, DataType, PrimaryKey, Default, AutoIncrement } from 'sequelize-typescript';
+import { Table, Column, Model, DataType, PrimaryKey, Default } from 'sequelize-typescript';
 
 @Table({
   tableName: 'invites',
@@ -8,25 +8,22 @@ import { Table, Column, Model, DataType, PrimaryKey, Default, AutoIncrement } fr
 })
 export class Invite extends Model<Invite> {
   @PrimaryKey
-  @AutoIncrement
-  @Column({
-    allowNull: false,
-    type: DataType.INTEGER,
-  })
-  inviteId!: number;
+  @Default(DataType.UUIDV4)
+  @Column({ type: DataType.UUID })
+  inviteId!: string;
 
   @Default(DataType.UUIDV4)
   @Column({
     type: DataType.UUID,
     allowNull: false,
-    unique: "invite_code_unique",
+    unique: 'invite_code_unique_constraint',
   })
   code!: string;
 
   @Column({
     type: DataType.STRING,
     allowNull: false,
-    unique: 'invite_email_unique',
+    unique: 'invite_email_unique_constraint',
   })
   email!: string;
 

@@ -12,16 +12,14 @@ const SALT_ROUNDS = 10;
 //Exported functions
 export const registerService = async (payload: any) => {
 	const { email, password, inviteCode } = payload;
-
 	const inviteOnly = (process.env.INVITE_ONLY || 'false').toLowerCase() === 'true';
 	const usersExist = await haveUsers();
 	const existingEmail = await findByEmail(email);
-    const base = (email.split('@')[0] || '').replace(/\s+/g, '').toLowerCase();
+    const userNameBase = (email.split('@')[0] || '').replace(/\s+/g, '').toLowerCase();
 
 	if (existingEmail) throw new CustomError('Email already in use', 409);
 
-	// Derive base from email local par35:0
-    let finalUserName = await createUniqueUsername(base);
+    let finalUserName = await createUniqueUsername(userNameBase);
 
 	if (inviteOnly && usersExist) {
         if (!inviteCode) throw new CustomError('Invite code is required for registration', 400);

@@ -4,9 +4,9 @@ import {
     Model,
     DataType,
     PrimaryKey,
-    AutoIncrement,
     ForeignKey,
     BelongsTo,
+    Default,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
 import { Users } from "./user.model";
@@ -19,24 +19,31 @@ import { Users } from "./user.model";
 })
 export class Comments extends Model<Comments> {
     @PrimaryKey
-    @AutoIncrement
-    @Column(DataType.INTEGER)
-    commentId!: number;
+    @Default(DataType.UUIDV4)
+    @Column({ type: DataType.UUID })
+    commentId!: string;
 
     @ForeignKey(() => Users)
-    @Column(DataType.INTEGER)
-    userId!: number;
+    @Column(DataType.UUID)
+    userId!: string;
 
+    @ForeignKey(() => Snippets)
+    @Column(DataType.UUID)
+    snippetId!: string;
+
+    @Column({
+        type: DataType.TEXT,
+        allowNull: false,
+    })
+    content!: string;
+
+    // Relations
     @BelongsTo(() => Users, {
         foreignKey: 'userId',
         targetKey: 'userId',
         constraints: false,
     })
-    users!: Users;
-    
-    @ForeignKey(() => Snippets)
-    @Column(DataType.INTEGER)
-    snippetId!: number;
+    user!: Users;
 
     @BelongsTo(() => Snippets, {
         foreignKey: 'snippetId',
@@ -44,10 +51,4 @@ export class Comments extends Model<Comments> {
         constraints: false,
     })
     snippet!: Snippets;
-
-    @Column({
-        type: DataType.TEXT,
-        allowNull: false,
-    })
-    content!: string;
 }

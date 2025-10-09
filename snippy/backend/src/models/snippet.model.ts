@@ -4,10 +4,10 @@ import {
   Model,
   DataType,
   PrimaryKey,
-  AutoIncrement,
   HasMany,
   ForeignKey,
   BelongsTo,
+  Default,
 } from "sequelize-typescript";
 import { Snippet_Files } from "./snippet_file.model";
 import { Users } from "./user.model";
@@ -22,29 +22,16 @@ import { Comments } from "./comment.model";
 })
 export class Snippets extends Model<Snippet_Files> {
   @PrimaryKey
-  @AutoIncrement
-  @Column(DataType.INTEGER)
-  snippetId!: number;
+  @Default(DataType.UUIDV4)
+  @Column({ type: DataType.UUID })
+  snippetId!: string;
 
   @ForeignKey(() => Users)
   @Column({
-    type: DataType.STRING,
+    type: DataType.UUID,
     allowNull: false,
   })
   userId!: string;
-
-  @BelongsTo(() => Users, {
-    foreignKey: 'userId',
-    targetKey: 'userId',
-    constraints: false,
-  })
-  user!: Users;
-
-  // @Column({
-  //   type: DataType.STRING,
-  //   allowNull: false,
-  // })
-  // snippet_type!: string; // Web, Python, etc.
 
   @Column({
     type: DataType.STRING,
@@ -59,45 +46,50 @@ export class Snippets extends Model<Snippet_Files> {
   description!: string;
 
   @Column({
-    type: DataType.STRING,
+    type: DataType.JSON,
     allowNull: true,
-    get() {
-      const raw = this.getDataValue('tags');
-      return raw ? raw.split(',').map((t: string) => t.trim()) : [];
-    },
-    set(value: string[] | string) {
-      if (Array.isArray(value)) {
-        this.setDataValue('tags', value.join(','));
-      } else {
-        this.setDataValue('tags', value);
-      }
-    },
   })
-  tags?: string[];
+  tags?: string | null;
 
-  @Column({ 
-    type: DataType.INTEGER, 
-    defaultValue: 0 
+  @Column({
+    type: DataType.INTEGER,
+    defaultValue: 0
   })
   view_count!: number;
 
+
+  //MAYBE ADD LATER
+  // @Column({
+  //   type: DataType.STRING,
+  //   allowNull: false,
+  // })
+  // snippet_type!: string; // Web, Python, etc.
+
+
   // Relations
-  @HasMany(() => Snippet_Files, { 
-    foreignKey: 'snippetId', 
+  @BelongsTo(() => Users, {
+    foreignKey: 'userId',
+    targetKey: 'userId',
+    constraints: false,
+  })
+  user!: Users;
+
+  @HasMany(() => Snippet_Files, {
+    foreignKey: 'snippetId',
     sourceKey: 'snippetId',
     constraints: false,
   })
   snippet_files!: Snippet_Files[];
 
-  @HasMany(() => Favorites, { 
-    foreignKey: 'snippetId', 
+  @HasMany(() => Favorites, {
+    foreignKey: 'snippetId',
     sourceKey: 'snippetId',
     constraints: false,
   })
   favorites!: Favorites[];
 
-  @HasMany(() => Comments, { 
-    foreignKey: 'snippetId', 
+  @HasMany(() => Comments, {
+    foreignKey: 'snippetId',
     sourceKey: 'snippetId',
     constraints: false,
   })
