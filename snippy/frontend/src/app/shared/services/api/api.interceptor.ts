@@ -1,66 +1,102 @@
 import { Injectable } from '@angular/core';
 import { HttpEvent, HttpHandler, HttpInterceptor, HttpRequest, HttpResponse } from '@angular/common/http';
-import { Observable, throwError, BehaviorSubject, of } from 'rxjs';
+import { Observable, throwError, BehaviorSubject, of, from } from 'rxjs';
 import { catchError, filter, switchMap, take, finalize } from 'rxjs/operators';
 import { HttpClient } from '@angular/common/http';
+import { AuthService as Auth0Service } from '@auth0/auth0-angular';
 
 @Injectable({ providedIn: 'root' })
 export class APIInterceptor implements HttpInterceptor {
     private refreshing = false;
     private refreshSubject: BehaviorSubject<string | null> = new BehaviorSubject<string | null>(null);
 
-    constructor(private http: HttpClient) {}
+    constructor(private http: HttpClient, private auth0: Auth0Service) {}
 
     intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
-        return next.handle(req).pipe(
-            catchError(err => {
-                // Only attempt refresh on 401 and not when calling refresh endpoint itself
-                if (err && err.status === 401 && !req.url.includes('/auth/refresh')) {
-                    return this.handle401Error(req, next);
+    // Workflow:
+    // 1. If Auth0 says user is authenticated, request a token via getAccessTokenSilently() and attach it.
+    // 2. Otherwise fall back to sessionStorage 'accessToken' (legacy).
+    // 3. On 401 attempt a silent Auth0 refresh (ignoreCache:true). If that fails, propagate the 401 so the app can logout/redirect.
+        return this.auth0.isAuthenticated$.pipe(
+            take(1),
+            switchMap((isAuth) => {
+                if (isAuth) {
+                    // Preferred path: use Auth0 SDK token
+                    return from(this.auth0.getAccessTokenSilently()).pipe(
+                        switchMap((token) => {
+                            if (token && !req.headers.has('Authorization')) {
+                                req = req.clone({ setHeaders: { Authorization: `Bearer ${token}` } });
+                            }
+                            return next.handle(req).pipe(
+                                catchError(err => {
+                                    if (err && err.status === 401) {
+                                                return this.tryAuth0Refresh(req, next);
+                                            }
+                                    return throwError(() => err);
+                                })
+                            );
+                        })
+                    );
                 }
-                return throwError(() => err);
+
+                // Attach Bearer token from sessionStorage if present and not already set
+                try {
+                    const stored = sessionStorage.getItem('accessToken');
+                    if (stored && !req.headers.has('Authorization')) {
+                        req = req.clone({ setHeaders: { Authorization: `Bearer ${stored}` } });
+                    }
+                } catch (e) {
+                    // sessionStorage may be unavailable in some environments; ignore
+                }
+
+                return next.handle(req).pipe(
+                    catchError(err => {
+                        if (err && err.status === 401) {
+                            return this.tryAuth0Refresh(req, next);
+                        }
+                        return throwError(() => err);
+                    })
+                );
             })
         );
     }
 
-    private handle401Error(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+    private tryAuth0Refresh(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+        // Attempt a silent token refresh with Auth0's SDK (ignore cache to force a refresh)
         if (!this.refreshing) {
             this.refreshing = true;
             this.refreshSubject.next(null);
 
-            // Call refresh endpoint; backend sets refresh token as HTTP-only cookie and returns new access token
-            // withCredentials is required so the browser sends cookies to the API
-            return this.http.post<{ accessToken: string }>('/api/v1/auth/refreshToken', {}).pipe(
-                switchMap(res => {
-                    const newToken = res?.accessToken;
+            return from((this.auth0 as any).getAccessTokenSilently({ ignoreCache: true } as any)).pipe(
+                switchMap((newTokenRaw: any) => {
+                    const newToken = typeof newTokenRaw === 'string' ? newTokenRaw : (newTokenRaw?.access_token ?? String(newTokenRaw));
                     if (newToken) {
+                        // Persist legacy sessionStorage for compatibility
+                        try { sessionStorage.setItem('accessToken', newToken); } catch {}
                         this.refreshSubject.next(newToken);
                         return next.handle(req.clone({ setHeaders: { Authorization: `Bearer ${newToken}` } }));
                     }
-                    // If no token returned, logout
+                    // No token returned -> propagate 401
                     this.refreshSubject.next(null);
-                    return throwError(() => new Error('No access token in refresh response'));
+                    return throwError(() => new Error('Unable to refresh token via Auth0'));
                 }),
-                catchError(err => {
+                catchError((e) => {
                     this.refreshSubject.next(null);
-                    return throwError(() => err);
+                    return throwError(() => e);
                 }),
                 finalize(() => {
                     this.refreshing = false;
                 })
             );
-        } else {
-            // Wait until refreshSubject has a non-null token then retry
-            return this.refreshSubject.pipe(
-                take(1),
-                switchMap(token => {
-                    if (!token) {
-                        // No token available after refresh -> fail
-                        return throwError(() => new Error('Unable to refresh token'));
-                    }
-                    return next.handle(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
-                })
-            );
         }
+
+        // If another refresh is ongoing, wait for it
+        return this.refreshSubject.pipe(
+            take(1),
+            switchMap(token => {
+                if (!token) return throwError(() => new Error('Unable to refresh token'));
+                return next.handle(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
+            })
+        );
     }
 }

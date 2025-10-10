@@ -48,15 +48,13 @@ app.use(express.json());
 // JWT Middleware to protect routes
 // Apply jwtCheck to most routes but allow a small whitelist (public endpoints)
 const jwtWhitelist: Array<{ method: string; path: string }> = [
-  { method: 'POST', path: '/api/v1/auth/register' },
-  { method: 'POST', path: '/api/v1/auth/login' },
-  { method: 'POST', path: '/api/v1/auth/refreshToken' },
-  { method: 'POST', path: '/api/v1/auth/forgot' },
-  { method: 'POST', path: '/api/v1/auth/reset' },
   // add other public endpoints here if needed
 ];
 
+// Debug middleware: report whether an Authorization header is present (do NOT log the token)
 app.use((req, res, next) => {
+  const hasAuth = Boolean(req.headers && (req.headers as any).authorization);
+  logger.debug(`[auth-debug] ${req.method} ${req.path} - Authorization header present: ${hasAuth}`);
   const isWhitelisted = jwtWhitelist.some(w => w.method === req.method && w.path === req.path);
   if (isWhitelisted) return next();
   return jwtCheck(req as any, res as any, next as any);

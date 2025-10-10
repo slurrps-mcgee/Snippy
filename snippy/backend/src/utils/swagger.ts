@@ -6,7 +6,7 @@ const options = {
     openapi: '3.0.0',
     info: {
       title: 'Snippy API',
-      version: '0.2.1',
+      version: '0.2.2',
       description: 'API documentation for Snippy',
     },
   },

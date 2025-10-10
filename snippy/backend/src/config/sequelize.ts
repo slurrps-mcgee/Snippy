@@ -5,7 +5,6 @@ import { Snippets } from '../models/snippet.model';
 import { Snippet_Files } from '../models/snippet_file.model';
 import { Favorites } from '../models/favorite.model';
 import { Comments } from '../models/comment.model';
-import { PasswordReset } from '../models/passwordReset.model';
 import { defaultPolicy } from '../utils/resiliance';
 import logger from '../utils/logger';
 
@@ -21,17 +20,7 @@ const sequelize = new Sequelize({
 });
 
 // Add models to sequelize after initialization
-sequelize.addModels([Users, Invite, Snippets, Snippet_Files, Favorites, Comments, PasswordReset]);
-
-// // Register default scopes after models are attached to Sequelize instance
-// try {
-//   // Default scope: exclude sensitive fields
-//   Users.addScope('defaultScope', { attributes: { exclude: ['password', 'salt'] } } as any, { override: true });
-//   Users.addScope('withSecrets', {} as any);
-// } catch (err) {
-//   // If something goes wrong here, log it but allow startup to continue to capture meaningful errors later
-//   logger.debug('Warning: could not register Users scopes at startup', err);
-// }
+sequelize.addModels([Users, Invite, Snippets, Snippet_Files, Favorites, Comments]);
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {

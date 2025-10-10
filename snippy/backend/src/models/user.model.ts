@@ -11,9 +11,8 @@ import { Comments } from './comment.model';
 })
 export class Users extends Model<Users> {
   @PrimaryKey
-  @Default(DataType.UUIDV4)
   @Column({ type: DataType.UUID })
-  userId!: string;
+  auth0Id!: string;
 
   @Column({
     type: DataType.STRING,
@@ -36,18 +35,6 @@ export class Users extends Model<Users> {
   email!: string;
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  password!: string;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-  })
-  salt!: string;
-
-  @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
@@ -62,22 +49,22 @@ export class Users extends Model<Users> {
 
   // Relations
   @HasMany(() => Snippets, {
-    foreignKey: 'userId',
-    sourceKey: 'userId',
+    foreignKey: 'auth0Id',
+    sourceKey: 'auth0Id',
     constraints: false,
   })
   snippets!: Snippets[];
 
   @HasMany(() => Favorites, {
-    foreignKey: 'userId',
-    sourceKey: 'userId',
+    foreignKey: 'auth0Id',
+    sourceKey: 'auth0Id',
     constraints: false,
   })
   favorites!: Favorites[];
 
   @HasMany(() => Comments, {
-    foreignKey: 'userId',
-    sourceKey: 'userId',
+    foreignKey: 'auth0Id',
+    sourceKey: 'auth0Id',
     constraints: false,
   })
   comments!: Comments[];

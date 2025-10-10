@@ -22,7 +22,7 @@ export async function findById(id: string) {
 }
 
 export async function updateUser(id: string, patch: Partial<Users>) {
-	const [count] = await Users.update(patch, { where: { userId: id } });
+	const [count] = await Users.update(patch, { where: { auth0Id: id } });
 	return count > 0;
 }
 

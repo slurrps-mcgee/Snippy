@@ -1,12 +1,51 @@
 import { NextFunction, Request, Response } from 'express';
-import { updateUserService } from './user.service';
+import { registerService, updateUserService } from './user.service';
 import { findById } from './user.repo';
-import { validateUpdateUser } from './user.validator';
+import { validateRegister, validateUpdateUser } from './user.validator';
+
+export async function registerUserHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        await validateRegister(req.body);
+
+        const { user } = await registerService(req);
+
+        res.status(201).json({ success: true, data: user });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export const register = [registerUserHandler];
+
+
+export async function getUserInfoHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+
+        // Ensure authenticated user exists
+        const authSub = req.auth?.payload?.sub;
+        if(!authSub) {
+            res.status(401).json({ error: 'Unauthorized' });
+            return;
+        }
+
+        const userRecord = await findById(authSub);
+        if (!userRecord) {
+            res.status(404).json({ error: 'User not found' });
+            return;
+        }
+
+        const user = userRecord.toJSON ? userRecord.toJSON() : { ...userRecord };
+
+        res.status(200).json({ success: true, user });
+    } catch (error) {
+        next(error);
+    }
+}
 
 export async function updateUserHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         validateUpdateUser(req.body);
-        
+
         let id = req.params.id;
 
         // Ensure authenticated user exists
@@ -55,4 +94,4 @@ export async function updateUserHandler(req: Request, res: Response, next: NextF
     }
 }
 
-export const updateUser = [ updateUserHandler ];
+export const updateUser = [updateUserHandler];

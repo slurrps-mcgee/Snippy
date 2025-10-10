@@ -25,7 +25,7 @@ export class Favorites extends Model<Favorites> {
 
     @ForeignKey(() => Users)
     @Column(DataType.UUID)
-    userId!: string;
+    auth0Id!: string;
 
     @ForeignKey(() => Snippets)
     @Column(DataType.UUID)
@@ -33,8 +33,8 @@ export class Favorites extends Model<Favorites> {
 
     // Relations
     @BelongsTo(() => Users, {
-        foreignKey: 'userId',
-        targetKey: 'userId',
+        foreignKey: 'auth0Id',
+        targetKey: 'auth0Id',
         onDelete: 'CASCADE',
         constraints: true,
     })

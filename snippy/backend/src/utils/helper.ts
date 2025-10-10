@@ -14,24 +14,6 @@ export const createUniqueUsername = async (base: string, maxTries = 20) => {
 	throw new Error('exhausted username generation attempts');
 };
 
-export const setAuthCookies = (res: any, accessToken: string, refreshToken: string) => {
-	res.cookie('accessToken', accessToken, {
-		httpOnly: true,
-		secure: true,
-		sameSite: 'None',
-		maxAge: 15 * 60 * 1000, // 15 min
-		path: '/',
-	});
-
-	res.cookie('refreshToken', refreshToken, {
-		httpOnly: true,
-		secure: true,
-		sameSite: 'None',
-		maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-		path: '/',
-	});
-}
-
 export const getOrigin = (req: Request) => {
 	const explicitOrigin = req.body?.origin;
 	const headerOrigin = req.get('origin') || req.get('referer')?.split('/').slice(0, 3).join('/');

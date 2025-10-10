@@ -31,7 +31,7 @@ export class Snippets extends Model<Snippet_Files> {
     type: DataType.UUID,
     allowNull: false,
   })
-  userId!: string;
+  auth0Id!: string;
 
   @Column({
     type: DataType.STRING,
@@ -68,8 +68,8 @@ export class Snippets extends Model<Snippet_Files> {
 
   // Relations
   @BelongsTo(() => Users, {
-    foreignKey: 'userId',
-    targetKey: 'userId',
+    foreignKey: 'auth0Id',
+    targetKey: 'auth0Id',
     onDelete: 'CASCADE',
     constraints: true,
   })

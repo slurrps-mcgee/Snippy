@@ -12,17 +12,21 @@ mkdir -p "$ASSETS_PATH"
 
 cat > "$CONFIG_FILE" <<EOF
 {
-  "api_base": "${API_BASE:-api/v1}"
+  "api_base": "${API_BASE:-/api/v1}",
+  "auth0_domain": "${AUTH0_DOMAIN:-}",
+  "auth0_client_id": "${AUTH0_CLIENT_ID:-}"
 }
 EOF
 
 echo "Wrote runtime config to $CONFIG_FILE"
 
 # Also write a small env.js that sets window.__env for scripts that expect it
-cat > "$ENV_JS_FILE" <<'JS'
+cat > "$ENV_JS_FILE" <<EOF
 window.__env = window.__env || {};
-window.__env.api_base = "api/v1";
-JS
+window.__env.api_base = "${API_BASE:-/api/v1}";
+window.__env.auth0_domain = "${AUTH0_DOMAIN:-}";
+window.__env.auth0_client_id = "${AUTH0_CLIENT_ID:-}";
+EOF
 
 echo "Wrote runtime env to $ENV_JS_FILE"
 

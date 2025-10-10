@@ -1,8 +1,11 @@
 import { CustomError } from '../../utils/custom-error';
-import sendInviteEmail from '../../utils/email';
+import { sendInviteEmail } from '../../utils/email';
 import { createInvite, findInviteByEmail } from './invite.repo';
 
-export async function generateInviteService(email: string,  origin: string) {
+export async function generateInviteService(payload: any) {
+    const { email } = payload.body;
+    
+    const origin = payload.origin || '';
     const invite = await findInviteByEmail(email);
     if (invite) throw new CustomError('Invite already exists for email', 409);
 

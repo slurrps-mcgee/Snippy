@@ -50,15 +50,15 @@ export class ApiService {
 
         switch (method) {
             case 'GET':
-                return this.http.get<T>(url, { headers, params, withCredentials: true });
+                return this.http.get<T>(url, { headers, params });
             case 'POST':
-                return this.http.post<T>(url, opts.body, { headers, params, withCredentials: true });
+                return this.http.post<T>(url, opts.body, { headers, params });
             case 'PUT':
-                return this.http.put<T>(url, opts.body, { headers, params, withCredentials: true });
+                return this.http.put<T>(url, opts.body, { headers, params });
             case 'PATCH':
-                return this.http.patch<T>(url, opts.body, { headers, params, withCredentials: true });
+                return this.http.patch<T>(url, opts.body, { headers, params });
             case 'DELETE':
-                return this.http.delete<T>(url, { headers, params, withCredentials: true });
+                return this.http.delete<T>(url, { headers, params });
             default:
                 throw new Error(`Unsupported method ${method}`);
         }
