@@ -35,6 +35,6 @@ export const setAuthCookies = (res: any, accessToken: string, refreshToken: stri
 export const getOrigin = (req: Request) => {
 	const explicitOrigin = req.body?.origin;
 	const headerOrigin = req.get('origin') || req.get('referer')?.split('/').slice(0, 3).join('/');
-	const frontend = (explicitOrigin || headerOrigin || process.env.FRONTEND_HOST || process.env.FRONTEND_ORIGIN || 'http://localhost:4200').replace(/\/$/, '');
+	const frontend = (process.env.FRONTEND_HOST ||explicitOrigin || headerOrigin || 'http://localhost:4200').replace(/\/$/, '');
 	return frontend;
 }
