@@ -1,17 +1,17 @@
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
 import { CustomError } from '../../utils/custom-error';
-import { findByEmail, createUser, haveUsers } from '../user/user.repo';
+import { findByEmail, createUser, haveUsers, updateUser, findById } from '../user/user.repo';
 import { createUniqueUsername } from '../../utils/helper';
 import { findInviteByCode, markInviteUsed } from '../invite/invite.repo';
+import { createTokens, refreshTokens } from '../../middleware/jwt.service';
+import { createPasswordReset, findPasswordResetByHash, deletePasswordResetById } from './auth.repo';
+import { sendPasswordResetEmail } from '../../utils/email';
+import crypto from 'crypto';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'secret';
-const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'secret';
 const SALT_ROUNDS = 10;
 
 //Exported functions
-export const registerService = async (payload: any) => {
-	const { email, password, inviteCode } = payload;
+export async function registerService(email: string, password: string, inviteCode?: string) {
 	const inviteOnly = (process.env.INVITE_ONLY || 'false').toLowerCase() === 'true';
 	const usersExist = await haveUsers();
 	const existingEmail = await findByEmail(email);
@@ -59,10 +59,9 @@ export const registerService = async (payload: any) => {
 
 			await t.commit();
 
-			const user = sanitizeUser(created);
 			const { accessToken, refreshToken } = createTokens({ sub: created.userId, email: created.email });
 
-			return { user, accessToken, refreshToken };
+			return { user: created, accessToken, refreshToken };
 		} catch (err) {
 			await t.rollback();
 			throw err;
@@ -82,52 +81,72 @@ export const registerService = async (payload: any) => {
 
 		if (!created) throw new CustomError('Failed to create user', 500);
 
-		const user = sanitizeUser(created);
 		const { accessToken, refreshToken } = createTokens({ sub: created.userId, email: created.email });
 
-		return { user, accessToken, refreshToken };
+		return { user: created, accessToken, refreshToken };
 	}
-};
+}
 
-export const loginService = async (payload: any) => {
-	const { email, password } = payload;
+export async function loginService(email: string, password: string) {
 	const user = await findByEmail(email);
 	if (!user) throw new CustomError('Invalid credentials', 401);
 
-	const match = await bcrypt.compare(password, user.password);
+	const match = await bcrypt.compare(password, (user as any).password);
 	if (!match) throw new CustomError('Invalid credentials', 401);
 
-	const sanitized = sanitizeUser(user);
 	const { accessToken, refreshToken } = createTokens({ sub: user.userId, email: user.email });
 
-	return { user: sanitized, accessToken, refreshToken };
-};
-
-export const refreshService = async (refreshToken: string) => {
-	const decoded = jwt.verify(refreshToken, JWT_REFRESH_SECRET);
-	if (typeof decoded !== 'object' || decoded === null || !('sub' in decoded) || !('email' in decoded)) {
-		throw new CustomError('Invalid refresh token payload', 401);
-	}
-
-	const { accessToken, refreshToken: newRefresh } = createTokens({ sub: (decoded as any).sub, email: (decoded as any).email });
-	
-	return { accessToken, refreshToken: newRefresh };
+	return { user, accessToken, refreshToken };
 }
 
-const createTokens = (payload: any) => {
-	const ACCESS_TOKEN_EXPIRES = '15m';
-	const REFRESH_TOKEN_EXPIRES = '7d';
-
-	const accessToken = jwt.sign(payload, JWT_SECRET, { expiresIn: ACCESS_TOKEN_EXPIRES });
-  	const refreshToken = jwt.sign(payload, JWT_REFRESH_SECRET, { expiresIn: REFRESH_TOKEN_EXPIRES });
-
-  	return { accessToken, refreshToken };
+export async function refreshService(refreshToken: string) {
+	return refreshTokens(refreshToken);
 }
 
-const sanitizeUser = (user: any) => {
-	if (!user) return null;
-	const u = user.toJSON ? user.toJSON() : { ...user };
-	delete u.password;
-	delete u.salt;
-	return u;
-};
+// Request a password reset: create token, email user with link containing raw token
+export async function requestPasswordReset(email: string, origin?: string) {
+	const user = await findByEmail(email);
+	// Always return success for the public API to avoid leaking whether email exists
+	if (!user) return;
+
+	const raw = crypto.randomBytes(32).toString('hex');
+	const hash = crypto.createHash('sha256').update(raw).digest('hex');
+	const expires = new Date(Date.now() + (process.env.PASSWORD_RESET_EXP_MIN ? parseInt(process.env.PASSWORD_RESET_EXP_MIN) * 60000 : 30 * 60 * 1000));
+
+	const rec = await createPasswordReset({ userId: user.userId, token_hash: hash, expires_at: expires } as any);
+
+	const frontend = origin || process.env.FRONTEND_ORIGIN || 'http://localhost:4200';
+	const resetUrl = `${frontend.replace(/\/$/, '')}/reset-password?token=${raw}`;
+
+	// fire-and-forget email send; don't block user-facing response
+	sendPasswordResetEmail(user.email, resetUrl).catch((err) => {
+		console.error('Failed to send password reset email', err);
+	});
+
+	return;
+}
+
+// Verify token and reset password. On success delete token record.
+export async function resetPassword(rawToken: string, newPassword: string) {
+	const hash = crypto.createHash('sha256').update(rawToken).digest('hex');
+	const record = await findPasswordResetByHash(hash);
+	if (!record) throw new CustomError('Invalid or expired token', 400);
+	if (record.expires_at < new Date()) throw new CustomError('Token expired', 400);
+
+	const user = await findById(record.userId);
+	if (!user) throw new CustomError('User not found', 404);
+
+	const salt = await bcrypt.genSalt(SALT_ROUNDS);
+	const hashed = await bcrypt.hash(newPassword, salt);
+
+	// Update using repository helper (use userId primary key)
+	const ok = await updateUser(user.userId, { password: hashed, salt } as any);
+
+	if (!ok) throw new CustomError('Failed to update password', 500);
+
+	// Delete the password reset record so it can't be reused
+	await deletePasswordResetById(record.id);
+
+	// Optionally: update password_changed_at on user or increment token version
+	return;
+}

@@ -17,8 +17,9 @@ CREATE DATABASE IF NOT EXISTS \`${DB_NAME}\`;
 -- Create user if not exists
 CREATE USER IF NOT EXISTS '${DB_USER}'@'%' IDENTIFIED BY '${DB_PASS}';
 
--- Grant only limited privileges (no DROP)
-GRANT SELECT, INSERT, UPDATE, DELETE, CREATE ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
+-- Grant limited privileges required for normal app operation, plus REFERENCES/ALTER/INDEX
+-- so the app user can create foreign keys and indexes during schema sync when needed.
+GRANT SELECT, INSERT, UPDATE, DELETE, CREATE, ALTER, INDEX, REFERENCES ON \`${DB_NAME}\`.* TO '${DB_USER}'@'%';
 
 FLUSH PRIVILEGES;
 EOSQL

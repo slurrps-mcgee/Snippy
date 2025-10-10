@@ -27,6 +27,7 @@ export class Invite extends Model<Invite> {
   })
   email!: string;
 
+  @Default(false)
   @Column({
     type: DataType.BOOLEAN,
     allowNull: false,
@@ -37,5 +38,5 @@ export class Invite extends Model<Invite> {
     type: DataType.DATE,
     allowNull: true, // invite may not be used yet
   })
-  used_at!: Date | null;
+  used_at?: Date | null;
 }

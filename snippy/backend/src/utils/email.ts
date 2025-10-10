@@ -66,3 +66,36 @@ Visit: ${process.env.FRONTEND_ORIGIN || 'http://localhost:4200'} to sign up.`;
 };
 
 export default sendInviteEmail;
+
+export const sendPasswordResetEmail = async (to: string, resetUrl: string) => {
+    const host = process.env.SMTP_HOST;
+    const port = process.env.SMTP_PORT ? parseInt(process.env.SMTP_PORT, 10) : undefined;
+    const user = process.env.SMTP_USER;
+    const pass = process.env.SMTP_PASS;
+    const from = process.env.EMAIL_FROM || `no-reply@${process.env.FRONTEND_ORIGIN || 'example.com'}`;
+    const secure = (process.env.EMAIL_SECURE || 'false').toLowerCase() === 'true';
+
+    if (!host || !port || !user || !pass) {
+        console.warn('SMTP not configured; password reset email not sent. Url:', resetUrl, 'to:', to);
+        return { success: false, error: 'SMTP not configured' } as any;
+    }
+
+    const transporter = nodemailer.createTransport({
+        host,
+        port,
+        secure: secure,
+        auth: { user, pass }
+    });
+
+    const subject = 'Reset your Snippy password';
+    const text = `Reset your password by visiting: ${resetUrl}`;
+    const html = `<p>Reset your password by clicking <a href="${resetUrl}">this link</a>. This link will expire shortly.</p>`;
+
+    try {
+        const info = await transporter.sendMail({ from, to, subject, text, html });
+        return { success: true, info };
+    } catch (err: any) {
+        console.error('Error sending password reset email:', err);
+        return { success: false, error: err?.message || String(err) } as any;
+    }
+}

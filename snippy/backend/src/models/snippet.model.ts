@@ -43,13 +43,13 @@ export class Snippets extends Model<Snippet_Files> {
     type: DataType.STRING,
     allowNull: true,
   })
-  description!: string;
+  description?: string | null;
 
   @Column({
     type: DataType.JSON,
     allowNull: true,
   })
-  tags?: string | null;
+  tags?: string[] | null;
 
   @Column({
     type: DataType.INTEGER,
@@ -70,7 +70,8 @@ export class Snippets extends Model<Snippet_Files> {
   @BelongsTo(() => Users, {
     foreignKey: 'userId',
     targetKey: 'userId',
-    constraints: false,
+    onDelete: 'CASCADE',
+    constraints: true,
   })
   user!: Users;
 

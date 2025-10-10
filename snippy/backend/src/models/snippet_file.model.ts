@@ -36,7 +36,7 @@ export class Snippet_Files extends Model<Snippet_Files> {
     type: DataType.TEXT,
     allowNull: true,
   })
-  content!: string | null;
+  content?: string | null;
 
   // Relations
    @BelongsTo(() => Snippets, {

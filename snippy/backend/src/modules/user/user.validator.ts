@@ -2,6 +2,7 @@ import Joi from 'joi';
 import { CustomError } from '../../utils/custom-error';
 
 const updateUserSchema = Joi.object({
+    userId: Joi.string().required(),
     user_name: Joi.string().optional(),
     display_name: Joi.string().optional(),
     bio: Joi.string().optional()

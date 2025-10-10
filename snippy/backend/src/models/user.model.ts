@@ -26,7 +26,7 @@ export class Users extends Model<Users> {
     type: DataType.STRING,
     allowNull: true,
   })
-  display_name!: string | null;
+  display_name?: string | null;
 
   @Column({
     type: DataType.STRING,
@@ -51,7 +51,7 @@ export class Users extends Model<Users> {
     type: DataType.TEXT,
     allowNull: true,
   })
-  bio!: string | null;
+  bio?: string | null;
 
   @Default(false)
   @Column({
@@ -83,6 +83,7 @@ export class Users extends Model<Users> {
   comments!: Comments[];
 
   
+  
   // Logic
   /**
    * Before creating a user, auto-generate a username if not provided
@@ -97,4 +98,12 @@ export class Users extends Model<Users> {
       user.user_name = `${baseName}${randomSuffix}`;
     }
   }
+
+  // toJSON() {
+  //   const values = Object.assign({}, this.get());
+  //   // cast to any so TypeScript allows deleting optional properties
+  //   delete (values as any).password;
+  //   delete (values as any).salt;
+  //   return values;
+  // }
 }

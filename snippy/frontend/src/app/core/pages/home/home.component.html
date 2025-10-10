@@ -4,3 +4,9 @@
 <button (click)="login()">Login</button>
 
 <button (click)="getUser()">ME</button>
+
+<!--create a textbox and button for resetting password-->
+<div>
+  <input type="email" placeholder="Enter your email" [(ngModel)]="resetEmail" />
+  <button (click)="resetPassword()">Reset Password</button>
+</div>

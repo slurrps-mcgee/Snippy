@@ -5,6 +5,7 @@ import { Snippets } from '../models/snippet.model';
 import { Snippet_Files } from '../models/snippet_file.model';
 import { Favorites } from '../models/favorite.model';
 import { Comments } from '../models/comment.model';
+import { PasswordReset } from '../models/passwordReset.model';
 import { defaultPolicy } from '../utils/resiliance';
 import logger from '../utils/logger';
 
@@ -17,8 +18,20 @@ const sequelize = new Sequelize({
   port: Number(process.env.DB_PORT) || 3306,
   dialect: 'mysql',
   logging: false,
-  models: [Users, Invite, Snippets, Snippet_Files, Favorites, Comments], // Register models for syncing
 });
+
+// Add models to sequelize after initialization
+sequelize.addModels([Users, Invite, Snippets, Snippet_Files, Favorites, Comments, PasswordReset]);
+
+// // Register default scopes after models are attached to Sequelize instance
+// try {
+//   // Default scope: exclude sensitive fields
+//   Users.addScope('defaultScope', { attributes: { exclude: ['password', 'salt'] } } as any, { override: true });
+//   Users.addScope('withSecrets', {} as any);
+// } catch (err) {
+//   // If something goes wrong here, log it but allow startup to continue to capture meaningful errors later
+//   logger.debug('Warning: could not register Users scopes at startup', err);
+// }
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {
@@ -27,8 +40,38 @@ async function connectWithRetry() {
       logger.info('⏳ Trying DB connection...');
       await sequelize.authenticate(); // Test the connection
       logger.info('✅ Database connected.');
-      await sequelize.sync({ force: false }); // Sync models with the database only if tables do not exist
-      logger.info('✅ Models synced.');
+
+      try {
+        await sequelize.sync({
+          force: false,
+          logging: (sql) => logger.debug(`[Sequelize SQL] ${sql}`),
+        }); // Sync models with the database only if tables do not exist
+        logger.info('✅ Models synced.');
+      } catch (syncErr) {
+        const errAny = syncErr as any;
+
+        // Extract common driver-level fields (mysql/mysql2 expose errno, code, sqlMessage, and sql)
+        const parent = errAny?.parent ?? errAny?.original ?? {};
+        const parentInfo = {
+          message: parent?.message,
+          code: parent?.code,
+          errno: parent?.errno,
+          sqlMessage: parent?.sqlMessage,
+          sqlState: parent?.sqlState,
+          sql: parent?.sql,
+        };
+
+        const details = {
+          message: errAny?.message,
+          stack: errAny?.stack,
+          sql: errAny?.sql ?? parentInfo.sql,
+          parent: parentInfo,
+        };
+
+        // Log as a single message so the logger's printf formatter includes it (avoids meta being dropped)
+        logger.error(`❌ sequelize.sync failed: ${JSON.stringify(details, null, 2)}`);
+        throw syncErr;
+      }
     });
   } catch (error) {
     logger.error('❌ Unable to connect to the database:', error);

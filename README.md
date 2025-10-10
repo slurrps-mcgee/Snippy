@@ -45,16 +45,17 @@ API_PORT=
 FRONTEND_ORIGIN=
 # If setting up invite only mode you will need to setup SMTP settings as well
 INVITE_ONLY=
+
+# REQUIRED
+JWT_SECRET=
+JWT_REFRESH_SECRET=
+# Used for password resets this can be left blank but password resets will not function
 SMTP_HOST=
 SMTP_PORT=
 SMTP_USER=
 SMTP_PASS=
 SMTP_FROM=
 SMTP_SECURE=
-
-# REQUIRED
-JWT_SECRET=
-JWT_REFRESH_SECRET=
 
 # FRONTEND
 # OPTIONAL

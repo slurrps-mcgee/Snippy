@@ -1,10 +1,12 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiService } from '../../../shared/services/api/api.service';
+import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-home',
-  imports: [],
+  imports: [CommonModule, FormsModule],
   templateUrl: './home.component.html',
   styleUrl: './home.component.scss'
 })
@@ -93,6 +95,28 @@ export class HomeComponent {
       error: (err) => {
         console.error('User failed', err);
         // show ui error message
+      }
+    });
+  }
+
+  resetEmail: string = '';
+
+  resetPassword() {
+    if (!this.resetEmail) {
+      alert('Please enter your email address.');
+      return;
+    }
+
+    this.api.request({
+      path: '/auth/forgot',
+      method: 'POST',
+      body: { email: this.resetEmail }
+    }).subscribe({
+      next: (res: any) => {
+        console.log('Password reset email sent', res);
+      },
+      error: (err) => {
+        console.error('Password reset failed', err);
       }
     });
   }

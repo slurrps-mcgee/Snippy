@@ -30,7 +30,7 @@ export class APIInterceptor implements HttpInterceptor {
 
             // Call refresh endpoint; backend sets refresh token as HTTP-only cookie and returns new access token
             // withCredentials is required so the browser sends cookies to the API
-            return this.http.post<{ accessToken: string }>('/api/v1/auth/refresh', {}).pipe(
+            return this.http.post<{ accessToken: string }>('/api/v1/auth/refreshToken', {}).pipe(
                 switchMap(res => {
                     const newToken = res?.accessToken;
                     if (newToken) {

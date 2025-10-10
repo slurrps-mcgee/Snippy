@@ -35,14 +35,16 @@ export class Favorites extends Model<Favorites> {
     @BelongsTo(() => Users, {
         foreignKey: 'userId',
         targetKey: 'userId',
-        constraints: false,
+        onDelete: 'CASCADE',
+        constraints: true,
     })
     user!: Users;
     
     @BelongsTo(() => Snippets, {
         foreignKey: 'snippetId',
         targetKey: 'snippetId',
-        constraints: false,
+        onDelete: 'CASCADE',
+        constraints: true,
     })
     snippet!: Snippets;
 }

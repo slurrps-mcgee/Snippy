@@ -9,7 +9,7 @@ import connectWithRetry from './config/sequelize';
 import { errorHandler } from './utils/error-handler';
 import { version } from '../package.json';
 import logger from './utils/logger';
-import jwtCheck from './middleware/jwt.service';
+import { jwtCheck } from './middleware/jwt.service';
 import cookie from 'cookie-parser';
 
 // Load environment variables from .env file
@@ -50,7 +50,9 @@ app.use(express.json());
 const jwtWhitelist: Array<{ method: string; path: string }> = [
   { method: 'POST', path: '/api/v1/auth/register' },
   { method: 'POST', path: '/api/v1/auth/login' },
-  { method: 'POST', path: '/api/v1/auth/refresh' },
+  { method: 'POST', path: '/api/v1/auth/refreshToken' },
+  { method: 'POST', path: '/api/v1/auth/forgot' },
+  { method: 'POST', path: '/api/v1/auth/reset' },
   // add other public endpoints here if needed
 ];
 

@@ -8,12 +8,3 @@ components:
                 email:
                     type: string
                     example: email@example.com
-
-        validateInvite:
-            type: object
-            required:
-                - email
-            properties:
-                email:
-                    type: string
-                    example: email@example.com
