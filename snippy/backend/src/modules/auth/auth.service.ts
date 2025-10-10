@@ -104,7 +104,7 @@ export async function refreshService(refreshToken: string) {
 }
 
 // Request a password reset: create token, email user with link containing raw token
-export async function requestPasswordReset(email: string, origin?: string) {
+export async function requestPasswordReset(email: string, origin: string) {
 	const user = await findByEmail(email);
 	// Always return success for the public API to avoid leaking whether email exists
 	if (!user) return;
@@ -115,11 +115,9 @@ export async function requestPasswordReset(email: string, origin?: string) {
 
 	const rec = await createPasswordReset({ userId: user.userId, token_hash: hash, expires_at: expires } as any);
 
-	const frontend = origin || process.env.FRONTEND_ORIGIN || 'http://localhost:4200';
-	const resetUrl = `${frontend.replace(/\/$/, '')}/reset-password?token=${raw}`;
-
+	origin = `${origin.replace(/\/+$/, '')}/reset-password?token=${raw}`;
 	// fire-and-forget email send; don't block user-facing response
-	sendPasswordResetEmail(user.email, resetUrl).catch((err) => {
+	sendPasswordResetEmail(user.email, origin).catch((err) => {
 		console.error('Failed to send password reset email', err);
 	});
 

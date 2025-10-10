@@ -42,7 +42,7 @@ MYSQL_ROOT_PASSWORD=
 # API
 # OPTIONAL
 API_PORT=
-FRONTEND_ORIGIN=
+FRONTEND_HOST= Required if hosting outside your network for the email links to work
 # If setting up invite only mode you will need to setup SMTP settings as well
 INVITE_ONLY=
 

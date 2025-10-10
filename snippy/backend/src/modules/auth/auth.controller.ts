@@ -3,7 +3,7 @@ import { registerService, loginService, refreshService } from './auth.service';
 import { requestPasswordReset, resetPassword } from './auth.service';
 import { validateRegister, validateLogin, ValidateForgotPassword, ValidateResetPassword } from './auth.validator';
 import { findById } from '../user/user.repo';
-import { setAuthCookies } from '../../utils/helper';
+import { getOrigin, setAuthCookies } from '../../utils/helper';
 
 const sanitize = (user: any) => {
 	if (!user) return null;
@@ -51,9 +51,9 @@ export const login = [loginHandler];
 export async function forgotPasswordHandler(req: Request, res: Response, next: NextFunction) {
 	try {
 		await ValidateForgotPassword(req.body);
-
+		const origin = getOrigin(req);
 		const { email } = req.body;
-		await requestPasswordReset(email, process.env.FRONTEND_ORIGIN);
+		await requestPasswordReset(email, origin);
 		// Always return success
 		res.status(200).json({ success: true });
 	} catch (err) {

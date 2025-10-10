@@ -1,4 +1,5 @@
 import { findByUsername } from "../modules/user/user.repo";
+import { Request } from 'express';
 
 
 export const createUniqueUsername = async (base: string, maxTries = 20) => {
@@ -29,4 +30,11 @@ export const setAuthCookies = (res: any, accessToken: string, refreshToken: stri
 		maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 		path: '/',
 	});
+}
+
+export const getOrigin = (req: Request) => {
+	const explicitOrigin = req.body?.origin;
+	const headerOrigin = req.get('origin') || req.get('referer')?.split('/').slice(0, 3).join('/');
+	const frontend = (explicitOrigin || headerOrigin || process.env.FRONTEND_HOST || process.env.FRONTEND_ORIGIN || 'http://localhost:4200').replace(/\/$/, '');
+	return frontend;
 }
