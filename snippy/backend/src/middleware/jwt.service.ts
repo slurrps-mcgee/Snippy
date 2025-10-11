@@ -6,11 +6,11 @@ import { auth } from 'express-oauth2-jwt-bearer';
  * Validates signature with Auth0 JWKS and optionally checks audience.
  */
 
-const AUDIENCE = process.env.AUDIENCE; // e.g. 'your-tenant.us.auth0.com'
-const ISSUER_BASE_URL = process.env.ISSUER_BASE_URL; // expected audience (optional)
+const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE; // e.g. 'your-tenant.us.auth0.com'
+const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN; // expected audience (optional)
 
 export const jwtCheck = auth({
-  audience: AUDIENCE,
-  issuerBaseURL: ISSUER_BASE_URL,
+  audience: AUTH0_AUDIENCE,
+  issuerBaseURL: `https://${AUTH0_DOMAIN}/`,
   tokenSigningAlg: 'RS256'
 });
