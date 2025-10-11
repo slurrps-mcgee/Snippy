@@ -1,11 +1,11 @@
 import { Routes } from '@angular/router';
-import { HomeComponent } from './core/pages/home/home.component';
-import { UserHomeComponent } from './core/pages/user-home/user-home.component';
 import { AuthGuard } from '@auth0/auth0-angular';
+import { HomePageComponent } from './core/pages/home-page/home-page.component';
+import { UserHomePageComponent } from './core/pages/user-home-page/user-home-page.component';
 
 export const routes: Routes = [
 // {path: '', redirectTo: '/home', pathMatch: 'full' },
-{path: 'home', component: HomeComponent},
-{path: 'userhome', component: UserHomeComponent, canActivate: [AuthGuard] }, // Protected route
-{ path: '**', redirectTo: 'home' } // catch-all -> home
+{path: '', component: HomePageComponent},
+{path: 'home', component: UserHomePageComponent, canActivate: [AuthGuard] }, // Protected route
+{ path: '**', redirectTo: '' } // catch-all -> home
 ];

@@ -51,7 +51,7 @@ const jwtWhitelist: Array<{ method: string; path: string }> = [
   // add other public endpoints here if needed
 ];
 
-// Debug middleware: report whether an Authorization header is present (do NOT log the token)
+// Middleware to check JWT, skipping whitelisted routes
 app.use((req, res, next) => {
   const isWhitelisted = jwtWhitelist.some(w => w.method === req.method && w.path === req.path);
   if (isWhitelisted) return next();

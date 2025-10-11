@@ -15,7 +15,7 @@ cat > "$CONFIG_FILE" <<EOF
   "api_base": "${API_BASE:-/api/v1}",
   "auth0_domain": "${AUTH0_DOMAIN:-}",
   "auth0_client_id": "${AUTH0_CLIENT_ID:-}",
-  "auth0_audience": "${AUTH0_AUDIENCE:-}"
+  "auth0_audience": "${AUTH0_AUDIENCE:-localhost:3000}"
 }
 EOF
 
@@ -27,7 +27,7 @@ window.__env = window.__env || {};
 window.__env.api_base = "${API_BASE:-/api/v1}";
 window.__env.auth0_domain = "${AUTH0_DOMAIN:-}";
 window.__env.auth0_client_id = "${AUTH0_CLIENT_ID:-}";
-window.__env.auth0_audience = "${AUTH0_AUDIENCE:-}";
+window.__env.auth0_audience = "${AUTH0_AUDIENCE:-localhost:3000}";
 EOF
 
 echo "Wrote runtime env to $ENV_JS_FILE"

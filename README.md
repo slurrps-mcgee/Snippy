@@ -25,41 +25,122 @@ docker --version
 docker compose version
 ```
 
+## Setup Auth0
+
+- Sign up for Auth0 with a free account
+- Create Application  
+  - Go to the applications section of the left sidebar and click on applications
+  - Click on create application
+  - Choose Single Page Web Applications the name can be anything
+  - Once created go to settings
+  - The following will need to be used in the .env variables
+    - DOMAIN
+    - Client ID
+  - Scroll to the Application URIs section and enter the following
+    - Allowed Callback URLs
+      - http://localhost:4200/home, https://yourcustomdomain.com/home
+    - Allowed Logout URLs
+      - http://localhost:4200/, https://yourcustomdomain.com/
+    - Allowed Web Origins
+      - http://localhost:4200, https://yourcustomdomain.com/
+  - Save the application
+- API Creation
+  - Click on APIs on the left sidebar under Applications
+  - Click Create API
+  - name can be anything
+    - Identifier should be
+      - http://localhost:3000
+    - Keep everything the same and click save
+
 ## .env file
 
 Put a `.env` file in the repository root (next to `docker-compose.yml`). Compose will load environment variables from that file. Example `.env`:
 
 ```ini
-# DB
-# OPTIONAL
-DB_HOST=
-DB_PORT=
-DB_NAME=
-DB_USER=
-# REQUIRED
-DB_PASS= Mcgee7089!?@
-MYSQL_ROOT_PASSWORD= Mcgee7089!?@
+#DB
+  #OPTIONAL do not need unless you want the db name to be different
+DB_HOST= #DEFAULT db
+DB_PORT= #DEFAULT 3306
+DB_NAME= #DEFAULT snippy
+DB_USER= #DEFAULT snippy_api
+  # REQUIRED
+DB_PASS= 
+MYSQL_ROOT_PASSWORD= 
 
-# API
-# OPTIONAL
-API_PORT=3000
-# REQUIRED
+#AUTH0
+AUTH0_DOMAIN=
+AUTH0_CLIENT_ID=
 
-# AUTH0
-AUTH0_AUDIENCE=http://localhost:3000
-AUTH0_DOMAIN=dev-4ev7py4uqxc7prli.us.auth0.com
-AUTH0_CLIENT_ID=n5bdvh7IGhMZ1AE69sPkQ3wzCUOhoWIj
+  #OPTIONAL only needed only if you change the api address from localhost to be public
+AUTH0_AUDIENCE=
 
+#API
+  #OPTIONAL
+API_PORT= #DEFAULT 3000
+  #REQUIRED
 
-# FRONTEND
-# OPTIONAL
-FRONTEND_PORT=4200
-# REQUIRED
+#FRONTEND
+  #OPTIONAL
+FRONTEND_PORT= #DEFAULT 4200
+  #REQUIRED
 
 ```
 
 Notes: Not all of these variables are needed as most have defaults
 
+## SETUP
+
+### Run the full stack using docker compose pulling from dockerhub
+
+Notes: this assumes you are using portainer to setup .env variables. If not you can update to just use a .env file from the options in the [ENV](#env-file) section
+
+### Docker Compose File Example
+
+```yaml
+version: '3.8'
+services:
+  db:
+    image: kennyl777/snippy-db:latest
+    container_name: snippy-db
+    env_file:
+      - stack.env
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  api:
+    image: kennyl777/snippy-api:latest
+    container_name: snippy-api
+    env_file:
+      - stack.env
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  frontend:
+    image: kennyl777/snippy-frontend:latest
+    container_name: snippy-frontend
+    env_file:
+      - stack.env
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+volumes:
+  mysql-data:
+```
 ## Development
 
 ### Run downloaded application locally
@@ -113,58 +194,6 @@ services:
     depends_on:
       - api
 
-volumes:
-  mysql-data:
-```
-
-## SETUP
-
-### Run the full stack using docker compose pulling from dockerhub
-
-Notes: this assumes you are using portainer to setup .env variables. If not you can update to just use a .env file from the options in the [ENV](#env-file) section
-
-### Docker Compose File Example
-
-```yaml
-version: '3.8'
-services:
-  db:
-    image: kennyl777/snippy-db:latest
-    container_name: snippy-db
-    env_file:
-      - stack.env
-    ports:
-      - "${DB_PORT:-3306}:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-
-  api:
-    image: kennyl777/snippy-api:latest
-    container_name: snippy-api
-    env_file:
-      - stack.env
-    ports:
-      - "${API_PORT:-3000}:3000"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-
-  frontend:
-    image: kennyl777/snippy-frontend:latest
-    container_name: snippy-frontend
-    ports:
-      - "${FRONTEND_PORT:-4200}:80"
-    depends_on:
-      - api
-    restart: unless-stopped
 volumes:
   mysql-data:
 ```

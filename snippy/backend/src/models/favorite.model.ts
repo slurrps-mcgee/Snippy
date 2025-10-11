@@ -2,16 +2,14 @@ import {
     Table,
     Column,
     Model,
-    DataType,
     PrimaryKey,
+    DataType,
+    Default,
     ForeignKey,
     BelongsTo,
-    Default,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
 import { Users } from "./user.model";
-import { UUIDV4 } from "sequelize";
-import { UUID } from "sequelize";
 
 @Table({
     tableName: "favorites",
@@ -21,16 +19,22 @@ import { UUID } from "sequelize";
 })
 export class Favorites extends Model<Favorites> {
     @PrimaryKey
-    @Default(UUIDV4)
-    @Column({ type: UUID })
+    @Default(DataType.UUIDV4)
+    @Column({ type: DataType.UUID })
     favoriteId!: string;
 
     @ForeignKey(() => Users)
-    @Column({ type: UUID })
+    @Column({
+        type: DataType.STRING,
+        allowNull: false,
+    })
     auth0Id!: string;
 
     @ForeignKey(() => Snippets)
-    @Column({ type: UUID })
+    @Column({
+        type: DataType.UUID,
+        allowNull: false,
+    })
     snippetId!: string;
 
     // Relations

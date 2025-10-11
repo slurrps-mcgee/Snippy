@@ -1,6 +1,5 @@
 import { Sequelize } from 'sequelize-typescript';
 import { Users } from '../models/user.model'; // Adjust the import path as necessary
-import { Invite } from '../models/invite.model';
 import { Snippets } from '../models/snippet.model';
 import { Snippet_Files } from '../models/snippet_file.model';
 import { Favorites } from '../models/favorite.model';
@@ -20,7 +19,7 @@ const sequelize = new Sequelize({
 });
 
 // Add models to sequelize after initialization
-sequelize.addModels([Users, Invite, Snippets, Snippet_Files, Favorites, Comments]);
+sequelize.addModels([Users, Snippets, Snippet_Files, Favorites, Comments]);
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {

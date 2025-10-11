@@ -1,9 +1,16 @@
-import { Table, Column, Model, PrimaryKey, DataType, HasMany, BeforeCreate, Default } from 'sequelize-typescript';
+import {
+  Table,
+  Column,
+  Model,
+  PrimaryKey,
+  DataType,
+  HasMany,
+  BeforeCreate,
+  Default
+} from 'sequelize-typescript';
 import { Snippets } from './snippet.model';
 import { Favorites } from './favorite.model';
 import { Comments } from './comment.model';
-import { UUIDV4 } from 'sequelize';
-import { UUID } from 'sequelize';
 
 @Table({
   tableName: 'users',
@@ -13,9 +20,15 @@ import { UUID } from 'sequelize';
 })
 export class Users extends Model<Users> {
   @PrimaryKey
-  @Default(UUIDV4)
-  @Column({ type: UUID })
+  @Column({ type: DataType.STRING })
   auth0Id!: string;
+
+  @Column({
+    type: DataType.STRING,
+    allowNull: false,
+    unique: 'user_email_unique_constraint'
+  })
+  email!: string;
 
   @Column({
     type: DataType.STRING,
@@ -29,13 +42,6 @@ export class Users extends Model<Users> {
     allowNull: true,
   })
   display_name?: string | null;
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: false,
-    unique: 'user_email_unique_constraint'
-  })
-  email!: string;
 
   @Column({
     type: DataType.TEXT,
@@ -72,12 +78,7 @@ export class Users extends Model<Users> {
   })
   comments!: Comments[];
 
-  
-  
-  // Logic
-  /**
-   * Before creating a user, auto-generate a username if not provided
-   */
+  // Before creating a user, auto-generate a username if not provided
   @BeforeCreate
   static async setDefaultUsername(user: Users) {
     if (!user.user_name) {

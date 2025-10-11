@@ -20,7 +20,7 @@ export const appConfig: ApplicationConfig = {
         authorizationParams: {
           // default audience used for login/consent
           audience: win.__env.auth0_audience,
-          redirect_uri: window.location.origin + '/userhome'
+          redirect_uri: window.location.origin + '/home'
         },
         // Configure the HTTP interceptor so it knows which outgoing requests
         // should receive an Authorization header with an access token.

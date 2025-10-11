@@ -13,10 +13,10 @@ export class LoginComponent {
   constructor(@Inject(DOCUMENT) public document: Document, public auth: AuthService) {}
 
   login() {
-    this.auth.loginWithRedirect({appState: { target: '/userhome' }});
+    this.auth.loginWithRedirect({appState: { target: '/home' }});
   }
 
   logout() {
-    this.auth.logout({ logoutParams: {returnTo: window.location.origin + '/home'} });
+    this.auth.logout({ logoutParams: {returnTo: window.location.origin + '/'} });
   }
 }

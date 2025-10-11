@@ -2,14 +2,13 @@ import {
   Table,
   Column,
   Model,
-  DataType,
   PrimaryKey,
+  DataType,
+  Default,
   ForeignKey,
   BelongsTo,
-  Default,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
-import { UUID, UUIDV4 } from "sequelize";
 
 @Table({
   tableName: "snippet_files",
@@ -19,12 +18,15 @@ import { UUID, UUIDV4 } from "sequelize";
 })
 export class Snippet_Files extends Model<Snippet_Files> {
   @PrimaryKey
-  @Default(UUIDV4)
-  @Column({ type: UUID })
+  @Default(DataType.UUIDV4)
+  @Column({ type: DataType.UUID })
   snippet_fileId!: string;
 
   @ForeignKey(() => Snippets)
-  @Column(UUID)
+  @Column({
+    type: DataType.UUID,
+    allowNull: false,
+  })
   snippetId!: string;
 
   @Column({
@@ -34,13 +36,23 @@ export class Snippet_Files extends Model<Snippet_Files> {
   file_type!: string; // html, css, js
 
   @Column({
+    type: DataType.STRING,
+    allowNull: true,
+  })
+  file_name?: string | null;
+
+  @Default(0)
+  @Column({ type: DataType.INTEGER })
+  sort_order!: number;
+
+  @Column({
     type: DataType.TEXT,
     allowNull: true,
   })
   content?: string | null;
 
   // Relations
-   @BelongsTo(() => Snippets, {
+  @BelongsTo(() => Snippets, {
     foreignKey: 'snippetId',
     targetKey: 'snippetId',
     constraints: false,

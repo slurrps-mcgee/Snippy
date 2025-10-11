@@ -35,7 +35,7 @@ services:
     container_name: snippy-frontend
     build: ./snippy/frontend
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-4200}:80"
     env_file:
       - ./.env
     restart: unless-stopped

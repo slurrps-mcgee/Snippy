@@ -6,12 +6,12 @@ import { AuthTokenService } from '../../../shared/services/auth/auth-token.servi
 import { Subscription, of } from 'rxjs';
 
 @Component({
-  selector: 'app-user-home',
-  imports: [CommonModule],
-  templateUrl: './user-home.component.html',
-  styleUrl: './user-home.component.scss'
+  selector: 'app-user-home-page',
+  imports: [],
+  templateUrl: './user-home-page.component.html',
+  styleUrl: './user-home-page.component.scss'
 })
-export class UserHomeComponent implements OnInit, OnDestroy {
+export class UserHomePageComponent implements OnInit, OnDestroy {
   user: any;
   private sub?: Subscription;
 
