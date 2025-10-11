@@ -2,6 +2,8 @@ import { Table, Column, Model, PrimaryKey, DataType, HasMany, BeforeCreate, Defa
 import { Snippets } from './snippet.model';
 import { Favorites } from './favorite.model';
 import { Comments } from './comment.model';
+import { UUIDV4 } from 'sequelize';
+import { UUID } from 'sequelize';
 
 @Table({
   tableName: 'users',
@@ -11,7 +13,8 @@ import { Comments } from './comment.model';
 })
 export class Users extends Model<Users> {
   @PrimaryKey
-  @Column({ type: DataType.UUID })
+  @Default(UUIDV4)
+  @Column({ type: UUID })
   auth0Id!: string;
 
   @Column({
@@ -85,12 +88,4 @@ export class Users extends Model<Users> {
       user.user_name = `${baseName}${randomSuffix}`;
     }
   }
-
-  // toJSON() {
-  //   const values = Object.assign({}, this.get());
-  //   // cast to any so TypeScript allows deleting optional properties
-  //   delete (values as any).password;
-  //   delete (values as any).salt;
-  //   return values;
-  // }
 }

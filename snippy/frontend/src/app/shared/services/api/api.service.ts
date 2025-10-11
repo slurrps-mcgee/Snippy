@@ -1,10 +1,9 @@
-(function () {
-    // placeholder to ensure module exists
-})();
-
 import { Injectable } from '@angular/core';
+import { AuthService } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { from, Observable, throwError } from 'rxjs';
+import { catchError, filter, switchMap, take } from 'rxjs/operators';
+import { defaultPolicy } from '../resiliance.service';
 
 export type ApiOptions = {
     path: string; // path under /api/v1
@@ -12,27 +11,17 @@ export type ApiOptions = {
     body?: any;
     params?: Record<string, any>;
     headers?: Record<string, string>;
+    // when true, wait for Auth0 to be authenticated before sending the request
+    // requireAuth?: boolean;
 };
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-    private base: string;
-
-    constructor(private http: HttpClient) {
-        // Prefer runtime-injected env (assets/env.js sets window.__env) when available
-        // window.__env is written by the container entrypoint at /assets/env.js
-        const win: any = window as any;
-        if (win && win.__env && win.__env.api_base) {
-            this.base = win.__env.api_base;
-        } else {
-            // fallback used for local dev or when env.js isn't present
-            this.base = 'http://localhost:3000/api/v1';
-        }
-    }
-
+    constructor(private http: HttpClient, private auth: AuthService) {}
+    
     // Generic API request method
     request<T = any>(opts: ApiOptions): Observable<T> {
-        const url = `${this.base}${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
+        const url = `/api/v1${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
 
         // Use caller-provided headers but do not attach Authorization here.
         // Authorization is handled centrally by the HTTP interceptor.
@@ -48,19 +37,52 @@ export class ApiService {
 
         const method = (opts.method || 'GET').toUpperCase();
 
-        switch (method) {
-            case 'GET':
-                return this.http.get<T>(url, { headers, params });
-            case 'POST':
-                return this.http.post<T>(url, opts.body, { headers, params });
-            case 'PUT':
-                return this.http.put<T>(url, opts.body, { headers, params });
-            case 'PATCH':
-                return this.http.patch<T>(url, opts.body, { headers, params });
-            case 'DELETE':
-                return this.http.delete<T>(url, { headers, params });
-            default:
-                throw new Error(`Unsupported method ${method}`);
-        }
+        // const makeRequest = (): Observable<T> => {
+        //     switch (method) {
+        //         case 'GET':
+        //             return this.http.get<T>(url, { headers, params });
+        //         case 'POST':
+        //             return this.http.post<T>(url, opts.body, { headers, params });
+        //         case 'PUT':
+        //             return this.http.put<T>(url, opts.body, { headers, params });
+        //         case 'PATCH':
+        //             return this.http.patch<T>(url, opts.body, { headers, params });
+        //         case 'DELETE':
+        //             return this.http.delete<T>(url, { headers, params });
+        //         default:
+        //             return throwError(() => new Error(`Unsupported method ${method}`));
+        //     }
+        // };
+
+        // // If caller requested we wait for authentication, delay the request until
+        // // Auth0 reports `isAuthenticated$ === true`. Otherwise send immediately.
+        // if (opts.requireAuth) {
+        //     return this.auth.isAuthenticated$.pipe(
+        //         filter(Boolean),
+        //         take(1),
+        //         switchMap(() => makeRequest())
+        //     );
+        // }
+
+        // defaultPolicy.execute returns a Promise/Observable that resolves to an Observable<T>;
+        // flatten the inner Observable to return Observable<T>.
+        return from(defaultPolicy.execute(async () => {
+            switch (method) {
+                case 'GET':
+                    return this.http.get<T>(url, { headers, params });
+                case 'POST':
+                    return this.http.post<T>(url, opts.body, { headers, params });
+                case 'PUT':
+                    return this.http.put<T>(url, opts.body, { headers, params });
+                case 'PATCH':
+                    return this.http.patch<T>(url, opts.body, { headers, params });
+                case 'DELETE':
+                    return this.http.delete<T>(url, { headers, params });
+                default:
+                    return throwError(() => new Error(`Unsupported method ${method}`));
+            }
+        })).pipe(
+            switchMap(inner => inner)
+        );
     }
 }

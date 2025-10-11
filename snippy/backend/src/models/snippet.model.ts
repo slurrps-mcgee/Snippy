@@ -13,6 +13,8 @@ import { Snippet_Files } from "./snippet_file.model";
 import { Users } from "./user.model";
 import { Favorites } from "./favorite.model";
 import { Comments } from "./comment.model";
+import { UUIDV4 } from "sequelize";
+import { UUID } from "sequelize";
 
 @Table({
   tableName: "snippets",
@@ -22,13 +24,13 @@ import { Comments } from "./comment.model";
 })
 export class Snippets extends Model<Snippet_Files> {
   @PrimaryKey
-  @Default(DataType.UUIDV4)
-  @Column({ type: DataType.UUID })
+  @Default(UUIDV4)
+  @Column({ type: UUID })
   snippetId!: string;
 
   @ForeignKey(() => Users)
   @Column({
-    type: DataType.UUID,
+    type: UUID,
     allowNull: false,
   })
   auth0Id!: string;
@@ -51,11 +53,17 @@ export class Snippets extends Model<Snippet_Files> {
   })
   tags?: string[] | null;
 
+  @Default(0)
   @Column({
-    type: DataType.INTEGER,
-    defaultValue: 0
+    type: DataType.INTEGER
   })
   view_count!: number;
+
+  @Default(false)
+  @Column({
+    type: DataType.BOOLEAN
+  })
+  is_private!: boolean;
 
 
   //MAYBE ADD LATER

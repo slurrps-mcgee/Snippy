@@ -1,26 +1,34 @@
 import { Users } from "../../models/user.model";
 import { CustomError } from "../../utils/custom-error";
 import { createUniqueUsername } from "../../utils/helper";
-import { createUser, findByEmail, haveUsers, updateUser } from "./user.repo";
+import { createUser, findById, haveUsers, updateUser } from "./user.repo";
 
 //Exported functions
 export async function registerService(payload: any) {
     const auth0Id = payload.auth?.payload?.sub;
-    const { email } = payload.body;
     const usersExist = await haveUsers();
-    const existingEmail = await findByEmail(email);
-    const userNameBase = (email.split('@')[0] || '').replace(/\s+/g, '').toLowerCase();
+    const user = await findById(auth0Id);
 
-    console.log(auth0Id);
+    if(payload?.body?.email) {
+        var email = payload.body.email;
+    }
 
-    if (existingEmail) throw new CustomError('Email already in use', 409);
+    console.log(payload.auth);
 
-    let finalUserName = await createUniqueUsername(userNameBase);
+    // If user already exists, return the existing user
+    if (user) {
+        return { user };
+    }
+
+    // Create a unique username
+    let userName = await createUniqueUsername(email);
 
     const created = await createUser({
-        auth0Id: auth0Id,
+        auth0Id: auth0Id,        
+        user_name: userName,
+        display_name: userName,
         email: email,
-        user_name: finalUserName,
+        bio: null,
         is_admin: usersExist ? false : true
     } as any);
 
@@ -29,7 +37,7 @@ export async function registerService(payload: any) {
     return { user: created };
 }
 
-export async function updateUserService(id: string, patch: Partial<Users>) {
+export async function updateUserService(auth0Id: string, patch: Partial<Users>) {
     // Business logic can be added here if needed
-    return await updateUser(id, patch);
+    return await updateUser(auth0Id, patch);
 }

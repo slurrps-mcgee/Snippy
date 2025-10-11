@@ -1,3 +1,4 @@
+import { Invite } from '../../models/invite.model';
 import { CustomError } from '../../utils/custom-error';
 import { sendInviteEmail } from '../../utils/email';
 import { createInvite, findInviteByEmail } from './invite.repo';
@@ -17,4 +18,9 @@ export async function generateInviteService(payload: any) {
         });
 
     return { message: 'Invite sent successfully'};
+}
+
+export async function getInviteService() {
+    // Business logic can be added here if needed
+    return await Invite.findAll();
 }

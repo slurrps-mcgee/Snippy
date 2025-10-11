@@ -21,8 +21,8 @@ export async function findById(id: string) {
 	return await Users.findByPk(id);
 }
 
-export async function updateUser(id: string, patch: Partial<Users>) {
-	const [count] = await Users.update(patch, { where: { auth0Id: id } });
+export async function updateUser(auth0Id: string, patch: Partial<Users>) {
+	const [count] = await Users.update(patch, { where: { auth0Id: auth0Id } });
 	return count > 0;
 }
 

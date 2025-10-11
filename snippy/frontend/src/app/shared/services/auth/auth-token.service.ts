@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { AuthService as Auth0Service } from '@auth0/auth0-angular';
-import { from, of, of as observableOf } from 'rxjs';
+import { AuthService } from '@auth0/auth0-angular';
+import { from, of } from 'rxjs';
 import { catchError, distinctUntilChanged, filter, switchMap, tap, take } from 'rxjs/operators';
 import { ApiService } from '../../services/api/api.service';
 import { HttpErrorResponse } from '@angular/common/http';
-import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '../../helpers/constants';
+import { USER_STORAGE_KEY } from '../../helpers/constants';
+import { BehaviorSubject, Observable } from 'rxjs';
 
 /**
  * Automatically persists Auth0 access token to sessionStorage when the user logs in.
@@ -14,26 +15,23 @@ import { TOKEN_STORAGE_KEY, USER_STORAGE_KEY } from '../../helpers/constants';
  */
 @Injectable({ providedIn: 'root' })
 export class AuthTokenService {
-    constructor(private auth0: Auth0Service, private api: ApiService) {
-        // When user becomes authenticated, silently obtain an access token and store it
-        this.auth0.isAuthenticated$.pipe(
-            distinctUntilChanged(),
-            filter(Boolean),
-            switchMap(() => from(this.auth0.getAccessTokenSilently()).pipe(catchError(() => observableOf(null)))),
-            tap((token) => {
-                try {
-                    if (token) sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
-                } catch (e) {
-                    console.warn('Failed to save access token to sessionStorage', e);
-                }
-            }),
-            catchError((err) => {
-                console.warn('Failed to acquire access token silently', err);
-                return of(null);
-            })
-        ).subscribe();
+    private userSubject: BehaviorSubject<any>;
+    public user$: Observable<any>;
 
-        // When user becomes unauthenticated (logged out), remove stored token
+    constructor(private auth0: AuthService, private api: ApiService) {
+        // seed from sessionStorage if available
+        let existing = null;
+        try {
+            const raw = sessionStorage.getItem(USER_STORAGE_KEY);
+            existing = raw ? JSON.parse(raw) : null;
+        } catch {
+            existing = null;
+        }
+
+        this.userSubject = new BehaviorSubject<any>(existing);
+        this.user$ = this.userSubject.asObservable();
+
+        // When user becomes unauthenticated (logged out), clear sessionStorage and emit null
         this.auth0.isAuthenticated$.pipe(
             distinctUntilChanged(),
             filter((isAuth) => !isAuth),
@@ -41,11 +39,11 @@ export class AuthTokenService {
                 try {
                     sessionStorage.clear();
                 } catch { /* ignore */ }
+                this.userSubject.next(null);
             })
         ).subscribe();
 
-        // After login, always call backend /auth/register to ensure a user record exists in the app DB.
-        // The route returns the created (or existing) user object which we persist to sessionStorage.
+        // After login, call backend to ensure a user record exists, then persist and emit it.
         this.auth0.isAuthenticated$.pipe(
             distinctUntilChanged(),
             filter(Boolean),
@@ -54,33 +52,36 @@ export class AuthTokenService {
                 const email = profile?.email;
                 if (!email) return of(null);
 
-                // Acquire an Auth0 access token, then call backend /auth/register with the token in the Authorization header.
-                return from(this.auth0.getAccessTokenSilently()).pipe(
-                    switchMap((token: any) => {
-                        if (!token) {
-                            console.warn('No Auth0 access token available for register call');
-                            return of(null);
+                return this.api.request<any>({ path: '/users', method: 'POST', body: { email } }).pipe(
+                    tap((res) => {
+                        const user = res?.data ?? res?.user ?? res;
+                        if (user) {
+                            try { sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user)); } catch { }
+                            this.userSubject.next(user);
                         }
-                        const headers = { Authorization: `Bearer ${token}` };
-                        return this.api.request<any>({ path: '/users', method: 'POST', body: { email }, headers }).pipe(
-                            tap((res) => {
-                                const user = res?.data ?? res?.user ?? res;
-                                if (user) {
-                                    try { sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user)); } catch { }
-                                }
-                            }),
-                            catchError((err: HttpErrorResponse) => {
-                                console.warn('Backend register attempt failed', err?.status, err?.message || err);
-                                return of(null);
-                            })
-                        );
                     }),
-                    catchError((err) => {
-                        console.warn('Failed to acquire access token for register', err);
+                    catchError((err: HttpErrorResponse) => {
+                        console.warn('Backend register attempt failed', err?.status, err?.message || err);
                         return of(null);
                     })
                 );
             })
         ).subscribe();
+    }
+
+    /** Optional: manually refresh user from the backend (GET /users) */
+    public refreshUserFromBackend(): void {
+        this.api.request<any>({ method: 'GET', path: '/users' }).pipe(take(1)).subscribe({
+            next: (res) => {
+                const user = res?.data ?? res?.user ?? res;
+                if (user) {
+                    try { sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user)); } catch { }
+                    this.userSubject.next(user);
+                }
+            },
+            error: () => {
+                // ignore
+            }
+        });
     }
 }

@@ -53,8 +53,6 @@ const jwtWhitelist: Array<{ method: string; path: string }> = [
 
 // Debug middleware: report whether an Authorization header is present (do NOT log the token)
 app.use((req, res, next) => {
-  const hasAuth = Boolean(req.headers && (req.headers as any).authorization);
-  logger.debug(`[auth-debug] ${req.method} ${req.path} - Authorization header present: ${hasAuth}`);
   const isWhitelisted = jwtWhitelist.some(w => w.method === req.method && w.path === req.path);
   if (isWhitelisted) return next();
   return jwtCheck(req as any, res as any, next as any);

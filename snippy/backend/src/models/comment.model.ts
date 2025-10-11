@@ -10,6 +10,7 @@ import {
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
 import { Users } from "./user.model";
+import { UUID, UUIDV4 } from "sequelize/lib/data-types";
 
 @Table({
     tableName: "comments",
@@ -19,16 +20,16 @@ import { Users } from "./user.model";
 })
 export class Comments extends Model<Comments> {
     @PrimaryKey
-    @Default(DataType.UUIDV4)
-    @Column({ type: DataType.UUID })
+    @Default(UUIDV4)
+    @Column({ type: UUID })
     commentId!: string;
 
     @ForeignKey(() => Users)
-    @Column(DataType.UUID)
+    @Column({ type: UUID })
     auth0Id!: string;
 
     @ForeignKey(() => Snippets)
-    @Column(DataType.UUID)
+    @Column({ type: UUID })
     snippetId!: string;
 
     @Column({

@@ -15,6 +15,7 @@ Docker Compose is used to run all services together and wire environment variabl
 
 - Docker (version supporting Compose v2+)
 - Docker Compose (or Docker CLI with compose support)
+- [Auth0](https://auth0.com/) 
 - A terminal and basic familiarity with Docker commands
 
 Verify Docker is running:
@@ -36,31 +37,25 @@ DB_PORT=
 DB_NAME=
 DB_USER=
 # REQUIRED
-DB_PASS=
-MYSQL_ROOT_PASSWORD=
+DB_PASS= Mcgee7089!?@
+MYSQL_ROOT_PASSWORD= Mcgee7089!?@
 
 # API
 # OPTIONAL
-API_PORT=
-FRONTEND_HOST= Required if hosting outside your network for the email links to work
-# If setting up invite only mode you will need to setup SMTP settings as well
-INVITE_ONLY=
-
+API_PORT=3000
 # REQUIRED
-JWT_SECRET=
-JWT_REFRESH_SECRET=
-# Used for password resets this can be left blank but password resets will not function
-SMTP_HOST=
-SMTP_PORT=
-SMTP_USER=
-SMTP_PASS=
-SMTP_FROM=
-SMTP_SECURE=
+
+# AUTH0
+AUTH0_AUDIENCE=http://localhost:3000
+AUTH0_DOMAIN=dev-4ev7py4uqxc7prli.us.auth0.com
+AUTH0_CLIENT_ID=n5bdvh7IGhMZ1AE69sPkQ3wzCUOhoWIj
+
 
 # FRONTEND
 # OPTIONAL
-FRONTEND_PORT=
+FRONTEND_PORT=4200
 # REQUIRED
+
 ```
 
 Notes: Not all of these variables are needed as most have defaults

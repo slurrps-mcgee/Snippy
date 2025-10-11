@@ -2,8 +2,9 @@ import { findByUsername } from "../modules/user/user.repo";
 import { Request } from 'express';
 
 
-export const createUniqueUsername = async (base: string, maxTries = 20) => {
-	const cleanBase = (base || 'user').replace(/\s+/g, '').toLowerCase();
+export const createUniqueUsername = async (email: string, maxTries = 20) => {
+	const userNameBase = (email.split('@')[0] || '').replace(/\s+/g, '').toLowerCase();
+	const cleanBase = (userNameBase || 'user').replace(/\s+/g, '').toLowerCase();
 	let candidate = cleanBase;
 	for (let i = 0; i < maxTries; i++) {
 		const suffix = i === 0 ? '' : `${Math.floor(Math.random() * 9000) + 1000}`;

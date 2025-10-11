@@ -9,6 +9,7 @@ import {
   Default,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
+import { UUID, UUIDV4 } from "sequelize";
 
 @Table({
   tableName: "snippet_files",
@@ -18,12 +19,12 @@ import { Snippets } from "./snippet.model";
 })
 export class Snippet_Files extends Model<Snippet_Files> {
   @PrimaryKey
-  @Default(DataType.UUIDV4)
-  @Column({ type: DataType.UUID })
+  @Default(UUIDV4)
+  @Column({ type: UUID })
   snippet_fileId!: string;
 
   @ForeignKey(() => Snippets)
-  @Column(DataType.UUID)
+  @Column(UUID)
   snippetId!: string;
 
   @Column({

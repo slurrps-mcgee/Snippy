@@ -10,6 +10,8 @@ import {
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
 import { Users } from "./user.model";
+import { UUIDV4 } from "sequelize";
+import { UUID } from "sequelize";
 
 @Table({
     tableName: "favorites",
@@ -19,16 +21,16 @@ import { Users } from "./user.model";
 })
 export class Favorites extends Model<Favorites> {
     @PrimaryKey
-    @Default(DataType.UUIDV4)
-    @Column({ type: DataType.UUID })
+    @Default(UUIDV4)
+    @Column({ type: UUID })
     favoriteId!: string;
 
     @ForeignKey(() => Users)
-    @Column(DataType.UUID)
+    @Column({ type: UUID })
     auth0Id!: string;
 
     @ForeignKey(() => Snippets)
-    @Column(DataType.UUID)
+    @Column({ type: UUID })
     snippetId!: string;
 
     // Relations
@@ -39,7 +41,7 @@ export class Favorites extends Model<Favorites> {
         constraints: true,
     })
     user!: Users;
-    
+
     @BelongsTo(() => Snippets, {
         foreignKey: 'snippetId',
         targetKey: 'snippetId',
