@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavbarComponent } from "./shared/components/navbar/navbar.component";
-import { AuthTokenService } from './shared/services/auth/auth-token.service';
+import { AuthLocalService } from './shared/services/auth/auth.local.service';
 
 @Component({
   selector: 'app-root',
@@ -11,5 +11,5 @@ import { AuthTokenService } from './shared/services/auth/auth-token.service';
 })
 export class AppComponent {
   title = 'Snippy';
-  constructor(private authToken: AuthTokenService) {}
+  constructor(private auth: AuthLocalService) {}
 }

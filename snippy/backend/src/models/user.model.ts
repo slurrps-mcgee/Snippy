@@ -6,11 +6,11 @@ import {
   DataType,
   HasMany,
   BeforeCreate,
-  Default
 } from 'sequelize-typescript';
 import { Snippets } from './snippet.model';
 import { Favorites } from './favorite.model';
 import { Comments } from './comment.model';
+import { createUniqueUsername } from '../utils/helper';
 
 @Table({
   tableName: 'users',
@@ -20,41 +20,50 @@ import { Comments } from './comment.model';
 })
 export class Users extends Model<Users> {
   @PrimaryKey
-  @Column({ type: DataType.STRING })
+  @Column({ 
+    field: 'auth0_id',
+    type: DataType.STRING
+  })
   auth0Id!: string;
 
   @Column({
+    field: 'user_name',
     type: DataType.STRING,
     allowNull: false,
-    unique: 'user_email_unique_constraint'
+    unique: true
   })
-  email!: string;
+  userName!: string;
 
   @Column({
-    type: DataType.STRING,
-    allowNull: false,
-    unique: 'user_name_unique_constraint'
-  })
-  user_name!: string;
-
-  @Column({
+    field: 'display_name',
     type: DataType.STRING,
     allowNull: true,
+    defaultValue: null,
   })
-  display_name?: string | null;
+  displayName?: string | null;
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
+    defaultValue: null,
   })
   bio?: string | null;
 
-  @Default(false)
   @Column({
+    field: 'picture_url',
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: null,
+  })
+  pictureUrl?: string | null;
+
+  @Column({
+    field: 'is_admin',
     type: DataType.BOOLEAN,
     allowNull: false,
+    defaultValue: false
   })
-  is_admin!: boolean;
+  isAdmin!: boolean;
 
   // Relations
   @HasMany(() => Snippets, {
@@ -80,13 +89,7 @@ export class Users extends Model<Users> {
 
   // Before creating a user, auto-generate a username if not provided
   @BeforeCreate
-  static async setDefaultUsername(user: Users) {
-    if (!user.user_name) {
-      const randomSuffix = Math.floor(Math.random() * 10000);
-      const baseName = user.display_name
-        ? user.display_name.replace(/\s+/g, '').toLowerCase()
-        : 'user';
-      user.user_name = `${baseName}${randomSuffix}`;
-    }
+  static async generateUsername(user: Users) {
+    await createUniqueUsername(user);
   }
 }

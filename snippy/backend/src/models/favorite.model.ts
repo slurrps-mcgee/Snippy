@@ -4,12 +4,12 @@ import {
     Model,
     PrimaryKey,
     DataType,
-    Default,
     ForeignKey,
     BelongsTo,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.model";
 import { Users } from "./user.model";
+import { allow } from "joi";
 
 @Table({
     tableName: "favorites",
@@ -19,12 +19,16 @@ import { Users } from "./user.model";
 })
 export class Favorites extends Model<Favorites> {
     @PrimaryKey
-    @Default(DataType.UUIDV4)
-    @Column({ type: DataType.UUID })
+    @Column({ 
+        field: 'favorite_id',
+        type: DataType.UUID,
+        defaultValue: DataType.UUIDV4
+    })
     favoriteId!: string;
 
     @ForeignKey(() => Users)
     @Column({
+        field: 'auth0_id',
         type: DataType.STRING,
         allowNull: false,
     })
@@ -32,6 +36,7 @@ export class Favorites extends Model<Favorites> {
 
     @ForeignKey(() => Snippets)
     @Column({
+        field: 'snippet_id',
         type: DataType.UUID,
         allowNull: false,
     })

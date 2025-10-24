@@ -14,6 +14,7 @@ export class LoginComponent {
 
   login() {
     this.auth.loginWithRedirect({appState: { target: '/home' }});
+    const win: any = window as any;
   }
 
   logout() {

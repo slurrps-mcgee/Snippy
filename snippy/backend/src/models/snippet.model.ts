@@ -5,7 +5,6 @@ import {
   PrimaryKey,
   DataType,
   HasMany,
-  Default,
   ForeignKey,
   BelongsTo,
   BeforeCreate,
@@ -14,11 +13,8 @@ import { Snippet_Files } from "./snippet_file.model";
 import { Users } from "./user.model";
 import { Favorites } from "./favorite.model";
 import { Comments } from "./comment.model";
-import { customAlphabet } from 'nanoid';
-
-const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-const nano = customAlphabet(alphabet, 6); // 6 chars
-
+import { createUniqueShortName } from "../utils/helper";
+import { allow } from "joi";
 
 @Table({
   tableName: "snippets",
@@ -28,12 +24,16 @@ const nano = customAlphabet(alphabet, 6); // 6 chars
 })
 export class Snippets extends Model<Snippets> {
   @PrimaryKey
-  @Default(DataType.UUIDV4)
-  @Column({ type: DataType.UUID })
+  @Column({ 
+    field: 'snippet_id',
+    type: DataType.UUID,
+    defaultValue: DataType.UUIDV4
+  })
   snippetId!: string;
 
   @ForeignKey(() => Users)
   @Column({
+    field: 'auth0_id',
     type: DataType.STRING,
     allowNull: false,
   })
@@ -42,9 +42,10 @@ export class Snippets extends Model<Snippets> {
   @Column({
     type: DataType.STRING(16),
     allowNull: false,
-    unique: 'snippet_short_id_unique_constraint'
+    unique: true,
+    field: 'short_id'
   })
-  short_id!: string;
+  shortId!: string;
 
   @Column({
     type: DataType.STRING,
@@ -58,9 +59,10 @@ export class Snippets extends Model<Snippets> {
   @Column({
     type: DataType.UUID,
     allowNull: true,
+    defaultValue: null,
     field: 'parent_snippet_id',
   })
-  parent_snippet_id?: string | null;
+  parentSnippetId?: string | null;
 
   @Column({
     type: DataType.STRING,
@@ -71,39 +73,49 @@ export class Snippets extends Model<Snippets> {
   @Column({
     type: DataType.JSON,
     allowNull: true,
+    defaultValue: null,
   })
   tags?: string[] | null;
 
-  @Default(false)
   @Column({
-    type: DataType.BOOLEAN
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false,
+    field: 'is_private',
   })
-  is_private!: boolean;
+  isPrivate!: boolean;
 
-  @Default(0)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0
   })
   view_count!: number;
 
   // Counts used for quick list sorting without joins
-  @Default(0)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'fork_count',
   })
-  fork_count!: number;
+  forkCount!: number;
 
-  @Default(0)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'favorite_count',
   })
-  favorite_count!: number;
+  favoriteCount!: number;
 
-  @Default(0)
   @Column({
-    type: DataType.INTEGER
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+    field: 'comment_count',
   })
-  comment_count!: number;
+  commentCount!: number;
 
   // Relations
   @BelongsTo(() => Users, {
@@ -153,20 +165,6 @@ export class Snippets extends Model<Snippets> {
 
   @BeforeCreate
   static async setShortId(snippet: Snippets) {
-    if (!snippet.short_id) {
-      // try generating a unique shortId a few times
-      for (let i = 0; i < 5; i++) {
-        const candidate = nano();
-        // try insert-safe uniqueness check: db lookup
-        // Note: a findOne on shortId is fine here; the DB unique index prevents final race
-        const exists = await Snippets.findOne({ where: { short_id: candidate } });
-        if (!exists) {
-          snippet.short_id = candidate;
-          return;
-        }
-      }
-      // fallback to a longer id if collisions happen repeatedly
-      snippet.short_id = `${nano(10)}`;
-    }
+    await createUniqueShortName(snippet);
   }
 }

@@ -4,7 +4,6 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthHttpInterceptor, provideAuth0 } from '@auth0/auth0-angular';
-import { AuthTokenService } from './shared/services/auth/auth-token.service';
 
 const win: any = window as any;
 
@@ -42,13 +41,5 @@ export const appConfig: ApplicationConfig = {
           ]
         }
     }),
-    // // Force instantiation of AuthTokenService at app startup so its constructor
-    // // subscriptions are active before components (like UserHome) make API calls.
-    // {
-    //   provide: APP_INITIALIZER,
-    //   useFactory: (authToken: AuthTokenService) => () => undefined,
-    //   deps: [AuthTokenService],
-    //   multi: true
-    // }
   ]
 };

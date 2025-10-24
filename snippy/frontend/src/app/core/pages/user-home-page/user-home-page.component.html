@@ -1,8 +1,8 @@
 <p>user-home works!</p>
 <ul>
-    <li>{{ user?.user_name }}</li>
-    <li>{{ user?.email }}</li>
-    <li>{{ user?.bio }}</li>
+    <li>{{ user?.userName }}</li>
+    <li>{{ user?.displayName }}</li>
+    <li><img [src]="user?.pictureUrl" alt="User Picture" /></li>
 </ul>
 
 <button (click)="getUser()">GetUser</button>

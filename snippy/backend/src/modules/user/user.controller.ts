@@ -1,41 +1,40 @@
 import { NextFunction, Request, Response } from 'express';
-import { registerService, updateUserService } from './user.service';
+import { checkUserNameAvailabilityHandler, ensureUserHandler, updateUserHandler } from './user.service';
 import { validateRegister, validateUpdateUser } from './user.validator';
 
-export async function registerUserHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+/*
+    * Controller for user registration
+    * Will try and find an existing user by Auth0 ID then try and update their profile picture else create a new user
+    * Validates input, calls service, and sends response
+    * Returns the created or updated user object
+ */
+export async function ensureUserFromAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        validateRegister(req.body);
+        await validateRegister(req.body);
 
-        const { user } = await registerService(req);
+        const result = await ensureUserHandler(req);
+        const status = result?.created ? 201 : 200;
+        const user = result?.user;
 
-        res.status(201).json({ success: true, data: user });
+        res.status(status).json({ success: true, user });
     } catch (error) {
         next(error);
     }
 }
 
-export const register = [registerUserHandler];
+export const ensureUser = [ensureUserFromAuth];
 
-export async function updateUserHandler(req: Request, res: Response, next: NextFunction): Promise<void> {
+/*
+    * Controller for updating user profile
+    * Will try and find an existing user by Auth0 ID then try and update their profile details
+    * Validates input, calls service, and sends response
+    * Returns the updated user object
+ */
+export async function updateUserFromAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        validateUpdateUser(req.body);
+        await validateUpdateUser(req.body);
 
-        const auth0Id = req.auth?.payload?.sub;
-        if(!auth0Id) {
-            res.status(401).json({ error: 'Unauthorized' });
-            return;
-        }
-
-        // Prevent updating sensitive fields from this endpoint
-        const patch = { ...req.body } as any;
-        delete patch.userId;
-        delete patch.is_admin;
-
-        const user = await updateUserService(auth0Id, patch);
-        if (!user) {
-            res.status(404).json({ error: 'User not found' });
-            return;
-        }
+        const { user } = await updateUserHandler(req);
 
         res.status(200).json({ success: true, user });
     } catch (error) {
@@ -43,4 +42,14 @@ export async function updateUserHandler(req: Request, res: Response, next: NextF
     }
 }
 
-export const updateUser = [updateUserHandler];
+export const updateUser = [updateUserFromAuth];
+
+export async function checkUserNameAvailability(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const username = req.params.username;
+        const isAvailable = await checkUserNameAvailabilityHandler(username);
+        res.status(200).json({ success: true, isAvailable });
+    } catch (error) {
+        next(error);
+    }
+}

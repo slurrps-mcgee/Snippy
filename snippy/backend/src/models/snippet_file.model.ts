@@ -4,7 +4,6 @@ import {
   Model,
   PrimaryKey,
   DataType,
-  Default,
   ForeignKey,
   BelongsTo,
 } from "sequelize-typescript";
@@ -15,39 +14,42 @@ import { Snippets } from "./snippet.model";
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  indexes: [
+    {
+      unique: true,
+      fields: ["snippet_id", "file_type"],
+      name: "unique_snippet_file_type_per_snippet",
+    },
+  ],
 })
 export class Snippet_Files extends Model<Snippet_Files> {
   @PrimaryKey
-  @Default(DataType.UUIDV4)
-  @Column({ type: DataType.UUID })
-  snippet_fileId!: string;
+  @Column({ 
+    field: 'snippet_file_id',
+    type: DataType.UUID,
+    defaultValue: DataType.UUIDV4
+  })
+  snippetFileID!: string;
 
   @ForeignKey(() => Snippets)
   @Column({
+    field: 'snippet_id',
     type: DataType.UUID,
     allowNull: false,
   })
   snippetId!: string;
 
   @Column({
-    type: DataType.STRING,
+    field: "file_type",
+    type: DataType.ENUM("html", "css", "js"),
     allowNull: false,
   })
-  file_type!: string; // html, css, js
-
-  @Column({
-    type: DataType.STRING,
-    allowNull: true,
-  })
-  file_name?: string | null;
-
-  @Default(0)
-  @Column({ type: DataType.INTEGER })
-  sort_order!: number;
+  fileType!: "html" | "css" | "js";
 
   @Column({
     type: DataType.TEXT,
     allowNull: true,
+    defaultValue: null,
   })
   content?: string | null;
 
@@ -55,7 +57,8 @@ export class Snippet_Files extends Model<Snippet_Files> {
   @BelongsTo(() => Snippets, {
     foreignKey: 'snippetId',
     targetKey: 'snippetId',
-    constraints: false,
+    onDelete: 'CASCADE',
+    constraints: true,
   })
   snippet!: Snippets;
 }

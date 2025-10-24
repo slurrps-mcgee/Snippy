@@ -2,7 +2,8 @@ import Joi from 'joi';
 import { CustomError } from '../../utils/custom-error';
 
 const registerSchema = Joi.object({
-    email: Joi.string().email().required(),
+    name: Joi.string().min(2).max(100).optional(),
+    pictureUrl: Joi.string().uri().optional(),
 });
 
 
@@ -14,9 +15,10 @@ export const validateRegister = async (payload: any) => {
 };
 
 const updateUserSchema = Joi.object({
-    user_name: Joi.string().optional(),
-    display_name: Joi.string().optional(),
-    bio: Joi.string().optional()
+    userName: Joi.string().optional(),
+    displayName: Joi.string().optional(),
+    bio: Joi.string().optional(),
+    pictureUrl: Joi.string().uri().optional(),
 });
 
 export const validateUpdateUser = async (payload: any) => {

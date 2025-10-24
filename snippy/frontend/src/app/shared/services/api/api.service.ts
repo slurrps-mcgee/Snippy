@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { from, Observable, throwError } from 'rxjs';
-import { catchError, filter, switchMap, take } from 'rxjs/operators';
+import { switchMap } from 'rxjs/operators';
 import { defaultPolicy } from '../resiliance.service';
 
 export type ApiOptions = {
@@ -36,33 +36,6 @@ export class ApiService {
         }
 
         const method = (opts.method || 'GET').toUpperCase();
-
-        // const makeRequest = (): Observable<T> => {
-        //     switch (method) {
-        //         case 'GET':
-        //             return this.http.get<T>(url, { headers, params });
-        //         case 'POST':
-        //             return this.http.post<T>(url, opts.body, { headers, params });
-        //         case 'PUT':
-        //             return this.http.put<T>(url, opts.body, { headers, params });
-        //         case 'PATCH':
-        //             return this.http.patch<T>(url, opts.body, { headers, params });
-        //         case 'DELETE':
-        //             return this.http.delete<T>(url, { headers, params });
-        //         default:
-        //             return throwError(() => new Error(`Unsupported method ${method}`));
-        //     }
-        // };
-
-        // // If caller requested we wait for authentication, delay the request until
-        // // Auth0 reports `isAuthenticated$ === true`. Otherwise send immediately.
-        // if (opts.requireAuth) {
-        //     return this.auth.isAuthenticated$.pipe(
-        //         filter(Boolean),
-        //         take(1),
-        //         switchMap(() => makeRequest())
-        //     );
-        // }
 
         // defaultPolicy.execute returns a Promise/Observable that resolves to an Observable<T>;
         // flatten the inner Observable to return Observable<T>.

@@ -2,7 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { ApiService } from '../../../shared/services/api/api.service';
-import { AuthTokenService } from '../../../shared/services/auth/auth-token.service';
+import { AuthLocalService } from '../../../shared/services/auth/auth.local.service';
 import { Subscription, of } from 'rxjs';
 
 @Component({
@@ -18,31 +18,33 @@ export class UserHomePageComponent implements OnInit, OnDestroy {
   constructor(
     public auth0: AuthService,
     private api: ApiService,
-    private authToken: AuthTokenService
-  ) {
-    //log token only
+    private auth: AuthLocalService) {
+
+    //log token only testing
     this.auth0.getAccessTokenSilently().subscribe(token => {
       console.log(token);
     });
-
-    this.getUser();
   }
 
+  // Subscribe to user info on init
   ngOnInit(): void {
     // Subscribe to the persisted user stream — this will emit as soon as
-    // AuthTokenService saves the user after login and backend registration.
-    this.sub = this.authToken.user$.subscribe((u) => {
+    // AuthLocalService saves the user after login and backend registration.
+    this.sub = this.auth.user$.subscribe((u) => {
       if (u) {
         this.user = u;
-        console.log('Received user from AuthTokenService:', u);
+        console.log('Received user from AuthLocalService:', u);
       } 
     });
   }
 
+  // Cleanup subscription
   ngOnDestroy(): void {
     this.sub?.unsubscribe();
   }
 
+
+  //Test API call to get user info from backend
   getUser() {
     // get email from Auth0 profile
     this.api.request({ path: '/users', method: 'POST' }).subscribe({
@@ -54,7 +56,6 @@ export class UserHomePageComponent implements OnInit, OnDestroy {
         console.error('API error:', error);
       }
     });
-
   }
 
 }

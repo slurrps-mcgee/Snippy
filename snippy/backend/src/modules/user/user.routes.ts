@@ -1,9 +1,10 @@
 import express from 'express';
-import { register, updateUser } from './user.controller';
+import { checkUserNameAvailability, ensureUser, updateUser } from './user.controller';
 
 const userRouter = express.Router();
 
-userRouter.post('/', register);
+userRouter.post('/', ensureUser);
 userRouter.put('/', updateUser);
+userRouter.get('/check-username/:username', checkUserNameAvailability);
 
 export default userRouter;
