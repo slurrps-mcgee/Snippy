@@ -1,10 +1,10 @@
 import { Users } from "../../models/user.model";
 import { CustomError } from "../../utils/custom-error";
 import logger from '../../utils/logger';
-import { fileTypes, invalidUsernames, sanitizeUser } from "../../utils/helper";
+import { fileTypes, handleSequelizeError, invalidUsernames } from "../../utils/helper";
 import { createUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
 import { Snippets } from "../../models/snippet.model";
-import { Snippet_Files } from "../../models/snippet_file.model";
+import { SnippetFiles } from "../../models/snippetFile.model";
 import { Comments } from "../../models/comment.model";
 import { Favorites } from "../../models/favorite.model";
 
@@ -63,8 +63,11 @@ export async function ensureUserHandler(payload: any) {
         } as any);
 
         if (!createdUser) throw new CustomError('Failed to create user', 500);
+        
+        
         // Dummy calls to ensure Models all work together
         await testModels(auth0Id);
+
 
         return { user: createdUser, created: true };
     } catch (err: any) {
@@ -74,18 +77,7 @@ export async function ensureUserHandler(payload: any) {
         // Log original error at debug so we can inspect stack in logs
         logger.debug(`ensureUserHandler error: ${err?.stack || err}`);
         // Map known Sequelize/DB error names to HTTP codes
-        const name = err?.name;
-        if (name === 'SequelizeUniqueConstraintError') {
-            throw new CustomError('Conflict: unique constraint violated', 409);
-        }
-        if (name === 'SequelizeValidationError') {
-            throw new CustomError(err.message || 'Validation failed', 400);
-        }
-        if (name === 'SequelizeForeignKeyConstraintError') {
-            throw new CustomError('Invalid reference', 400);
-        }
-        // Unexpected DB error
-        throw new CustomError('Database error', 500);
+        handleSequelizeError(err);
     }
 }
 
@@ -99,8 +91,8 @@ export async function updateUserHandler(payload: any) {
 
     // Prevent updating sensitive fields from this endpoint
     var patch = { ...payload.body } as any;
-    // sanitizeUser will camelCase keys and remove internal fields
-    patch = sanitizeUser(patch) as any;
+    delete patch.auth0Id;
+    delete patch.isAdmin;
 
     try {
         var user: any = await updateUser(auth0Id, patch);
@@ -113,17 +105,7 @@ export async function updateUserHandler(payload: any) {
         if (err instanceof CustomError) throw err;
 
         logger.debug(`updateUserHandler error: ${err?.stack || err}`);
-        const name = err?.name;
-        if (name === 'SequelizeUniqueConstraintError') {
-            throw new CustomError('Conflict: unique constraint violated', 409);
-        }
-        if (name === 'SequelizeValidationError') {
-            throw new CustomError(err.message || 'Validation failed', 400);
-        }
-        if (name === 'SequelizeForeignKeyConstraintError') {
-            throw new CustomError('Invalid reference', 400);
-        }
-        throw new CustomError('Database error', 500);
+        handleSequelizeError(err);
     }
 }
 
@@ -142,12 +124,14 @@ export async function checkUserNameAvailabilityHandler(userName: string) {
         // Preserve already-mapped errors
         if (err instanceof CustomError) throw err;
 
-        // Otherwise treat as a DB/unexpected error
-        throw new CustomError('Database error', 500);
+        handleSequelizeError(err);
     }
 }
 
 
+
+// Dummy calls to ensure Models all work together
+// TESTIONG PURPOSES ONLY
 async function testModels(auth0Id: string) {
     // Dummy calls to ensure Models all work together
     var test = await Snippets.create({
@@ -156,20 +140,38 @@ async function testModels(auth0Id: string) {
         shortId: ''
     } as any); // Dummy call to ensure Snippets model is imported
 
-    await Snippet_Files.create({
+    await SnippetFiles.create({
         snippetId: test.snippetId,
         fileType: fileTypes.html.toString(),
         content: '<p>This is a test file.</p>'
     } as any); // Dummy call to ensure Snippet_Files model is imported
 
-    await Comments.create({
+    await SnippetFiles.create({
         snippetId: test.snippetId,
+        fileType: fileTypes.css.toString(),
+        content: '.class { color: red; }'
+    } as any); // Dummy call to ensure Snippet_Files model is imported
+
+    await SnippetFiles.create({
+        snippetId: test.snippetId,
+        fileType: fileTypes.js.toString(),
+        content: 'console.log("Hello, world!");'
+    } as any); // Dummy call to ensure Snippet_Files model is imported
+
+    var snippet = await Snippets.findOne({ where: { shortId: test.shortId }});
+
+    await Comments.create({
+        snippetId: snippet?.snippetId,
         auth0Id: auth0Id,
         content: 'This is a test comment.'
     } as any); // Dummy call to ensure Comments model is imported
 
+    await snippet?.increment('commentCount');
+
     await Favorites.create({
         auth0Id: auth0Id,
-        snippetId: test.snippetId
+        snippetId: snippet?.snippetId
     } as any); // Dummy call to ensure Favorites model is imported
+
+    await snippet?.increment('favoriteCount');
 }

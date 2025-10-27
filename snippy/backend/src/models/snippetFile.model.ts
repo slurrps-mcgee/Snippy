@@ -22,7 +22,7 @@ import { Snippets } from "./snippet.model";
     },
   ],
 })
-export class Snippet_Files extends Model<Snippet_Files> {
+export class SnippetFiles extends Model<SnippetFiles> {
   @PrimaryKey
   @Column({ 
     field: 'snippet_file_id',

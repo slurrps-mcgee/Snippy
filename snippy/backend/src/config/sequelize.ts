@@ -1,14 +1,14 @@
 import { Sequelize } from 'sequelize-typescript';
 import { Users } from '../models/user.model'; // Adjust the import path as necessary
 import { Snippets } from '../models/snippet.model';
-import { Snippet_Files } from '../models/snippet_file.model';
+import { SnippetFiles } from '../models/snippetFile.model';
 import { Favorites } from '../models/favorite.model';
 import { Comments } from '../models/comment.model';
 import { defaultPolicy } from '../utils/resiliance';
 import logger from '../utils/logger';
 
 // Initialize Sequelize with MySQL configuration
-const sequelize = new Sequelize({
+export const sequelize = new Sequelize({
   database: process.env.DB_NAME || 'snippy',
   username: process.env.DB_USER || 'snippy_api',
   password: process.env.DB_PASS,
@@ -19,7 +19,7 @@ const sequelize = new Sequelize({
 });
 
 // Add models to sequelize after initialization
-sequelize.addModels([Users, Snippets, Snippet_Files, Favorites, Comments]);
+sequelize.addModels([Users, Snippets, SnippetFiles, Favorites, Comments]);
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {

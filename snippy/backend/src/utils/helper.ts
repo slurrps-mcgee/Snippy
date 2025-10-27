@@ -2,10 +2,13 @@ import { randomInt } from 'crypto';
 import { Users } from '../models/user.model';
 import { Snippets } from '../models/snippet.model';
 import { customAlphabet } from 'nanoid';
+import { CustomError } from './custom-error';
 
+// Nanoid setup for shortId generation
 const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
 const nano = customAlphabet(alphabet, 6); // 6 chars
 
+// Word lists for username generation
 const adjectives = [
 	'silver', 'blue', 'brave', 'clever', 'happy', 'swift', 'bright', 'calm', 'lucky', 'gentle'
 ];
@@ -14,17 +17,19 @@ const nouns = [
 ];
 
 
+// List of usernames that are not allowed
 export const invalidUsernames = [
 	'snippet'
 ];
 
+// Supported file types
 export enum fileTypes {
 	html = 'html',
 	css = 'css',
 	js = 'js'
 };
 
-
+// Generate a unique username for a user
 export const createUniqueUsername = async (user: Users, maxTries = 20) => {
 	// Base name preference: display_name → email prefix → generated words
 	let base: string | undefined;
@@ -58,6 +63,7 @@ export const createUniqueUsername = async (user: Users, maxTries = 20) => {
 	console.log(`Generated username: ${user.userName}`);
 }
 
+// Generate a unique shortId for a snippet
 export const createUniqueShortName = async (snippet: Snippets, maxTries = 5) => {
 	if (!snippet.shortId) {
 		// try generating a unique shortId a few times
@@ -76,38 +82,19 @@ export const createUniqueShortName = async (snippet: Snippets, maxTries = 5) => 
 	}
 }
 
-// Sanitize user object by removing sensitive/internal fields
-export const sanitizeUser = (user: any) => {
-	if (!user) return null;
+export function handleSequelizeError(err: any): never {
+	const name = err?.name;
 
-	// If this is a Sequelize instance, get a plain object copy
-	let plain: any;
-	try {
-		if (typeof user.get === 'function') {
-			plain = user.get({ plain: true });
-		} else if (typeof user.toJSON === 'function') {
-			plain = user.toJSON();
-		} else {
-			plain = { ...user };
-		}
-	} catch (e) {
-		plain = { ...user };
+	if (name === "SequelizeUniqueConstraintError") {
+		throw new CustomError("Conflict: unique constraint violated", 409);
+	}
+	if (name === "SequelizeValidationError") {
+		throw new CustomError(err.message || "Validation failed", 400);
+	}
+	if (name === "SequelizeForeignKeyConstraintError") {
+		throw new CustomError("Invalid reference", 400);
 	}
 
-	// Convert any snake_case keys to camelCase and remove internal fields
-	const out: any = {};
-	const toCamel = (s: string) => s.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
-
-	for (const k of Object.keys(plain)) {
-		const camel = toCamel(k);
-		out[camel] = (plain as any)[k];
-	}
-
-	// Remove internal/sensitive fields if present (both snake and camel forms handled by conversion)
-	delete out.auth0Id;
-	delete out.isAdmin;
-	delete out.createdAt;
-	delete out.updatedAt;
-
-	return out;
-};
+	console.error('Sequelize error:', err);
+	throw new CustomError("Database error", 500);
+}

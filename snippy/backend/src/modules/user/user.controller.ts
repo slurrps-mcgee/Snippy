@@ -8,7 +8,7 @@ import { validateRegister, validateUpdateUser } from './user.validator';
     * Validates input, calls service, and sends response
     * Returns the created or updated user object
  */
-export async function ensureUserFromAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function ensureUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateRegister(req.body);
 
@@ -22,15 +22,13 @@ export async function ensureUserFromAuth(req: Request, res: Response, next: Next
     }
 }
 
-export const ensureUser = [ensureUserFromAuth];
-
 /*
     * Controller for updating user profile
     * Will try and find an existing user by Auth0 ID then try and update their profile details
     * Validates input, calls service, and sends response
     * Returns the updated user object
  */
-export async function updateUserFromAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateUpdateUser(req.body);
 
@@ -42,9 +40,12 @@ export async function updateUserFromAuth(req: Request, res: Response, next: Next
     }
 }
 
-export const updateUser = [updateUserFromAuth];
-
-export async function checkUserNameAvailability(req: Request, res: Response, next: NextFunction): Promise<void> {
+/*
+    * Controller for checking username availability
+    * Calls service and sends response
+    * Returns boolean indicating availability
+ */
+export async function checkUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const username = req.params.username;
         const isAvailable = await checkUserNameAvailabilityHandler(username);

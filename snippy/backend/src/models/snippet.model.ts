@@ -9,7 +9,7 @@ import {
   BelongsTo,
   BeforeCreate,
 } from "sequelize-typescript";
-import { Snippet_Files } from "./snippet_file.model";
+import { SnippetFiles } from "./snippetFile.model";
 import { Users } from "./user.model";
 import { Favorites } from "./favorite.model";
 import { Comments } from "./comment.model";
@@ -57,10 +57,10 @@ export class Snippets extends Model<Snippets> {
   // Nullable self-referential FK to indicate this snippet was forked from another.
   @ForeignKey(() => Snippets)
   @Column({
+    field: 'parent_snippet_id',
     type: DataType.UUID,
     allowNull: true,
     defaultValue: null,
-    field: 'parent_snippet_id',
   })
   parentSnippetId?: string | null;
 
@@ -78,42 +78,43 @@ export class Snippets extends Model<Snippets> {
   tags?: string[] | null;
 
   @Column({
+    field: 'is_private',
     type: DataType.BOOLEAN,
     allowNull: false,
     defaultValue: false,
-    field: 'is_private',
   })
   isPrivate!: boolean;
 
   @Column({
+    field: 'view_count',
     type: DataType.INTEGER,
     allowNull: false,
     defaultValue: 0
   })
-  view_count!: number;
+  viewCount!: number;
 
   // Counts used for quick list sorting without joins
   @Column({
+    field: 'fork_count',
     type: DataType.INTEGER,
     allowNull: false,
     defaultValue: 0,
-    field: 'fork_count',
   })
   forkCount!: number;
 
   @Column({
+    field: 'favorite_count',
     type: DataType.INTEGER,
     allowNull: false,
     defaultValue: 0,
-    field: 'favorite_count',
   })
   favoriteCount!: number;
 
   @Column({
+    field: 'comment_count',
     type: DataType.INTEGER,
     allowNull: false,
     defaultValue: 0,
-    field: 'comment_count',
   })
   commentCount!: number;
 
@@ -142,12 +143,12 @@ export class Snippets extends Model<Snippets> {
   })
   forks!: Snippets[];
 
-  @HasMany(() => Snippet_Files, {
+  @HasMany(() => SnippetFiles, {
     foreignKey: 'snippetId',
     sourceKey: 'snippetId',
     constraints: false,
   })
-  snippet_files!: Snippet_Files[];
+  snippetFiles!: SnippetFiles[];
 
   @HasMany(() => Favorites, {
     foreignKey: 'snippetId',
