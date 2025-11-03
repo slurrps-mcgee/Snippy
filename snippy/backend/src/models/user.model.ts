@@ -65,6 +65,14 @@ export class Users extends Model<Users> {
   })
   isAdmin!: boolean;
 
+  @Column({
+    field: 'is_private',
+    type: DataType.BOOLEAN,
+    allowNull: false,
+    defaultValue: false
+  })
+  isPrivate!: boolean;
+
   // Relations
   @HasMany(() => Snippets, {
     foreignKey: 'auth0Id',

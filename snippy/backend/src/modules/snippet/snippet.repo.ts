@@ -1,11 +1,9 @@
 import { Transaction } from "sequelize";
-import { sequelize } from "../../config/sequelize";
 import { Snippets } from "../../models/snippet.model";
 import { SnippetFiles } from "../../models/snippetFile.model";
+import { Op } from "sequelize";
 
-// #region Snippet CRUD
-
-//CREATE, UPDATE, DELETE
+// #region Snippet CREATE/UPDATE/DELETE
 // Create Snippet
 export async function createSnippet(
     snippetData: Partial<Snippets>,
@@ -47,9 +45,10 @@ export async function deleteSnippet(
 ): Promise<void> {
     await Snippets.destroy({ where: { shortId }, transaction });
 }
+// #endregion
 
-//GET Snippet and Snippets
-// Get Snippet by Short ID
+// #region Snippet READ
+// Find snippet by shortId
 export async function findByShortId(
     shortId: string,
     transaction?: Transaction
@@ -57,21 +56,33 @@ export async function findByShortId(
     return await Snippets.findOne({
         where: { shortId },
         include: [SnippetFiles],
-        transaction,
+        transaction
     });
 }
-// Get Snippet by Primary ID
-export async function findByPK(
-    snippetId: string,
+// Search snippets by query (name, description, etc.)
+export async function searchSnippets(
+    query: string,
+    offset: number,
+    limit: number,
     transaction?: Transaction
-): Promise<Snippets | null> {
-    return await Snippets.findByPk(snippetId, {
+): Promise<Snippets[]> {
+    return await Snippets.findAll({
+        where: { 
+            isPrivate: false, // Only search public snippets
+            [Op.or]: [
+                { name: { [Op.like]: `%${query}%` } }, 
+                { description: { [Op.like]: `%${query}%` } }
+            ] 
+        },
         include: [SnippetFiles],
-        transaction,
+        offset,
+        limit,
+        order: [['created_at', 'DESC']], // Show newest first
+        transaction
     });
 }
-// Get All Public Snippets with Pagination
-export async function findAllPublicSnippets(
+// Get all public snippets
+export async function getAllPublicSnippets(
     offset: number,
     limit: number,
     transaction?: Transaction
@@ -81,11 +92,26 @@ export async function findAllPublicSnippets(
         include: [SnippetFiles],
         offset,
         limit,
-        transaction,
+        transaction
     });
 }
-
-export async function findAllUserSnippets(
+// Get public snippets for a specific user
+export async function getUserPublicSnippets(
+    auth0Id: string,
+    offset: number,
+    limit: number,
+    transaction?: Transaction
+): Promise<Snippets[]> {
+    return await Snippets.findAll({
+        where: { auth0Id, isPrivate: false },
+        include: [SnippetFiles],
+        offset,
+        limit,
+        transaction
+    });
+}
+// Get snippets for the current user
+export async function getMySnippets(
     auth0Id: string,
     offset: number,
     limit: number,
@@ -96,28 +122,12 @@ export async function findAllUserSnippets(
         include: [SnippetFiles],
         offset,
         limit,
-        transaction,
-    });
-}
-//HELPERS
-// Validate Ownership of Snippet
-export async function validateOwnership(
-    auth0Id: string,
-    shortId: string,
-    transaction?: Transaction
-): Promise<boolean> {
-    const snippet = await Snippets.findOne({
-        where: { shortId, auth0Id },
         transaction
     });
-    return snippet !== null;
 }
-
-
 // #endregion
 
-// #region Count Management
-
+// #region Snippet Count Management
 export async function incrementSnippetForkCount(
     shortId: string,
     transaction?: Transaction

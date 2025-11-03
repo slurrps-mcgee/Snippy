@@ -1,13 +1,15 @@
 import { NextFunction, Request, Response } from 'express';
-import { checkUserNameAvailabilityHandler, ensureUserHandler, updateUserHandler } from './user.service';
+import { 
+    checkUserNameAvailabilityHandler, 
+    deleteUserHandler, 
+    ensureUserHandler, 
+    getCurrentUserHandler, 
+    getUserProfileHandler, 
+    updateUserHandler 
+} from './user.service';
 import { validateRegister, validateUpdateUser } from './user.validator';
 
-/*
-    * Controller for user registration
-    * Will try and find an existing user by Auth0 ID then try and update their profile picture else create a new user
-    * Validates input, calls service, and sends response
-    * Returns the created or updated user object
- */
+
 export async function ensureUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateRegister(req.body);
@@ -22,12 +24,6 @@ export async function ensureUser(req: Request, res: Response, next: NextFunction
     }
 }
 
-/*
-    * Controller for updating user profile
-    * Will try and find an existing user by Auth0 ID then try and update their profile details
-    * Validates input, calls service, and sends response
-    * Returns the updated user object
- */
 export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateUpdateUser(req.body);
@@ -40,16 +36,37 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
     }
 }
 
-/*
-    * Controller for checking username availability
-    * Calls service and sends response
-    * Returns boolean indicating availability
- */
+export async function deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        await deleteUserHandler(req);
+        res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { user } = await getUserProfileHandler(req);
+        res.status(200).json({ success: true, user });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getCurrentUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { user } = await getCurrentUserHandler(req);
+        res.status(200).json({ success: true, user });
+    } catch (error) {
+        next(error);
+    }
+}
+
 export async function checkUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const username = req.params.username;
-        const isAvailable = await checkUserNameAvailabilityHandler(username);
-        res.status(200).json({ success: true, isAvailable });
+        const { available } = await checkUserNameAvailabilityHandler(req);
+        res.status(200).json({ success: true, available });
     } catch (error) {
         next(error);
     }

@@ -4,7 +4,7 @@ import { Snippets } from '../models/snippet.model';
 import { SnippetFiles } from '../models/snippetFile.model';
 import { Favorites } from '../models/favorite.model';
 import { Comments } from '../models/comment.model';
-import { defaultPolicy } from '../utils/resiliance';
+import { dbConnectionPolicy, defaultPolicy } from '../utils/resiliance';
 import logger from '../utils/logger';
 
 // Initialize Sequelize with MySQL configuration
@@ -24,7 +24,7 @@ sequelize.addModels([Users, Snippets, SnippetFiles, Favorites, Comments]);
 // Function to connect to the database with retry logic
 async function connectWithRetry() {
   try {
-    await defaultPolicy.execute(async () => {
+    await dbConnectionPolicy.execute(async () => {
       logger.info('⏳ Trying DB connection...');
       await sequelize.authenticate(); // Test the connection
       logger.info('✅ Database connected.');

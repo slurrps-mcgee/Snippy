@@ -3,6 +3,7 @@ import { Users } from '../models/user.model';
 import { Snippets } from '../models/snippet.model';
 import { customAlphabet } from 'nanoid';
 import { CustomError } from './custom-error';
+import { shortIdRetryPolicy, usernameRetryPolicy } from './resiliance';
 
 // Nanoid setup for shortId generation
 const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -31,7 +32,6 @@ export enum fileTypes {
 
 // Generate a unique username for a user
 export const createUniqueUsername = async (user: Users, maxTries = 20) => {
-	// Base name preference: display_name → email prefix → generated words
 	let base: string | undefined;
 
 	if (user.displayName) {
@@ -64,28 +64,61 @@ export const createUniqueUsername = async (user: Users, maxTries = 20) => {
 }
 
 // Generate a unique shortId for a snippet
-export const createUniqueShortName = async (snippet: Snippets, maxTries = 5) => {
+export const createUniqueShortName = async (snippet: Snippets) => {
 	if (!snippet.shortId) {
-		// try generating a unique shortId a few times
-		for (let i = 0; i < maxTries; i++) {
-			const candidate = nano();
-			// try insert-safe uniqueness check: db lookup
-			// Note: a findOne on shortId is fine here; the DB unique index prevents final race
-			const exists = await Snippets.findOne({ where: { shortId: candidate } });
-			if (!exists) {
-				snippet.shortId = candidate;
-				return;
-			}
+		try {
+			// Use resilience policy to handle shortId generation with automatic retries
+			snippet.shortId = await shortIdRetryPolicy.execute(async () => {
+				return await generateShortIdCandidate();
+			});
+		} catch (error) {
+			// If all retries failed, use emergency fallback
+			console.error('All shortId generation attempts failed, using emergency fallback');
+			snippet.shortId = generateEmergencyShortId();
 		}
-		// fallback to a longer id if collisions happen repeatedly
-		snippet.shortId = `${nano(10)}`;
 	}
 }
 
+// Internal function to generate and validate a shortId candidate
+async function generateShortIdCandidate(): Promise<string> {
+	// Try primary 6-character ID
+	const candidate = nano(); // 6 characters
+	
+	// Check uniqueness - if it exists, throw error to trigger retry
+	const exists = await Snippets.findOne({ 
+		where: { shortId: candidate }
+	});
+	
+	if (exists) {
+		// Create an error that matches our resilience policy filter
+		const error = new Error(`ShortId collision for candidate: ${candidate}`) as any;
+		error.name = 'SequelizeUniqueConstraintError';
+		error.fields = { shortId: candidate };
+		throw error;
+	}
+	
+	console.log(`Generated unique shortId: ${candidate}`);
+	return candidate;
+}
+
+// Emergency fallback when all retries are exhausted
+function generateEmergencyShortId(): string {
+	const timestamp = Date.now().toString(36);
+	const randomPart = nano(8);
+	const emergencyId = `${randomPart}-${timestamp}`;
+	console.error(`Using emergency shortId: ${emergencyId}`);
+	return emergencyId;
+}
+
+// Handle Sequelize errors and map to CustomError
 export function handleSequelizeError(err: any): never {
 	const name = err?.name;
 
 	if (name === "SequelizeUniqueConstraintError") {
+		// Check if it's specifically a shortId constraint violation
+		if (err?.fields?.shortId || err?.message?.includes('short_id')) {
+			throw new CustomError("ShortId generation failed - please try again", 500);
+		}
 		throw new CustomError("Conflict: unique constraint violated", 409);
 	}
 	if (name === "SequelizeValidationError") {

@@ -24,6 +24,8 @@ export class UserHomePageComponent implements OnInit, OnDestroy {
     this.auth0.getAccessTokenSilently().subscribe(token => {
       console.log(token);
     });
+
+    this.getUser();
   }
 
   // Subscribe to user info on init
@@ -47,7 +49,7 @@ export class UserHomePageComponent implements OnInit, OnDestroy {
   //Test API call to get user info from backend
   getUser() {
     // get email from Auth0 profile
-    this.api.request({ path: '/users', method: 'POST' }).subscribe({
+    this.api.request({ path: '/users/me', method: 'GET' }).subscribe({
       next: (response) => {
         this.user = response.user;
         console.log('API response:', response);

@@ -1,67 +1,41 @@
 import { Users } from '../../models/user.model';
 
-export async function haveUsers() {
-	const count = await Users.count();
-	return count > 0;
-}
-
-// Find user by Auth0 ID
-export async function findById(id: string) {
-	const user = await Users.findByPk(id);
-	return sanitizeUser(user);
-}
-
-// Find user by username
-export async function findByUsername(userName: string) {
- 	const user = await Users.findOne({ where: { userName }});
- 	return sanitizeUser(user);
-}
-
-// Find user by display name
-export async function findByDisplayName(displayName: string) {
- 	const user = await Users.findOne({ where: { displayName }});
- 	return sanitizeUser(user);
-}
-
-// Create a new user
-export async function createUser(userData: Partial<Users>) {
+// #region User CRUD
+export async function createUser(
+	userData: Partial<Users>): Promise<Users> {
 	const created = await Users.create(userData as any);
-	return sanitizeUser(created);
+	return created;
 }
 
 // Update existing user
-export async function updateUser(auth0Id: string, patch: Partial<Users>) {
-	await Users.update(patch, { where: { auth0Id: auth0Id } });
-	const user = await Users.findOne({ where: { auth0Id: auth0Id }});
-	return sanitizeUser(user);
+export async function updateUser(
+	auth0Id: string, 
+	patch: Partial<Users>): Promise<boolean> {
+	const updated = await Users.update(patch, { where: { auth0Id: auth0Id } });
+	return updated[0] > 0;
 }
 
+export async function deleteUser(auth0Id: string): Promise<boolean> {
+	const deleted = await Users.destroy({ where: { auth0Id: auth0Id } });
+	return deleted > 0;
+}
+// #endregion
 
-// Sanitize user object by removing sensitive/internal fields
-function sanitizeUser(user: any) {
-	if (!user) return null;
+// #region User FIND
+// Find user by Auth0 ID
+export async function findById(id: string): Promise<Users | null> {
+	return await Users.findByPk(id);
+}
 
-	// If this is a Sequelize instance, get a plain object copy
-	let plain: any;
-	try {
-		if (typeof user.get === 'function') {
-			plain = user.get({ plain: true });
-		} else if (typeof user.toJSON === 'function') {
-			plain = user.toJSON();
-		} else {
-			plain = { ...user };
-		}
-	} catch (e) {
-		plain = { ...user };
-	}
+// Find user by username 
+export async function findByUsername(userName: string): Promise<Users | null> {
+ 	return await Users.findOne({ 
+		where: { userName }});
+}
+// #endregion
 
-	user = plain;
-
-	// Remove sensitive/internal fields	
-	delete user.auth0Id;
-	delete user.isAdmin;
-	delete user.created_at;
-	delete user.updated_at;
-
-	return user;
+// Check if any users exist
+export async function haveUsers(): Promise<boolean> {
+	const count = await Users.count();
+	return count > 0;
 }

@@ -13,7 +13,7 @@ export async function checkAdmin(req: Request, res: Response, next: NextFunction
     const user = await findById(userId);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    if (!user.is_admin) {
+    if (!user.isAdmin) {
       return res.status(403).json({ error: "Forbidden: Admins only" });
     }
 

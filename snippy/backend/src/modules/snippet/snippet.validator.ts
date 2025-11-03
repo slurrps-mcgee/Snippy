@@ -25,14 +25,12 @@ export const validateCreateSnippet = async (payload: any) => {
 
 
 const updateSnippetSchema = Joi.object({
-    shortId: Joi.string().required(),
     name: Joi.string().min(1).max(255).optional(),
     description: Joi.string().max(1000).optional().allow(null, ''),
     tags: Joi.array().items(Joi.string().max(50)).optional(),
     isPrivate: Joi.boolean().optional(),
     snippetFiles: Joi.array().items(
         Joi.object({
-            snippetFileID: Joi.string().uuid().required(),
             fileType: Joi.string().min(1).max(255).optional(),
             content: Joi.string().optional(),
         })
@@ -41,6 +39,17 @@ const updateSnippetSchema = Joi.object({
 
 export const validateUpdateSnippet = async (payload: any) => {
     const { error } = updateSnippetSchema.validate(payload);
+    if (error) throw new CustomError(error.message, 400);
+
+    return true;
+}
+
+const forkSnippetSchema = Joi.object({
+    shortId: Joi.string().required(),
+});
+
+export const validateForkSnippet = async (payload: any) => {
+    const { error } = forkSnippetSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
 
     return true;

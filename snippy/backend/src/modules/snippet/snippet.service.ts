@@ -1,34 +1,38 @@
 import { sequelize } from "../../config/sequelize";
+import { Snippets } from "../../models/snippet.model";
 import { CustomError } from "../../utils/custom-error";
 import { handleSequelizeError } from "../../utils/helper";
 import logger from "../../utils/logger";
+import { findByUsername } from "../user/user.repo";
 import {
     createSnippet,
     createSnippetFiles,
     decrementSnippetForkCount,
     deleteSnippet,
-    findAllPublicSnippets,
+    getAllPublicSnippets,
     findByShortId,
-    findByPK,
     incrementSnippetForkCount,
     updateSnippet,
-    validateOwnership,
     updateSnippetFiles,
-    findAllUserSnippets,
+    incrementSnippetViewCount,
+    getMySnippets,
+    getUserPublicSnippets,
+    searchSnippets,
 } from "./snippet.repo";
 
-// #region Create
+// #region CREATE
+// Create Snippet
 export async function createSnippetHandler(payload: any) {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
         // Use transaction to ensure atomicity
         return await sequelize.transaction(async (t) => {
-            // Create the snippet
+            // Create the snippet (shortId resilience handled in @BeforeCreate hook)
             var newSnippet = await createSnippet({
                 auth0Id,
                 ...payload.body,
-                shortId: '' // auto-generated
+                shortId: '' // auto-generated with resilience in createUniqueShortName
             }, t);
 
             // Set snippetId for each snippet file from newSnippet
@@ -42,7 +46,7 @@ export async function createSnippetHandler(payload: any) {
             // Query back the new snippet with its files
             newSnippet = await findByShortId(newSnippet.shortId, t) as any;
 
-            return { snippet: newSnippet };
+            return { snippet: sanitizeSnippet(newSnippet) };
         });
     } catch (err: any) {
         if (err instanceof CustomError) throw err;
@@ -51,97 +55,7 @@ export async function createSnippetHandler(payload: any) {
         handleSequelizeError(err);
     }
 }
-// #endregion
-
-// #region Update
-
-export async function updateSnippetHandler(payload: any) {
-    try {
-        const auth0Id = payload.auth?.payload?.sub;
-        const shortId = payload.body.shortId;
-        const patch = payload.body;
-
-        // Prevent updating system fields
-        delete patch.snippetId;
-        delete patch.auth0Id;
-        delete patch.shortId;
-        delete patch.parentSnippetId;
-
-        return await sequelize.transaction(async (t) => {
-            var snippet = await findByShortId(shortId, t);
-            if (!snippet) {
-                throw new CustomError("Snippet not found", 404);
-            }
-
-            const ownsSnippet = await validateOwnership(auth0Id, shortId, t);
-            if (!ownsSnippet) {
-                throw new CustomError("Unauthorized: not snippet owner", 401);
-            }
-
-            await updateSnippet(shortId, patch, t);
-
-
-            console.log(payload.body.snippetFiles);
-            for(const filePatch of payload.body.snippetFiles || []) {
-                console.log(filePatch);
-                await updateSnippetFiles(filePatch.snippetFileID, filePatch, t);
-            }
-
-            snippet = await findByShortId(shortId, t);
-
-            return { snippet: snippet };
-        });
-    } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`updateSnippetHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
-    }
-}
-
-// #endregion
-
-// #region Delete
-
-export async function deleteSnippetHandler(payload: any) {
-    try {
-        const auth0Id = payload.auth?.payload?.sub;
-        const shortId = payload.params.shortId;
-
-        return await sequelize.transaction(async (t) => {
-            const snippet = await findByShortId(shortId, t);
-            if (!snippet) {
-                throw new CustomError("Snippet not found", 404);
-            }
-
-            const ownsSnippet = await validateOwnership(auth0Id, shortId, t);
-            if (!ownsSnippet) {
-                throw new CustomError("Unauthorized: not snippet owner", 401);
-            }
-
-            if (snippet.parentSnippetId) {
-                const parentSnippet = await findByPK(snippet.parentSnippetId || '');
-                if (parentSnippet) {
-                    await decrementSnippetForkCount(parentSnippet.shortId, t);
-                }
-            }
-
-            await deleteSnippet(shortId, t);
-
-            return { message: "Snippet deleted successfully" };
-        });
-    } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`deleteSnippetHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
-    }
-}
-
-// #endregion
-
-// #region Fork Snippet
-
+// Fork Snippet
 export async function forkSnippetHandler(payload: any) {
     try {
         const auth0Id = payload.auth?.payload?.sub;
@@ -155,15 +69,19 @@ export async function forkSnippetHandler(payload: any) {
                 throw new CustomError("Original snippet not found", 404);
             }
 
+            if(originalSnippet.isPrivate && originalSnippet.auth0Id !== auth0Id) {
+                throw new CustomError("Unauthorized to fork private snippet", 401);
+            }
+
             // Create fork data with only the necessary fields
             const forkData = {
                 auth0Id: auth0Id,
-                parentSnippetId: originalSnippet.snippetId,
+                parentShortId: originalSnippet.shortId,
                 name: originalSnippet.name,
                 description: originalSnippet.description,
                 tags: originalSnippet.tags,
                 isPrivate: originalSnippet.isPrivate,
-                shortId: '' // auto-generated
+                shortId: '' // auto-generated with resilience in createUniqueShortName
             };
 
             var forkedSnippet = await createSnippet(forkData as any, t);
@@ -182,7 +100,7 @@ export async function forkSnippetHandler(payload: any) {
 
             forkedSnippet = await findByShortId(forkedSnippet.shortId, t) as any;
 
-            return { snippet: forkedSnippet };
+            return { snippet: sanitizeSnippet(forkedSnippet) };
         });
 
     } catch (err: any) {
@@ -192,31 +110,125 @@ export async function forkSnippetHandler(payload: any) {
         handleSequelizeError(err);
     }
 }
-
 // #endregion
 
-// #region Get All Public Snippets (Pagination)
-
-export async function getAllPublicSnippetsHandler(payload: any) {
+// #region UPDATE
+export async function updateSnippetHandler(payload: any) {
     try {
-        const page = parseInt(payload.query.page) || 1;
-        const limit = parseInt(payload.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        const auth0Id = payload.auth?.payload?.sub;
+        const shortId = payload.params.shortId;
+        const patch = payload.body;
 
-        const snippets = await findAllPublicSnippets(offset, limit);
-        return { snippets };
+        // Prevent updating system fields
+        delete patch.snippetId;
+        delete patch.auth0Id;
+        delete patch.shortId;
+        delete patch.parentShortId;
+
+        return await sequelize.transaction(async (t) => {
+            var snippet = await findByShortId(shortId, t);
+            
+            if (!snippet) {
+                throw new CustomError("Snippet not found", 404);
+            }
+
+            const ownsSnippet = snippet.auth0Id === auth0Id;
+            if (!ownsSnippet) {
+                throw new CustomError("Unauthorized: not snippet owner", 401);
+            }
+
+            await updateSnippet(shortId, patch, t);
+
+            // Update snippet files - match by index or create mapping
+            const existingFiles = snippet.snippetFiles || [];
+            const patchFiles = payload.body.snippetFiles || [];
+
+            for (let i = 0; i < patchFiles.length; i++) {
+                const filePatch = patchFiles[i];
+                
+                if (i < existingFiles.length) {
+                    // Update existing file using its ID
+                    const existingFile = existingFiles[i];
+                    await updateSnippetFiles(existingFile.snippetFileID, filePatch, t);
+                } else {
+                    // If more files in patch than exist, create new ones
+                    const newFile = {
+                        ...filePatch,
+                        snippetId: snippet.snippetId
+                    };
+                    await createSnippetFiles([newFile], t);
+                }
+            }
+
+            snippet = await findByShortId(shortId, t);
+
+            return { snippet: sanitizeSnippet(snippet!) };
+        });
     } catch (err: any) {
         if (err instanceof CustomError) throw err;
 
-        logger.debug(`getAllPublicSnippetsHandler error: ${err?.stack || err}`);
+        logger.debug(`updateSnippetHandler error: ${err?.stack || err}`);
+        handleSequelizeError(err);
+    }
+}
+// Update Snippet View Count
+export async function updateSnippetViewCountHandler(payload: any) {
+    try {
+        const shortId = payload.params.shortId;
+
+        return await sequelize.transaction(async (t) => {
+            await incrementSnippetViewCount(shortId, t);
+
+            const updatedSnippet = await findByShortId(shortId, t);
+
+            return { snippet: updatedSnippet };
+        });
+    } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+
+        logger.debug(`updateSnippetViewCountHandler error: ${err?.stack || err}`);
+        handleSequelizeError(err);
+    }
+}
+// #endregion
+
+// #region DELETE
+export async function deleteSnippetHandler(payload: any) {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        const shortId = payload.params.shortId;
+
+        return await sequelize.transaction(async (t) => {
+            const snippet = await findByShortId(shortId, t);
+            if (!snippet) {
+                throw new CustomError("Snippet not found", 404);
+            }
+
+            const ownsSnippet = snippet.auth0Id === auth0Id;
+            if (!ownsSnippet) {
+                throw new CustomError("Unauthorized: not snippet owner", 401);
+            }
+
+            if (snippet.parentShortId) {
+                await decrementSnippetForkCount(snippet.parentShortId, t);
+            }
+
+            await deleteSnippet(shortId, t);
+
+            return { message: "Snippet deleted successfully" };
+        });
+    } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+
+        logger.debug(`deleteSnippetHandler error: ${err?.stack || err}`);
         handleSequelizeError(err);
     }
 }
 
 // #endregion
 
-// #region Get By Short ID
-
+// #region READ Handlers
+// Get Snippet by ShortId
 export async function getSnippetHandler(payload: any) {
     const auth0Id = payload.auth?.payload?.sub;
     const shortId = payload.params.shortId;
@@ -232,7 +244,10 @@ export async function getSnippetHandler(payload: any) {
             throw new CustomError("Unauthorized", 401);
         }
 
-        return { snippet };
+        // Check if the current user owns this snippet
+        const isOwner = snippet.auth0Id === auth0Id;
+
+        return { snippet: sanitizeSnippet(snippet), isOwner };
     } catch (err: any) {
         if (err instanceof CustomError) throw err;
 
@@ -240,22 +255,38 @@ export async function getSnippetHandler(payload: any) {
         handleSequelizeError(err);
     }
 }
-
-// #endregion
-
-// #region Get All User's Snippets (Pagination)
-
-export async function getAllUserSnippetsHandler(payload: any) {
+// Get All Public Snippets (Pagination)
+export async function getAllPublicSnippetsHandler(payload: any) {
     try {
-        const auth0Id = payload.auth?.payload?.sub;
         const page = parseInt(payload.query.page) || 1;
         const limit = parseInt(payload.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        console.log(`Fetching snippets for user: ${auth0Id}, page: ${page}, limit: ${limit}`);
+        const snippets = await getAllPublicSnippets(offset, limit);
 
-        const snippets = await findAllUserSnippets(auth0Id, offset, limit);
-        return { snippets };
+        return { snippets: snippets.map(sanitizeSnippetList) };
+    } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+
+        logger.debug(`getAllPublicSnippetsHandler error: ${err?.stack || err}`);
+        handleSequelizeError(err);
+    }
+}
+// Get Public Snippets by User
+export async function getUserPublicSnippetsHandler(payload: any) {
+    try {
+        const userName = payload.params.userName;
+        const page = parseInt(payload.query.page) || 1;
+        const limit = parseInt(payload.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const user = await findByUsername(userName);
+        if (!user) {
+            throw new CustomError("User not found", 404);
+        }
+
+        const snippets = await getUserPublicSnippets(user.auth0Id, offset, limit);
+        return { snippets: snippets.map(sanitizeSnippetList) };
     } catch (err: any) {
         if (err instanceof CustomError) throw err;
 
@@ -263,9 +294,80 @@ export async function getAllUserSnippetsHandler(payload: any) {
         handleSequelizeError(err);
     }
 }
+// Get Current User's Snippets
+export async function getMySnippetsHandler(payload: any) {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        const page = parseInt(payload.query.page) || 1;
+        const limit = parseInt(payload.query.limit) || 10;
+        const offset = (page - 1) * limit;
 
+        const snippets = await getMySnippets(auth0Id, offset, limit);
+        return { snippets: snippets.map(sanitizeSnippetList) };
+    } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+
+        logger.debug(`getMySnippetsHandler error: ${err?.stack || err}`);
+        handleSequelizeError(err);
+    }
+}
+// Search Snippets
+export async function searchSnippetsHandler(payload: any) {
+    try {
+        // Handle multiple search parameter formats:
+        // ?q=searchterm (general search)
+        // ?name=searchterm (search by name)
+        // ?description=searchterm (search by description)
+        const generalQuery = payload.query.q || '';
+        const nameQuery = payload.query.name || '';
+        const descriptionQuery = payload.query.description || '';
+        
+        // Combine all search terms into a single query string
+        const query = generalQuery || nameQuery || descriptionQuery || '';
+        
+        if (!query.trim()) {
+            return { snippets: [] };
+        }
+        
+        const page = parseInt(payload.query.page) || 1;
+        const limit = parseInt(payload.query.limit) || 10;
+        const offset = (page - 1) * limit;
+
+        const snippets = await searchSnippets(query, offset, limit);
+        
+        return { snippets: snippets.map(sanitizeSnippetList) };
+    } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+
+        logger.debug(`searchSnippetsHandler error: ${err?.stack || err}`);
+        handleSequelizeError(err);
+    }
+}
 // #endregion
 
-// #region Shared Error Mapper
+// Sanitize Snippet before returning to client
+function sanitizeSnippet(snippet: Snippets): any {
+    return {
+        shortId: snippet.shortId,
+        name: snippet.name,
+        description: snippet.description,
+        tags: snippet.tags,
+        isPrivate: snippet.isPrivate,
+        forkCount: snippet.forkCount,
+        viewCount: snippet.viewCount,
+        parentShortId: snippet.parentShortId,
+        snippetFiles: snippet.snippetFiles?.map(file => ({
+            fileType: file.fileType,
+            content: file.content
+        }))
+    }
+}
 
-// #endregion
+function sanitizeSnippetList(snippet: Snippets): any {
+    return {
+        shortId: snippet.shortId,
+        name: snippet.name,
+        description: snippet.description,
+        tags: snippet.tags
+    }
+}

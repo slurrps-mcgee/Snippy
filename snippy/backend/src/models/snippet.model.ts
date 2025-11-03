@@ -14,7 +14,6 @@ import { Users } from "./user.model";
 import { Favorites } from "./favorite.model";
 import { Comments } from "./comment.model";
 import { createUniqueShortName } from "../utils/helper";
-import { allow } from "joi";
 
 @Table({
   tableName: "snippets",
@@ -57,12 +56,12 @@ export class Snippets extends Model<Snippets> {
   // Nullable self-referential FK to indicate this snippet was forked from another.
   @ForeignKey(() => Snippets)
   @Column({
-    field: 'parent_snippet_id',
-    type: DataType.UUID,
+    field: 'parent_snippet_short_id',
+    type: DataType.STRING(16),
     allowNull: true,
     defaultValue: null,
   })
-  parentSnippetId?: string | null;
+  parentShortId?: string | null;
 
   @Column({
     type: DataType.STRING,
@@ -129,16 +128,16 @@ export class Snippets extends Model<Snippets> {
 
   // Self-referential relation: parent snippet (if this is a fork)
   @BelongsTo(() => Snippets, {
-    foreignKey: 'parent_snippet_id',
-    targetKey: 'snippetId',
+    foreignKey: 'parent_snippet_short_id',
+    targetKey: 'shortId',
     constraints: false,
   })
   parent?: Snippets;
 
   // List of forks that reference this snippet as parent
   @HasMany(() => Snippets, {
-    foreignKey: 'parent_snippet_id',
-    sourceKey: 'snippetId',
+    foreignKey: 'parent_snippet_short_id',
+    sourceKey: 'shortId',
     constraints: false,
   })
   forks!: Snippets[];
