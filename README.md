@@ -16,6 +16,7 @@ Docker Compose is used to run all services together and wire environment variabl
 - Docker (version supporting Compose v2+)
 - Docker Compose (or Docker CLI with compose support)
 - [Auth0](https://auth0.com/) 
+- *NOTE: Either run docker locally or use cloudflare tunnel to tunnel the frontend service as Auth0 only works on a secure origin.
 - A terminal and basic familiarity with Docker commands
 
 Verify Docker is running:
