@@ -9,10 +9,10 @@ export const routes: Routes = [
 // {path: '', redirectTo: '/home', pathMatch: 'full' },
 { path: '', component: HomePageComponent},
 { path: 'home', component: UserHomePageComponent, canActivate: [AuthGuard] }, // Protected route
-{ path: 'snippet', component: SnippetCodeEditorComponentComponent },
+{ path: 'snippet', component: SnippetCodeEditorComponentComponent, canActivate: [AuthGuard] },
 
-{ path: ':username', component: ProfilePageComponent },
-{ path: ':username/snippet/:id', component: SnippetCodeEditorComponentComponent },
+{ path: ':username', component: ProfilePageComponent, canActivate: [AuthGuard] },
+{ path: ':username/snippet/:id', component: SnippetCodeEditorComponentComponent, canActivate: [AuthGuard] },
 
 { path: '**', redirectTo: '' }, // catch-all -> home
 ];

@@ -1,6 +1,6 @@
 {
   "name": "snippy_frontend",
-  "version": "0.1.2",
+  "version": "0.1.4",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -8,6 +8,10 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
+  "keywords": ["Angular", "Frontend", "Snippy"],
+  "author": "Kenneth Lamb",
+  "license": "MIT",
+  "description": "Frontend application for Snippy",
   "private": true,
   "dependencies": {
     "@angular/common": "^19.2.0",

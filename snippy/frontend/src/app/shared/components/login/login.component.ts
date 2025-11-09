@@ -1,6 +1,7 @@
 import { Component, Inject } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { CommonModule, DOCUMENT } from '@angular/common';
+import { AuthLocalService } from '../../services/auth/auth.local.service';
 
 @Component({
   selector: 'app-login',
@@ -10,14 +11,18 @@ import { CommonModule, DOCUMENT } from '@angular/common';
 })
 export class LoginComponent {
   // Inject the AuthService to enable authentication features.
-  constructor(@Inject(DOCUMENT) public document: Document, public auth: AuthService) {}
+  constructor(
+    @Inject(DOCUMENT) public document: Document, 
+    public auth: AuthService,
+    private authLocal: AuthLocalService
+  ) {}
 
   login() {
     this.auth.loginWithRedirect({appState: { target: '/home' }});
-    const win: any = window as any;
   }
 
   logout() {
-    this.auth.logout({ logoutParams: {returnTo: window.location.origin + '/'} });
+    // Use AuthLocalService logout for consistent state management
+    this.authLocal.logout();
   }
 }

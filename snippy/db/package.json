@@ -1,4 +1,8 @@
 {
   "name": "snippy_db",
-  "version": "1.0.1"
+  "version": "1.0.1",
+  "keywords": ["MySQL", "database", "Snippy"],
+  "author": "Kenneth Lamb",
+  "license": "MIT",
+  "description": "Database module for Snippy application"
 }
