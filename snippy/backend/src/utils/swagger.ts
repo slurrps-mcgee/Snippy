@@ -6,14 +6,29 @@ const options = {
     openapi: '3.0.0',
     info: {
       title: 'Snippy API',
-      version: '0.2.2',
+      version: '0.3.1',
       description: 'API documentation for Snippy',
+    },
+    servers: [
+      {
+        url: '/api/v1',
+        description: 'API v1 server',
+      },
+    ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          description: 'JWT Bearer token for authorization',
+        },
+      },
     },
   },
   apis: [
-    path.resolve(__dirname, '../docs/*.yaml'),
-    path.resolve(__dirname, '../docs/schema/*.yaml'),
-  ], // Path to the API docs
+    path.resolve(__dirname, '../modules/**/*.controller.ts'),
+  ], // Path to controller files with JSDoc swagger comments
 };
 
 const swaggerSpec = swaggerJSDoc(options);

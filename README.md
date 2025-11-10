@@ -2,6 +2,15 @@
 
 This is a Codepen.io clone that can be hosted locally by anyone and is opensource.
 
+## Table of Contents
+* [Overview] (#overview)
+* [Prerequisites](#prerequisites)
+* [`Auth0 Setup`](#auth0-setup)
+* [`ENV file`](#env-file)
+* [`Primary Setup`](#primary-setup)
+* [`Development Setup`](#development-setup)
+
+
 ## Overview
 
 This repository contains a 3-service application:
@@ -15,8 +24,9 @@ Docker Compose is used to run all services together and wire environment variabl
 
 - Docker (version supporting Compose v2+)
 - Docker Compose (or Docker CLI with compose support)
+- Portainer setup
 - [Auth0](https://auth0.com/) 
-- *NOTE: Either run docker locally or use cloudflare tunnel to tunnel the frontend service as Auth0 only works on a secure origin.
+  - *NOTE: Either run docker locally or use cloudflare tunnel to tunnel the frontend service as Auth0 only works on a secure origin.
 - A terminal and basic familiarity with Docker commands
 
 Verify Docker is running:
@@ -26,7 +36,7 @@ docker --version
 docker compose version
 ```
 
-## Setup Auth0
+## Auth0 Setup
 
 - Sign up for Auth0 with a free account
 - Create Application  
@@ -53,7 +63,7 @@ docker compose version
       - http://localhost:3000
     - Keep everything the same and click save
 
-## .env file
+## ENV file
 
 Put a `.env` file in the repository root (next to `docker-compose.yml`). Compose will load environment variables from that file. Example `.env`:
 
@@ -69,10 +79,11 @@ DB_PASS=
 MYSQL_ROOT_PASSWORD= 
 
 #AUTH0
+  #Required
 AUTH0_DOMAIN=
 AUTH0_CLIENT_ID=
 
-  #OPTIONAL only needed only if you change the api address from localhost to be public
+  #OPTIONAL
 AUTH0_AUDIENCE=
 
 #API
@@ -89,11 +100,13 @@ FRONTEND_PORT= #DEFAULT 4200
 
 Notes: Not all of these variables are needed as most have defaults
 
-## SETUP
+## Primary Setup
 
 ### Run the full stack using docker compose pulling from dockerhub
 
 Notes: this assumes you are using portainer to setup .env variables. If not you can update to just use a .env file from the options in the [ENV](#env-file) section
+
+*** Important *** If you are running docker on another computer and want to access it locally only you will need to setup nginx proxy manager to setup a self signed cert as Auth0 requires a secure origin to work and will not work using the IP of the docker container. Follow the below to link to setup [nginx](#nginx-setup) instead of the Primary Setup
 
 ### Docker Compose File Example
 
@@ -142,7 +155,8 @@ services:
 volumes:
   mysql-data:
 ```
-## Development
+
+## Development Setup
 
 ### Run downloaded application locally
 
@@ -198,3 +212,86 @@ services:
 volumes:
   mysql-data:
 ```
+
+## NGINX Setup
+
+### Portainer
+- Setup a new docker network called NPM
+- Create a new stack for nginx using the below yaml
+```yaml
+services:
+  app:
+    image: 'jc21/nginx-proxy-manager:latest'
+    restart: unless-stopped
+    ports:
+      - '80:80'
+      - '81:81'
+      - '443:443'
+    volumes:
+      - ./data:/data
+      - ./letsencrypt:/etc/letsencrypt
+    networks:
+      - NPM
+
+networks:
+  NPM:
+    external: true
+```
+- Create a new stack for snippy
+```yaml
+version: '3.8'
+services:
+  db:
+    image: kennyl777/snippy-db:latest
+    container_name: snippy-db
+    env_file:
+      - stack.env
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - NPM
+
+  api:
+    image: kennyl777/snippy-api:latest
+    container_name: snippy-api
+    env_file:
+      - stack.env
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - NPM
+
+  frontend:
+    image: kennyl777/snippy-frontend:latest
+    container_name: snippy-frontend
+    env_file:
+      - stack.env
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - NPM
+
+volumes:
+  mysql-data:
+
+networks:
+  NPM:
+    external: true
+```
+- Setup the env variables using the [ENV](#env-file)

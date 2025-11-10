@@ -3,7 +3,7 @@ import { getUserProfile, checkUsername, ensureUser, updateUser, getCurrentUserPr
 
 const userRouter = express.Router();
 
-userRouter.get('/check-username/:userName', checkUsername); // More specific route first
+userRouter.get('/check-username/:userName', checkUsername);
 userRouter.get('/me', getCurrentUserProfile);
 userRouter.get('/:userName', getUserProfile);
 userRouter.post('/', ensureUser);

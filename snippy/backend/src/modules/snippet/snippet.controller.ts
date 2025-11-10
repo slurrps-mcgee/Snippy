@@ -13,6 +13,40 @@ import {
 } from "./snippet.service";
 import { validateCreateSnippet, validateForkSnippet, validateUpdateSnippet } from './snippet.validator';
 
+/**
+ * @swagger
+ * /snippets:
+ *   post:
+ *     tags:
+ *       - Snippet
+ *     summary: Create a new snippet
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               isPrivate:
+ *                 type: boolean
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               snippetFiles:
+ *                 type: array
+ *     responses:
+ *       '201':
+ *         description: Created snippet
+ *       '400':
+ *         description: Validation error
+ */
 export async function createSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateCreateSnippet(req.body);
@@ -24,6 +58,42 @@ export async function createSnippet(req: Request, res: Response, next: NextFunct
     }
 }
 
+/**
+ * @swagger
+ * /snippets/{shortId}:
+ *   put:
+ *     tags:
+ *       - Snippet
+ *     summary: Update a snippet
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: shortId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               isPrivate:
+ *                 type: boolean
+ *               tags:
+ *                 type: array
+ *     responses:
+ *       '200':
+ *         description: Updated snippet
+ *       '404':
+ *         description: Not found
+ */
 export async function updateSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateUpdateSnippet(req.body);
@@ -35,6 +105,27 @@ export async function updateSnippet(req: Request, res: Response, next: NextFunct
     }
 }
 
+/**
+ * @swagger
+ * /snippets/{shortId}:
+ *   delete:
+ *     tags:
+ *       - Snippet
+ *     summary: Delete a snippet
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: shortId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '204':
+ *         description: Deleted
+ *       '404':
+ *         description: Not found
+ */
 export async function deleteSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await deleteSnippetHandler(req);
@@ -44,6 +135,30 @@ export async function deleteSnippet(req: Request, res: Response, next: NextFunct
     }
 }
 
+/**
+ * @swagger
+ * /snippets/fork:
+ *   post:
+ *     tags:
+ *       - Snippet
+ *     summary: Fork an existing snippet
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               shortId:
+ *                 type: string
+ *     responses:
+ *       '201':
+ *         description: Forked snippet
+ *       '404':
+ *         description: Not found
+ */
 export async function forkSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateForkSnippet(req.body);
@@ -56,9 +171,17 @@ export async function forkSnippet(req: Request, res: Response, next: NextFunctio
 }
 
 /**
- * Controller for getting all public snippets
- * Calls service and sends response
- * Returns array of public snippets
+ * @swagger
+ * /snippets/public:
+ *   get:
+ *     tags:
+ *       - Snippet
+ *     summary: Get public snippets
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Public snippets list
  */
 export async function getPublicSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -70,9 +193,17 @@ export async function getPublicSnippets(req: Request, res: Response, next: NextF
 }
 
 /**
- * Controller for getting current user's snippets
- * Calls service and sends response
- * Returns array of user's own snippets
+ * @swagger
+ * /snippets/me:
+ *   get:
+ *     tags:
+ *       - Snippet
+ *     summary: Get snippets for the current user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: User's snippets
  */
 export async function getCurrentUserSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -84,9 +215,23 @@ export async function getCurrentUserSnippets(req: Request, res: Response, next: 
 }
 
 /**
- * Controller for searching snippets by query
- * Calls service and sends response
- * Returns array of snippets matching search criteria
+ * @swagger
+ * /snippets/search:
+ *   get:
+ *     tags:
+ *       - Snippet
+ *     summary: Search snippets by query
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Search query
+ *     responses:
+ *       '200':
+ *         description: Search results
  */
 export async function searchSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -98,9 +243,25 @@ export async function searchSnippets(req: Request, res: Response, next: NextFunc
 }
 
 /**
- * Controller for getting a specific snippet by its short ID
- * Calls service and sends response
- * Returns single snippet with all details and ownership status
+ * @swagger
+ * /snippets/{shortId}:
+ *   get:
+ *     tags:
+ *       - Snippet
+ *     summary: Get a snippet by shortId
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: shortId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Snippet object
+ *       '404':
+ *         description: Not found
  */
 export async function getSnippetByShortId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -112,9 +273,25 @@ export async function getSnippetByShortId(req: Request, res: Response, next: Nex
 }
 
 /**
- * Controller for getting a user's public snippets
- * Calls service and sends response
- * Returns array of public snippets by specified user
+ * @swagger
+ * /snippets/user/{userName}:
+ *   get:
+ *     tags:
+ *       - Snippet
+ *     summary: Get public snippets for a user
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: userName
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: User public snippets
+ *       '404':
+ *         description: Not found
  */
 export async function getUserPublicSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -124,12 +301,25 @@ export async function getUserPublicSnippets(req: Request, res: Response, next: N
         next(error);
     }
 }
-    
 
 /**
- * Controller for updating snippet view count
- * Calls service and sends response
- * Returns updated snippet with incremented view count
+ * @swagger
+ * /snippets/{shortId}/view:
+ *   post:
+ *     tags:
+ *       - Snippet
+ *     summary: Increment view count for a snippet
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: shortId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: View count updated
  */
 export async function updateSnippetViewCount(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
