@@ -1,12 +1,13 @@
 import path from 'path';
 import swaggerJSDoc from 'swagger-jsdoc';
+import { version } from '../../package.json';
 
 const options = {
   definition: {
     openapi: '3.0.0',
     info: {
       title: 'Snippy API',
-      version: '0.3.1',
+      version: version,
       description: 'API documentation for Snippy',
     },
     servers: [

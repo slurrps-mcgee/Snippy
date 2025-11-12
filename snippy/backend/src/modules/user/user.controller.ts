@@ -25,7 +25,7 @@ import { validateRegister, validateUpdateUser } from './user.validator';
  *           schema:
  *             type: object
  *             properties:
- *               userName:
+ *               name:
  *                 type: string
  *               pictureUrl:
  *                 type: string

@@ -9,7 +9,7 @@ This is a Codepen.io clone that can be hosted locally by anyone and is opensourc
 * [`ENV file`](#env-file)
 * [`Primary Setup`](#primary-setup)
 * [`Development Setup`](#development-setup)
-
+* [`NGINX Setup`](*nginx-setup)
 
 ## Overview
 

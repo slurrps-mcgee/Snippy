@@ -1,20 +1,22 @@
 import { Users } from "../../models/user.model";
 import { CustomError } from "../../utils/custom-error";
 import logger from '../../utils/logger';
-import { fileTypes, handleSequelizeError, invalidUsernames } from "../../utils/helper";
+import { fileTypes, invalidUsernames } from "../../utils/helper";
 import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
 import { Snippets } from "../../models/snippet.model";
 import { SnippetFiles } from "../../models/snippetFile.model";
 import { Comments } from "../../models/comment.model";
 import { Favorites } from "../../models/favorite.model";
+import { handleError } from "../../utils/error-handler";
 
 export async function ensureUserHandler(payload: any) {
     const auth0Id = payload.auth?.payload?.sub;
+    var created = false;
 
     try {
         var user = await findById(auth0Id);
 
-        // If user already exists, return the existing user (possibly after patch)
+        // Check if the user exists
         if (user) {
             // incoming values from Auth0 profile (you already extract these)
             const pictureUrl = payload?.body?.pictureUrl;
@@ -22,7 +24,7 @@ export async function ensureUserHandler(payload: any) {
             // Build a patch only for allowed fields
             const patch: any = {};
 
-            // Update picture_url if different and not empty
+            // Update picture_url if different and not empty this usually updates from Auth0 profile only as no bucket for images yet
             if (pictureUrl && pictureUrl !== user.pictureUrl) {
                 // Optionally check last_synced_at or last_modified_by to avoid clobbering manual changes
                 patch.pictureUrl = pictureUrl;
@@ -35,58 +37,49 @@ export async function ensureUserHandler(payload: any) {
                 if (!updated) {
                     throw new CustomError('Failed to update user', 500);
                 }
-
-                // re-fetch the user after update and sanitize for frontend
-                user = await findById(auth0Id);
-
-                // return sanitized user object to caller
-                return { user, created: false };
+            }
+        }
+        else {
+            // Check if any users exist to set isAdmin flag to true for the first user
+            const usersExist = await haveUsers();
+            
+            const details = {
+                name: payload?.body?.name,
+                pictureUrl: payload?.body?.pictureUrl
             }
 
-            // Dummy calls to ensure Models all work together
-            await testModels(auth0Id);
+            const createdUser: Users = await createUser({
+                auth0Id: auth0Id,
+                userName: details.name || '',
+                displayName: details.name,
+                bio: null,
+                pictureUrl: details.pictureUrl,
+                isAdmin: usersExist ? false : true
+            } as any);
 
-            user = sanitizeUser(user!);
+            if (!createdUser) throw new CustomError('Failed to create user', 500);
 
-            // nothing to change
-            return { user, created: false };
+            created = true;
         }
 
-        const usersExist = await haveUsers();
-        const details = {
-            name: payload?.body?.name,
-            pictureUrl: payload?.body?.pictureUrl
-        }
-
-        const createdUser: Users = await createUser({
-            auth0Id: auth0Id,
-            userName: details.name || '',
-            displayName: details.name,
-            bio: null,
-            pictureUrl: details.pictureUrl,
-            isAdmin: usersExist ? false : true
-        } as any);
-
-        if (!createdUser) throw new CustomError('Failed to create user', 500);
-        
-        
         // Dummy calls to ensure Models all work together
         await testModels(auth0Id);
 
-        // Get complete user for business logic, then sanitize for frontend response
+
+
+        // Fetch the user again to return
         user = await findById(auth0Id);
 
+        if (!user) {
+            throw new CustomError('User not found after ensure', 500);
+        }
+
+        // Sanitize user before returning
         user = sanitizeUser(user!);
-
-        return { user, created: true };
+        // Return user and created flag
+        return { user, created };
     } catch (err: any) {
-        // Preserve already-mapped errors
-        if (err instanceof CustomError) throw err;
-
-        // Log original error at debug so we can inspect stack in logs
-        logger.debug(`ensureUserHandler error: ${err?.stack || err}`);
-        // Map known Sequelize/DB error names to HTTP codes
-        handleSequelizeError(err);
+        handleError(err, 'ensureUserHandler');
     }
 }
 
@@ -118,11 +111,7 @@ export async function updateUserHandler(payload: any) {
 
         return { user };
     } catch (err: any) {
-        // Preserve already-mapped errors
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`updateUserHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'updateUserHandler');
     }
 }
 
@@ -144,11 +133,7 @@ export async function deleteUserHandler(payload: any) {
 
         return { success: true };
     } catch (err: any) {
-        logger.debug(`deleteUserHandler error: ${err?.stack || err}`);
-        // Preserve already-mapped errors
-        if (err instanceof CustomError) throw err;
-
-        handleSequelizeError(err);
+        handleError(err, 'deleteUserHandler');
     }
 }
 
@@ -158,12 +143,12 @@ export async function getUserProfileHandler(payload: any) {
 
         // Get user data (already sanitized by findByUsername)
         var user = await findByUsername(userName);
-        
+
         if (!user) {
             throw new CustomError('User not found', 404);
         }
 
-        if(user.isPrivate) {
+        if (user.isPrivate) {
             throw new CustomError('User profile is private', 403);
         }
 
@@ -171,11 +156,7 @@ export async function getUserProfileHandler(payload: any) {
 
         return { user };
     } catch (err: any) {
-        logger.debug(`getUserProfileHandler error: ${err?.stack || err}`);
-        // Preserve already-mapped errors
-        if (err instanceof CustomError) throw err;
-
-        handleSequelizeError(err);
+        handleError(err, 'getUserProfileHandler');
     }
 }
 
@@ -188,7 +169,7 @@ export async function getCurrentUserHandler(payload: any) {
         }
 
         var user = await findById(auth0Id);
-        
+
         if (!user) {
             throw new CustomError('User not found', 404);
         }
@@ -197,11 +178,7 @@ export async function getCurrentUserHandler(payload: any) {
 
         return { user };
     } catch (err: any) {
-        logger.debug(`getCurrentUserHandler error: ${err?.stack || err}`);
-        // Preserve already-mapped errors
-        if (err instanceof CustomError) throw err;
-
-        handleSequelizeError(err);
+        handleError(err, 'getCurrentUserHandler');
     }
 }
 
@@ -216,11 +193,7 @@ export async function checkUserNameAvailabilityHandler(payload: any) {
 
         return { available: !user };
     } catch (err: any) {
-        logger.debug(`checkUserNameAvailability error: ${err?.stack || err}`);
-        // Preserve already-mapped errors
-        if (err instanceof CustomError) throw err;
-
-        handleSequelizeError(err);
+        handleError(err, 'checkUserNameAvailabilityHandler');
     }
 }
 
@@ -236,6 +209,11 @@ function sanitizeUser(user: Users): any {
 
 
 
+
+
+
+
+// Remove after testing
 // Dummy calls to ensure Models all work together
 // TESTIONG PURPOSES ONLY
 async function testModels(auth0Id: string) {
@@ -264,7 +242,7 @@ async function testModels(auth0Id: string) {
         content: 'console.log("Hello, world!");'
     } as any); // Dummy call to ensure Snippet_Files model is imported
 
-    var snippet = await Snippets.findOne({ where: { shortId: test.shortId }});
+    var snippet = await Snippets.findOne({ where: { shortId: test.shortId } });
 
     await Comments.create({
         snippetId: snippet?.snippetId,

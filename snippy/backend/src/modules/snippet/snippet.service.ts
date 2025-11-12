@@ -1,7 +1,7 @@
 import { sequelize } from "../../config/sequelize";
 import { Snippets } from "../../models/snippet.model";
 import { CustomError } from "../../utils/custom-error";
-import { handleSequelizeError } from "../../utils/helper";
+import { handleError } from "../../utils/error-handler";
 import logger from "../../utils/logger";
 import { findByUsername } from "../user/user.repo";
 import {
@@ -49,10 +49,7 @@ export async function createSnippetHandler(payload: any) {
             return { snippet: sanitizeSnippet(newSnippet) };
         });
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`createSnippetHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'createSnippetHandler');
     }
 }
 // Fork Snippet
@@ -104,10 +101,7 @@ export async function forkSnippetHandler(payload: any) {
         });
 
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`forkSnippetHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'forkSnippetHandler');
     }
 }
 // #endregion
@@ -165,10 +159,7 @@ export async function updateSnippetHandler(payload: any) {
             return { snippet: sanitizeSnippet(snippet!) };
         });
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`updateSnippetHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'updateSnippetHandler');
     }
 }
 // Update Snippet View Count
@@ -184,10 +175,7 @@ export async function updateSnippetViewCountHandler(payload: any) {
             return { snippet: updatedSnippet };
         });
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`updateSnippetViewCountHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'updateSnippetViewCountHandler');
     }
 }
 // #endregion
@@ -218,10 +206,7 @@ export async function deleteSnippetHandler(payload: any) {
             return { message: "Snippet deleted successfully" };
         });
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`deleteSnippetHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'deleteSnippetHandler');
     }
 }
 
@@ -249,10 +234,7 @@ export async function getSnippetHandler(payload: any) {
 
         return { snippet: sanitizeSnippet(snippet), isOwner };
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`getSnippetByShortIdHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'getSnippetHandler');
     }
 }
 // Get All Public Snippets (Pagination)
@@ -266,10 +248,7 @@ export async function getAllPublicSnippetsHandler(payload: any) {
 
         return { snippets: snippets.map(sanitizeSnippetList) };
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`getAllPublicSnippetsHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'getAllPublicSnippetsHandler');
     }
 }
 // Get Public Snippets by User
@@ -288,10 +267,7 @@ export async function getUserPublicSnippetsHandler(payload: any) {
         const snippets = await getUserPublicSnippets(user.auth0Id, offset, limit);
         return { snippets: snippets.map(sanitizeSnippetList) };
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`getAllUserSnippetsHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'getUserPublicSnippetsHandler');
     }
 }
 // Get Current User's Snippets
@@ -305,10 +281,7 @@ export async function getMySnippetsHandler(payload: any) {
         const snippets = await getMySnippets(auth0Id, offset, limit);
         return { snippets: snippets.map(sanitizeSnippetList) };
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`getMySnippetsHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'getMySnippetsHandler');
     }
 }
 // Search Snippets
@@ -337,10 +310,7 @@ export async function searchSnippetsHandler(payload: any) {
         
         return { snippets: snippets.map(sanitizeSnippetList) };
     } catch (err: any) {
-        if (err instanceof CustomError) throw err;
-
-        logger.debug(`searchSnippetsHandler error: ${err?.stack || err}`);
-        handleSequelizeError(err);
+        handleError(err, 'searchSnippetsHandler');
     }
 }
 // #endregion

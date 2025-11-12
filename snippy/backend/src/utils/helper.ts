@@ -2,8 +2,8 @@ import { randomInt } from 'crypto';
 import { Users } from '../models/user.model';
 import { Snippets } from '../models/snippet.model';
 import { customAlphabet } from 'nanoid';
-import { CustomError } from './custom-error';
 import { shortIdRetryPolicy, usernameRetryPolicy } from './resiliance';
+import { findByShortId } from '../modules/snippet/snippet.repo';
 
 // Nanoid setup for shortId generation
 const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -31,37 +31,52 @@ export enum fileTypes {
 };
 
 // Generate a unique username for a user
-export const createUniqueUsername = async (user: Users, maxTries = 20) => {
-	let base: string | undefined;
+export const createUniqueUsername = async (user: Users) => {
+	// derive base username from displayName or random adjective-noun
+	let base: string;
 
 	if (user.displayName) {
 		base = user.displayName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
+		if (!base) {
+			const adj = adjectives[randomInt(0, adjectives.length)];
+			const noun = nouns[randomInt(0, nouns.length)];
+			base = `${adj}-${noun}`;
+		}
 	} else {
 		const adj = adjectives[randomInt(0, adjectives.length)];
 		const noun = nouns[randomInt(0, nouns.length)];
 		base = `${adj}-${noun}`;
 	}
 
-	// Make sure username is unique
-	let username: string;
-	let exists = true;
-	for (let i = 0; i < maxTries; i++) {
-		const suffix = randomInt(1000, 9999);
-		username = `${base}${base.includes('-') ? '-' : ''}${suffix}`;
-		const existing = await Users.findOne({ where: { userName: username } });
-		if (!existing) {
-			exists = false;
-			break;
-		}
-	}
+	try {
+		// Use resilience policy to attempt generation with retries on unique constraint errors
+		const username = await usernameRetryPolicy.execute(async () => {
+			// create candidate
+			const suffix = randomInt(1000, 9999);
+			const candidate = `${base}${base.includes('-') ? '-' : ''}${suffix}`;
 
-	if (exists) {
-		username = `${base}-${Date.now()}`;
-	}
+			// check existence
+			const existing = await Users.findOne({ where: { userName: candidate } });
+			if (existing) {
+				const err = new Error(`Username collision for candidate: ${candidate}`) as any;
+				err.name = 'SequelizeUniqueConstraintError';
+				err.fields = { userName: candidate };
+				throw err;
+			}
 
-	user.userName = username!;
-	console.log(`Generated username: ${user.userName}`);
-}
+			console.log(`Generated unique username candidate: ${candidate}`);
+			return candidate;
+		});
+
+		user.userName = username;
+		console.log(`Assigned username: ${user.userName}`);
+	} catch (error) {
+		// All retries exhausted — fallback to timestamped username
+		const fallback = `${base}-${Date.now()}`;
+		user.userName = fallback;
+		console.error(`Falling back to emergency username: ${user.userName}`);
+	}
+};
 
 // Generate a unique shortId for a snippet
 export const createUniqueShortName = async (snippet: Snippets) => {
@@ -85,9 +100,7 @@ async function generateShortIdCandidate(): Promise<string> {
 	const candidate = nano(); // 6 characters
 	
 	// Check uniqueness - if it exists, throw error to trigger retry
-	const exists = await Snippets.findOne({ 
-		where: { shortId: candidate }
-	});
+	const exists = await findByShortId(candidate);
 	
 	if (exists) {
 		// Create an error that matches our resilience policy filter
@@ -108,26 +121,4 @@ function generateEmergencyShortId(): string {
 	const emergencyId = `${randomPart}-${timestamp}`;
 	console.error(`Using emergency shortId: ${emergencyId}`);
 	return emergencyId;
-}
-
-// Handle Sequelize errors and map to CustomError
-export function handleSequelizeError(err: any): never {
-	const name = err?.name;
-
-	if (name === "SequelizeUniqueConstraintError") {
-		// Check if it's specifically a shortId constraint violation
-		if (err?.fields?.shortId || err?.message?.includes('short_id')) {
-			throw new CustomError("ShortId generation failed - please try again", 500);
-		}
-		throw new CustomError("Conflict: unique constraint violated", 409);
-	}
-	if (name === "SequelizeValidationError") {
-		throw new CustomError(err.message || "Validation failed", 400);
-	}
-	if (name === "SequelizeForeignKeyConstraintError") {
-		throw new CustomError("Invalid reference", 400);
-	}
-
-	console.error('Sequelize error:', err);
-	throw new CustomError("Database error", 500);
 }
