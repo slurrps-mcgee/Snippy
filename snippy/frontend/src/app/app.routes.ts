@@ -6,7 +6,7 @@ import { ProfilePageComponent } from './core/pages/profile-page/profile-page.com
 import { SnippetCodeEditorComponentComponent } from './shared/components/snippet-code-editor-component/snippet-code-editor-component.component';
 
 export const routes: Routes = [
-// {path: '', redirectTo: '/home', pathMatch: 'full' },
+
 { path: '', component: HomePageComponent},
 { path: 'home', component: UserHomePageComponent, canActivate: [AuthGuard] }, // Protected route
 { path: 'snippet', component: SnippetCodeEditorComponentComponent, canActivate: [AuthGuard] },

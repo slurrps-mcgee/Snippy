@@ -15,8 +15,6 @@ import cookie from 'cookie-parser';
 // Load environment variables from .env file
 dotenv.config();
 
-const PORT = process.env.PORT || 3000;
-
 const app = express();
 app.set('trust proxy', 1);
 
@@ -72,8 +70,8 @@ const startServer = async () => {
       .then(() => logger.info('Database connection established.'))
       .catch((err) => logger.info('Unable to connect to the database:', err));
 
-    app.listen(PORT, () => {
-      logger.info(`🚀 Snippy API v${version} starting on port ${process.env.API_PORT || 3000}`);
+    app.listen(3000, () => {
+      logger.info(`🚀 Snippy API v${version} starting on port 3000`);
     });
   } catch (error) {
     logger.info('Unable to connect to the database or start server:', error);
