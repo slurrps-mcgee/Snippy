@@ -1,14 +1,14 @@
 import { NextFunction, Request, Response } from 'express';
-import { 
-    createSnippetHandler, 
-    deleteSnippetHandler, 
-    forkSnippetHandler, 
-    getAllPublicSnippetsHandler, 
-    getUserPublicSnippetsHandler, 
-    getMySnippetsHandler, 
-    getSnippetHandler, 
-    updateSnippetHandler, 
-    updateSnippetViewCountHandler, 
+import {
+    createSnippetHandler,
+    deleteSnippetHandler,
+    forkSnippetHandler,
+    getAllPublicSnippetsHandler,
+    getUserPublicSnippetsHandler,
+    getMySnippetsHandler,
+    getSnippetHandler,
+    updateSnippetHandler,
+    updateSnippetViewCountHandler,
     searchSnippetsHandler
 } from "./snippet.service";
 import { validateCreateSnippet, validateForkSnippet, validateUpdateSnippet } from './snippet.validator';
@@ -50,7 +50,7 @@ import { validateCreateSnippet, validateForkSnippet, validateUpdateSnippet } fro
 export async function createSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateCreateSnippet(req.body);
-        
+
         const { snippet } = await createSnippetHandler(req);
         res.status(201).json({ success: true, snippet });
     } catch (error) {
@@ -97,7 +97,7 @@ export async function createSnippet(req: Request, res: Response, next: NextFunct
 export async function updateSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         await validateUpdateSnippet(req.body);
-        
+
         const { snippet } = await updateSnippetHandler(req);
         res.status(200).json({ success: true, snippet });
     } catch (error) {
@@ -128,8 +128,8 @@ export async function updateSnippet(req: Request, res: Response, next: NextFunct
  */
 export async function deleteSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await deleteSnippetHandler(req);
-        res.status(204).json({ success: true });
+        const { message } = await deleteSnippetHandler(req);
+        res.status(204).json({ success: true, message });
     } catch (error) {
         next(error);
     }

@@ -108,8 +108,8 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
  */
 export async function deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await deleteUserHandler(req);
-        res.status(200).json({ success: true, message: 'User deleted successfully' });
+        const { message } = await deleteUserHandler(req);
+        res.status(200).json({ success: true, message });
     } catch (error) {
         next(error);
     }

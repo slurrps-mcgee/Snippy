@@ -2,7 +2,6 @@ import { sequelize } from "../../config/sequelize";
 import { Snippets } from "../../models/snippet.model";
 import { CustomError } from "../../utils/custom-error";
 import { handleError } from "../../utils/error-handler";
-import logger from "../../utils/logger";
 import { findByUsername } from "../user/user.repo";
 import {
     createSnippet,

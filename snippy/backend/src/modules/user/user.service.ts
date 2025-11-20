@@ -131,7 +131,7 @@ export async function deleteUserHandler(payload: any) {
 
         await deleteUser(auth0Id);
 
-        return { success: true };
+        return { message: 'User deleted successfully' };
     } catch (err: any) {
         handleError(err, 'deleteUserHandler');
     }
