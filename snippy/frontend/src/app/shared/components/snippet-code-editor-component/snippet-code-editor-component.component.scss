@@ -1,0 +1,39 @@
+.codepen-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.editor-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-right: 1px solid #333;
+}
+
+.editor-panel:last-child {
+  border-right: none;
+}
+
+.panel-title {
+  background: #333;
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #444;
+}
+
+.editor {
+  flex: 1;
+}
+
+.preview-container {
+  height: 50vh; /* bottom half of page */
+  border-top: 1px solid #333;
+}
+
+.preview {
+  width: 100%;
+  height: 100%;
+  border: none;
+}

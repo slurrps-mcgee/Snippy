@@ -8,29 +8,42 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test"
   },
-  "keywords": ["Angular", "Frontend", "Snippy"],
+  "keywords": [
+    "Angular",
+    "Frontend",
+    "Snippy"
+  ],
   "author": "Kenneth Lamb",
   "license": "MIT",
   "description": "Frontend application for Snippy",
   "private": true,
   "dependencies": {
-    "@angular/common": "^19.2.0",
-    "@angular/compiler": "^19.2.0",
-    "@angular/core": "^19.2.0",
-    "@angular/forms": "^19.2.0",
-    "@angular/platform-browser": "^19.2.0",
-    "@angular/platform-browser-dynamic": "^19.2.0",
-    "@angular/router": "^19.2.0",
+    "@angular/cdk": "^20.2.14",
+    "@angular/common": "^20.3.13",
+    "@angular/compiler": "^20.3.13",
+    "@angular/core": "^20.3.13",
+    "@angular/forms": "^20.3.13",
+    "@angular/material": "^20.2.14",
+    "@angular/platform-browser": "^20.3.13",
+    "@angular/platform-browser-dynamic": "^20.3.13",
+    "@angular/router": "^20.3.13",
     "@auth0/auth0-angular": "^2.3.0",
+    "@materia-ui/ngx-monaco-editor": "^6.0.0",
+    "angular-split": "^20.0.0",
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
     "cockatiel": "^3.2.1",
+    "monaco-editor": "^0.52.2",
+    "ngx-bootstrap": "^20.0.2",
+    "ngx-monaco-editor-v2": "^20.3.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular-devkit/build-angular": "^19.2.10",
-    "@angular/cli": "^19.2.10",
-    "@angular/compiler-cli": "^19.2.0",
+    "@angular/build": "^20.3.11",
+    "@angular/cli": "^20.3.11",
+    "@angular/compiler-cli": "^20.3.13",
     "@types/jasmine": "~5.1.0",
     "jasmine-core": "~5.6.0",
     "karma": "~6.4.0",
@@ -38,6 +51,6 @@
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
-    "typescript": "~5.7.2"
+    "typescript": "~5.9.3"
   }
 }

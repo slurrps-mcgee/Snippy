@@ -122,14 +122,14 @@ export async function updateSnippet(req: Request, res: Response, next: NextFunct
  *           type: string
  *     responses:
  *       '204':
- *         description: Deleted
+ *         description: Snippet Deleted
  *       '404':
  *         description: Not found
  */
 export async function deleteSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { message } = await deleteSnippetHandler(req);
-        res.status(204).json({ success: true, message });
+        await deleteSnippetHandler(req);
+        res.status(204).end();
     } catch (error) {
         next(error);
     }
@@ -265,8 +265,8 @@ export async function searchSnippets(req: Request, res: Response, next: NextFunc
  */
 export async function getSnippetByShortId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippet, isOwner } = await getSnippetHandler(req);
-        res.status(200).json({ success: true, snippet, isOwner });
+        const { snippet } = await getSnippetHandler(req);
+        res.status(200).json({ success: true, snippet });
     } catch (error) {
         next(error);
     }

@@ -9,7 +9,7 @@ import {
     findCommentsBySnippetId,
     updateComment,
 } from "./comment.repo";
-import { findByShortId } from "../snippet/snippet.repo";
+import { decrementSnippetCommentCount, findByShortId, incrementSnippetCommentCount } from "../snippet/snippet.repo";
 
 // do so as async functions
 export async function addCommentHandler(payload: any) {
@@ -18,14 +18,19 @@ export async function addCommentHandler(payload: any) {
 
         const snippet = await findByShortId(payload.params.shortId);
 
+        if (!snippet) {
+            throw new CustomError('Snippet not found', 404);
+        }
+
         return await sequelize.transaction(async (t) => {
             var newComment = await createComment(
                 {
                     auth0Id,
                     ...payload.body,
-                    snippetId: snippet?.snippetId!
+                    snippetId: snippet.snippetId
                 }, t);
 
+            await incrementSnippetCommentCount(snippet.shortId, t);
             newComment = await findCommentByCommentId(newComment.commentId, t) as any;
 
             return { comment: sanitizeComment(newComment) };
@@ -93,6 +98,7 @@ export async function deleteCommentHandler(payload: any) {
             }
 
             await deleteComment(commentId, t);
+            await decrementSnippetCommentCount(comment.snippetId, t);
 
             return { message: 'Comment deleted successfully' };
         });
@@ -125,8 +131,8 @@ export async function getCommentsBySnippetIdHandler(payload: any){
 
 function sanitizeComment(comment: Comments) {
     return {
+        auth0Id: comment.auth0Id,
         commentId: comment.commentId,
         content: comment.content,
     };
 }
-

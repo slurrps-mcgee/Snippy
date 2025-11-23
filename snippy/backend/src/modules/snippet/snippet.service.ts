@@ -45,7 +45,7 @@ export async function createSnippetHandler(payload: any) {
             // Query back the new snippet with its files
             newSnippet = await findByShortId(newSnippet.shortId, t) as any;
 
-            return { snippet: sanitizeSnippet(newSnippet) };
+            return { snippet: sanitizeSnippet(newSnippet, auth0Id) };
         });
     } catch (err: any) {
         handleError(err, 'createSnippetHandler');
@@ -96,7 +96,7 @@ export async function forkSnippetHandler(payload: any) {
 
             forkedSnippet = await findByShortId(forkedSnippet.shortId, t) as any;
 
-            return { snippet: sanitizeSnippet(forkedSnippet) };
+            return { snippet: sanitizeSnippet(forkedSnippet, auth0Id) };
         });
 
     } catch (err: any) {
@@ -155,7 +155,7 @@ export async function updateSnippetHandler(payload: any) {
 
             snippet = await findByShortId(shortId, t);
 
-            return { snippet: sanitizeSnippet(snippet!) };
+            return { snippet: sanitizeSnippet(snippet!, auth0Id) };
         });
     } catch (err: any) {
         handleError(err, 'updateSnippetHandler');
@@ -164,6 +164,7 @@ export async function updateSnippetHandler(payload: any) {
 // Update Snippet View Count
 export async function updateSnippetViewCountHandler(payload: any) {
     try {
+        const auth0Id = payload.auth?.payload?.sub;
         const shortId = payload.params.shortId;
 
         return await sequelize.transaction(async (t) => {
@@ -171,7 +172,7 @@ export async function updateSnippetViewCountHandler(payload: any) {
 
             const updatedSnippet = await findByShortId(shortId, t);
 
-            return { snippet: updatedSnippet };
+            return { snippet: sanitizeSnippet(updatedSnippet!, auth0Id) };
         });
     } catch (err: any) {
         handleError(err, 'updateSnippetViewCountHandler');
@@ -228,10 +229,7 @@ export async function getSnippetHandler(payload: any) {
             throw new CustomError("Unauthorized", 401);
         }
 
-        // Check if the current user owns this snippet
-        const isOwner = snippet.auth0Id === auth0Id;
-
-        return { snippet: sanitizeSnippet(snippet), isOwner };
+        return { snippet: sanitizeSnippet(snippet, auth0Id) };
     } catch (err: any) {
         handleError(err, 'getSnippetHandler');
     }
@@ -239,13 +237,14 @@ export async function getSnippetHandler(payload: any) {
 // Get All Public Snippets (Pagination)
 export async function getAllPublicSnippetsHandler(payload: any) {
     try {
+        const auth0Id = payload.auth?.payload?.sub;
         const page = parseInt(payload.query.page) || 1;
         const limit = parseInt(payload.query.limit) || 10;
         const offset = (page - 1) * limit;
 
         const snippets = await getAllPublicSnippets(offset, limit);
 
-        return { snippets: snippets.map(sanitizeSnippetList) };
+        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
     } catch (err: any) {
         handleError(err, 'getAllPublicSnippetsHandler');
     }
@@ -253,6 +252,7 @@ export async function getAllPublicSnippetsHandler(payload: any) {
 // Get Public Snippets by User
 export async function getUserPublicSnippetsHandler(payload: any) {
     try {
+        const auth0Id = payload.auth?.payload?.sub;
         const userName = payload.params.userName;
         const page = parseInt(payload.query.page) || 1;
         const limit = parseInt(payload.query.limit) || 10;
@@ -264,7 +264,7 @@ export async function getUserPublicSnippetsHandler(payload: any) {
         }
 
         const snippets = await getUserPublicSnippets(user.auth0Id, offset, limit);
-        return { snippets: snippets.map(sanitizeSnippetList) };
+        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
     } catch (err: any) {
         handleError(err, 'getUserPublicSnippetsHandler');
     }
@@ -278,7 +278,7 @@ export async function getMySnippetsHandler(payload: any) {
         const offset = (page - 1) * limit;
 
         const snippets = await getMySnippets(auth0Id, offset, limit);
-        return { snippets: snippets.map(sanitizeSnippetList) };
+        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
     } catch (err: any) {
         handleError(err, 'getMySnippetsHandler');
     }
@@ -286,6 +286,8 @@ export async function getMySnippetsHandler(payload: any) {
 // Search Snippets
 export async function searchSnippetsHandler(payload: any) {
     try {
+        const auth0Id = payload.auth?.payload?.sub;
+
         // Handle multiple search parameter formats:
         // ?q=searchterm (general search)
         // ?name=searchterm (search by name)
@@ -307,7 +309,7 @@ export async function searchSnippetsHandler(payload: any) {
 
         const snippets = await searchSnippets(query, offset, limit);
         
-        return { snippets: snippets.map(sanitizeSnippetList) };
+        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
     } catch (err: any) {
         handleError(err, 'searchSnippetsHandler');
     }
@@ -315,7 +317,7 @@ export async function searchSnippetsHandler(payload: any) {
 // #endregion
 
 // Sanitize Snippet before returning to client
-function sanitizeSnippet(snippet: Snippets): any {
+function sanitizeSnippet(snippet: Snippets, currentUser: string): any {
     return {
         shortId: snippet.shortId,
         name: snippet.name,
@@ -324,19 +326,26 @@ function sanitizeSnippet(snippet: Snippets): any {
         isPrivate: snippet.isPrivate,
         forkCount: snippet.forkCount,
         viewCount: snippet.viewCount,
+        commentCount: snippet.commentCount,
+        favoriteCount: snippet.favoriteCount,
         parentShortId: snippet.parentShortId,
+        isOwner: snippet.auth0Id === currentUser,
         snippetFiles: snippet.snippetFiles?.map(file => ({
             fileType: file.fileType,
             content: file.content
-        }))
+        })),
     }
 }
 
-function sanitizeSnippetList(snippet: Snippets): any {
+function sanitizeSnippetList(snippet: Snippets, currentUser: string): any {
     return {
         shortId: snippet.shortId,
         name: snippet.name,
         description: snippet.description,
-        tags: snippet.tags
+        tags: snippet.tags,
+        commentCount: snippet.commentCount,
+        favoriteCount: snippet.favoriteCount,
+        viewCount: snippet.viewCount,
+        isOwner: snippet.auth0Id === currentUser
     }
 }

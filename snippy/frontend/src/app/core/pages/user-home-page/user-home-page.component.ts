@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+
 import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { ApiService } from '../../../shared/services/api/api.service';

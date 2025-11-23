@@ -101,15 +101,15 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
  *     security:
  *       - bearerAuth: []
  *     responses:
- *       '200':
+ *       '204':
  *         description: User deleted
  *       '401':
  *         description: Unauthorized
  */
 export async function deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { message } = await deleteUserHandler(req);
-        res.status(200).json({ success: true, message });
+        await deleteUserHandler(req);
+        res.status(204).end();
     } catch (error) {
         next(error);
     }

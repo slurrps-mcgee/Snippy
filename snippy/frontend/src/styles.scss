@@ -1,1 +1,65 @@
-/* You can add global styles to this file, and also import other style files */
+/* -------------------------------------------------------
+   Angular Material M3 Theming with Light + Dark Support
+   Using system preference (prefers-color-scheme)
+-------------------------------------------------------- */
+
+@use '@angular/material' as mat;
+
+/* Root defaults — allow browser to choose system theme */
+html {
+  color-scheme: light dark;
+}
+
+/* ---------------------
+   LIGHT THEME
+---------------------- */
+@media (prefers-color-scheme: light) {
+  html {
+    @include mat.theme((
+      color: (
+        primary: mat.$cyan-palette,
+        tertiary: mat.$orange-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+      theme-type: light,
+    ));
+  }
+}
+
+/* ---------------------
+   DARK THEME
+---------------------- */
+@media (prefers-color-scheme: dark) {
+  html {
+    @include mat.theme((
+      color: (
+        primary: mat.$cyan-palette,
+        tertiary: mat.$orange-palette,
+      ),
+      typography: Roboto,
+      density: 0,
+      theme-type: dark,
+    ));
+  }
+}
+
+/* ---------------------
+   Base body styling
+---------------------- */
+body {
+  background-color: var(--mat-sys-background);
+  color: var(--mat-sys-on-background);
+  font: var(--mat-sys-body-medium);
+  margin: 0;
+}
+
+/* Full height */
+html, body {
+  height: 100%;
+}
+
+/* Default font */
+body {
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+}

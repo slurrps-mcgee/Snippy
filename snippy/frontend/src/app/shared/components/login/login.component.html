@@ -1,9 +1,14 @@
-<ng-container *ngIf="auth.isAuthenticated$ | async; else loggedOut">
-    <button (click)="logout()">
-        Log out
-    </button>
-</ng-container>
+@if (auth.isAuthenticated$ | async) {
+<button matButton="filled" [matMenuTriggerFor]="beforeMenu">
+  <img src="" alt="Profile_Picture" />
+</button>
+<mat-menu #beforeMenu="matMenu" xPosition="before">
+  <button mat-menu-item (click)="logout()">Log out</button>
+</mat-menu>
 
-<ng-template #loggedOut>
-    <button (click)="login()">Log in</button>
-</ng-template>
+<!-- <button (click)="logout()">
+  Log out
+</button> -->
+} @else {
+<button matButton="filled" (click)="login()">Log in</button>
+}
