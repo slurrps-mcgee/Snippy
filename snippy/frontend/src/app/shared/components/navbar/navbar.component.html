@@ -2,6 +2,41 @@
   <div class="container-fluid">
     <a class="navbar-brand">Snippy</a>
     
+    @if (auth0Service.isAuthenticated$ | async) {
+      @if (snippetService.snippet() && snippetService.snippet()!.isOwner) {
+        <!-- Snippet editor mode -->
+        <div class="snippet-editor-controls">
+          <mat-form-field appearance="outline" class="snippet-name-field">
+            <input 
+              matInput 
+              [ngModel]="snippetService.snippet()!.name"
+              (ngModelChange)="onSnippetNameChange($event)"
+              placeholder="Snippet name">
+          </mat-form-field>
+          
+          <button 
+            mat-raised-button 
+            [color]="snippetService.isDirty() ? 'accent' : 'primary'"
+            (click)="saveSnippet()"
+            [disabled]="!snippetService.isDirty()">
+            <mat-icon>save</mat-icon>
+            {{ snippetService.isDirty() ? 'Save Changes' : 'Saved' }}
+          </button>
+        </div>
+      } @else {
+        <!-- Normal navigation mode -->
+        <mat-button-toggle-group 
+          name="pageNavigation"
+          [(value)]="selectedPage"
+          (change)="onPageChange($event)" 
+          [hideSingleSelectionIndicator]="true">
+          <mat-button-toggle value="home">Your Snippets</mat-button-toggle>
+          <mat-button-toggle value="Following" disabled="true">Following</mat-button-toggle>
+          <mat-button-toggle value="trending" disabled="true">Trending</mat-button-toggle>
+        </mat-button-toggle-group>
+      }
+    }
+
     <app-login></app-login>
   </div>
 </nav>

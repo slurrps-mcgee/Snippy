@@ -1,8 +1,13 @@
 <p>user-home works!</p>
-<ul>
-    <li>{{ user?.userName }}</li>
-    <li>{{ user?.displayName }}</li>
-    <li><img [src]="user?.pictureUrl" alt="User Picture" /></li>
-</ul>
 
-<button (click)="getUser()">GetUser</button>
+<!-- @if directive for signals -->
+ @if(user$()) {
+    <ul>
+        <li>{{ user$()?.userName }}</li>
+        <li>{{ user$()?.displayName }}</li>
+        <li><img [src]="user$()?.pictureUrl" alt="User Picture" /></li>
+    </ul>
+ }
+ @else {
+    loading
+ }

@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
-import { ApiService } from '../../../shared/services/api/api.service';
-import { AuthLocalService } from '../../../shared/services/auth/auth.local.service';
+import { ApiService } from '../../../shared/services/api.service';
+import { AuthLocalService } from '../../../shared/services/auth.local.service';
 
 @Component({
   selector: 'app-profile-page',

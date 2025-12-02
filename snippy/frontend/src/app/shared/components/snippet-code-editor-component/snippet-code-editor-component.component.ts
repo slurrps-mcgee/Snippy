@@ -1,9 +1,10 @@
-import { Component, signal, Input, ViewChild, ElementRef } from '@angular/core';
+import { Component, signal, Input, ViewChild, ElementRef, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { AngularSplitModule } from 'angular-split';
 import { CommonModule } from '@angular/common';
-import { min } from 'rxjs';
+import { Snippet } from '../../interfaces/snippet.interface';
+import { SnippetService } from '../../services/snippet.service';
 
 @Component({
   selector: 'app-snippet-code-editor-component',
@@ -12,22 +13,52 @@ import { min } from 'rxjs';
   styleUrl: './snippet-code-editor-component.component.scss'
 })
 export class SnippetCodeEditorComponentComponent {
-  // Inputs for initial values
-  @Input() initialHtml = '<h1>Hello World!</h1>';
-  @Input() initialCss = 'h1 { color: red; }';
-  @Input() initialJs = 'console.log("Hello");';
-
-  // Initialize signals with inputs
-  ngOnInit() {
-    this.htmlCode.set(this.initialHtml);
-    this.cssCode.set(this.initialCss);
-    this.jsCode.set(this.initialJs);
-  }
+  @Input() snippet!: Snippet;
 
   // Signals for editing
   htmlCode = signal('');
   cssCode = signal('');
   jsCode = signal('');
+
+  constructor(private snippetService: SnippetService) {
+    // Reactive iframe update whenever any code changes
+    effect(() => {
+      // Read all signals to trigger effect
+      this.htmlCode();
+      this.cssCode();
+      this.jsCode();
+      // Update iframe
+      this.updateIframe();
+    });
+  }
+
+  // Initialize signals with snippet data
+  ngOnInit() {
+    if (this.snippet) {
+      const htmlFile = this.snippet.snippetFiles.find(f => f.fileType === 'html');
+      const cssFile = this.snippet.snippetFiles.find(f => f.fileType === 'css');
+      const jsFile = this.snippet.snippetFiles.find(f => f.fileType === 'js' || f.fileType === 'js');
+      
+      this.htmlCode.set(htmlFile?.content || '');
+      this.cssCode.set(cssFile?.content || '');
+      this.jsCode.set(jsFile?.content || '');
+    }
+  }
+
+  onHtmlChange(content: string) {
+    this.htmlCode.set(content);
+    this.snippetService.updateSnippetFile('html', content);
+  }
+
+  onCssChange(content: string) {
+    this.cssCode.set(content);
+    this.snippetService.updateSnippetFile('css', content);
+  }
+
+  onJsChange(content: string) {
+    this.jsCode.set(content);
+    this.snippetService.updateSnippetFile('js', content);
+  }
 
   // Monaco editor options
   htmlOptions = { 
@@ -52,22 +83,11 @@ export class SnippetCodeEditorComponentComponent {
     wordWrap: 'on'
   };
 
-  // // Combined output for live preview
-  // combinedOutput = computed(() => `
-  //   <html>
-  //     <head>
-  //       <style>${this.cssCode()}</style></head>
-  //     <body>
-  //       ${this.htmlCode()}
-  //       <script>${this.jsCode()}<\/script>
-  //     </body>
-  //   </html>
-  // `);
+  @ViewChild('previewIframe') previewIframe?: ElementRef<HTMLIFrameElement>;
 
-  @ViewChild('previewIframe') previewIframe!: ElementRef<HTMLIFrameElement>;
-
-  // Update iframe content manually
+  // Update iframe content (called by effect)
   updateIframe() {
+    if (!this.previewIframe) return;
     const iframe = this.previewIframe.nativeElement;
     if (!iframe.contentDocument) return;
 

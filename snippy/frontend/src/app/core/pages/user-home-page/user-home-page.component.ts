@@ -1,9 +1,11 @@
 
-import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { AuthService } from '@auth0/auth0-angular';
-import { ApiService } from '../../../shared/services/api/api.service';
-import { AuthLocalService } from '../../../shared/services/auth/auth.local.service';
-import { Subscription, of } from 'rxjs';
+import { ApiService } from '../../../shared/services/api.service';
+import { AuthLocalService } from '../../../shared/services/auth.local.service';
+import { Subscription } from 'rxjs';
+import { User } from '../../../shared/interfaces/user.interface';
 
 @Component({
   selector: 'app-user-home-page',
@@ -12,52 +14,27 @@ import { Subscription, of } from 'rxjs';
   styleUrl: './user-home-page.component.scss'
 })
 export class UserHomePageComponent implements OnInit, OnDestroy {
-  user: any;
   private sub?: Subscription;
+  user$!: ReturnType<typeof toSignal<User | null>>; // signal type
 
   constructor(
-    public auth0: AuthService,
+    public auth0Service: AuthService,
     private api: ApiService,
-    private auth: AuthLocalService) {
+    private authLocalService: AuthLocalService) {
 
     //log token only testing
-    this.auth0.getAccessTokenSilently().subscribe(token => {
+    this.auth0Service.getAccessTokenSilently().subscribe(token => {
       console.log(token);
     });
 
-    this.getUser();
+    this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
   }
 
   // Subscribe to user info on init
   ngOnInit(): void {
-    // Subscribe to the persisted user stream — this will emit as soon as
-    // AuthLocalService saves the user after login and backend registration.
-    this.sub = this.auth.user$.subscribe((u) => {
-      if (u) {
-        this.user = u;
-        console.log('Received user from AuthLocalService:', u);
-      } 
-    });
   }
 
   // Cleanup subscription
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
   }
-
-
-  //Test API call to get user info from backend
-  getUser() {
-    // get email from Auth0 profile
-    this.api.request({ path: '/users/me', method: 'GET' }).subscribe({
-      next: (response) => {
-        this.user = response.user;
-        console.log('API response:', response);
-      },
-      error: (error) => {
-        console.error('API error:', error);
-      }
-    });
-  }
-
 }

@@ -7,10 +7,10 @@ const createSnippetSchema = Joi.object({
     description: Joi.string().max(1000).optional().allow(null, ''),
     tags: Joi.array().items(Joi.string().max(50)).optional(),
     isPrivate: Joi.boolean().optional(),
-    snippetFiles: Joi.array().items(
+    snippetFiles: Joi.array().optional().items(
         Joi.object({
             fileType: Joi.string().min(1).max(255).required(),
-            content: Joi.string().required(),
+            content: Joi.string().optional().allow(''),
         })
     )
 });
@@ -32,7 +32,7 @@ const updateSnippetSchema = Joi.object({
     snippetFiles: Joi.array().items(
         Joi.object({
             fileType: Joi.string().min(1).max(255).optional(),
-            content: Joi.string().optional(),
+            content: Joi.string().optional().allow(''),
         })
     ).optional(),
 });

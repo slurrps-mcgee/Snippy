@@ -1,0 +1,22 @@
+.editor-page-container {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  
+  .loading, .error {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    font-size: 1.5rem;
+  }
+  
+  .error {
+    color: #f44336;
+  }
+  
+  app-snippet-code-editor-component {
+    flex: 1;
+    overflow: hidden;
+  }
+}

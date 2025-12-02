@@ -1,1 +1,12 @@
-<app-snippet-code-editor-component #editor></app-snippet-code-editor-component>
+<div class="editor-page-container">
+  @if (loading) {
+    <div class="loading">Loading snippet...</div>
+  } @else if (error) {
+    <div class="error">{{ error }}</div>
+  } @else if (snippetService.snippet()) {
+    <app-snippet-code-editor-component 
+      #editor
+      [snippet]="snippetService.snippet()!">
+    </app-snippet-code-editor-component>
+  }
+</div>

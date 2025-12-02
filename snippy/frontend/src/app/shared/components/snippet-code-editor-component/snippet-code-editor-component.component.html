@@ -8,7 +8,7 @@
         <ngx-monaco-editor
           [options]="htmlOptions"
           [ngModel]="htmlCode()"
-          (ngModelChange)="htmlCode.set($event); updateIframe()"
+          (ngModelChange)="onHtmlChange($event)"
           style="height: 100%">
         </ngx-monaco-editor>
       </div>
@@ -21,7 +21,7 @@
         <ngx-monaco-editor
           [options]="cssOptions"
           [ngModel]="cssCode()"
-          (ngModelChange)="cssCode.set($event); updateIframe()"
+          (ngModelChange)="onCssChange($event)"
           style="height: 100%">
         </ngx-monaco-editor>
       </div>
@@ -34,7 +34,7 @@
         <ngx-monaco-editor
           [options]="jsOptions"
           [ngModel]="jsCode()"
-          (ngModelChange)="jsCode.set($event); updateIframe()"
+          (ngModelChange)="onJsChange($event)"
           style="height: 100%">
         </ngx-monaco-editor>
       </div>
@@ -45,8 +45,7 @@
   <div class="preview-container">
     <iframe
       class="preview"
-      #previewIframe
-      (load)="updateIframe()">
+      #previewIframe>
     </iframe>
   </div>
 </div>

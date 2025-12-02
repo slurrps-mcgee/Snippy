@@ -3,7 +3,7 @@ import { AuthService } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { from, Observable, throwError } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
-import { defaultPolicy } from '../resiliance.service';
+import { defaultPolicy } from './resiliance.service';
 
 export type ApiOptions = {
     path: string; // path under /api/v1
