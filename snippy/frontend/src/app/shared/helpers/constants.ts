@@ -1,1 +1,0 @@
-export const USER_STORAGE_KEY = 'snippy_user';

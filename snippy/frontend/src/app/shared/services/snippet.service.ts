@@ -9,6 +9,8 @@ export class SnippetService {
   snippet = signal<Snippet | null>(null);
   private originalSnippet = signal<Snippet | null>(null);
 
+  constructor(private apiService: ApiService) { }
+
   isDirty = computed(() => {
     const s = this.snippet();
     const o = this.originalSnippet();
@@ -20,8 +22,6 @@ export class SnippetService {
     }
     return false;
   });
-
-  constructor(private apiService: ApiService) { }
 
   fetchSnippet(shortId: string): Observable<SnippetResponse> {
     return this.apiService.request<SnippetResponse>({

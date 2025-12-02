@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ApiService } from '../../../shared/services/api.service';
-import { AuthLocalService } from '../../../shared/services/auth.local.service';
+import { User } from '../../../shared/interfaces/user.interface';
 
 @Component({
   selector: 'app-profile-page',
@@ -10,28 +10,29 @@ import { AuthLocalService } from '../../../shared/services/auth.local.service';
   styleUrl: './profile-page.component.scss'
 })
 export class ProfilePageComponent implements OnInit {
-  user: any;
+  user?: User;
 
-  constructor(private route: ActivatedRoute,
-    private router: Router,
-    private api: ApiService,
-    private auth: AuthLocalService) { }
-
+  constructor(
+    private route: ActivatedRoute,
+    private apiService: ApiService
+  ) { }
 
   ngOnInit(): void {
     this.route.paramMap.subscribe(params => {
-      this.api.request({ path: '/users/' + params.get('username'), method: 'GET' }).subscribe({
+      const username = params.get('username');
+      if (!username) return;
+      
+      this.apiService.request<{ user: User }>({
+        path: `/users/${username}`,
+        method: 'GET'
+      }).subscribe({
         next: (response) => {
           this.user = response.user;
-          console.log('API response:', response);
         },
         error: (error) => {
-          console.error('API error:', error);
+          console.error('Failed to load user profile:', error);
         }
       });
     });
   }
-
 }
-
-

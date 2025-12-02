@@ -1,4 +1,4 @@
-import { Component, signal, Input, ViewChild, ElementRef, effect } from '@angular/core';
+import { Component, signal, Input, ViewChild, ElementRef, effect, AfterViewInit } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MonacoEditorModule } from 'ngx-monaco-editor-v2';
 import { AngularSplitModule } from 'angular-split';
@@ -12,8 +12,9 @@ import { SnippetService } from '../../services/snippet.service';
   templateUrl: './snippet-code-editor-component.component.html',
   styleUrl: './snippet-code-editor-component.component.scss'
 })
-export class SnippetCodeEditorComponentComponent {
+export class SnippetCodeEditorComponentComponent implements AfterViewInit {
   @Input() snippet!: Snippet;
+  @ViewChild('previewIframe') previewIframe?: ElementRef<HTMLIFrameElement>;
 
   // Signals for editing
   htmlCode = signal('');
@@ -37,12 +38,18 @@ export class SnippetCodeEditorComponentComponent {
     if (this.snippet) {
       const htmlFile = this.snippet.snippetFiles.find(f => f.fileType === 'html');
       const cssFile = this.snippet.snippetFiles.find(f => f.fileType === 'css');
-      const jsFile = this.snippet.snippetFiles.find(f => f.fileType === 'js' || f.fileType === 'js');
+      const jsFile = this.snippet.snippetFiles.find(f => f.fileType === 'js');
       
       this.htmlCode.set(htmlFile?.content || '');
       this.cssCode.set(cssFile?.content || '');
       this.jsCode.set(jsFile?.content || '');
     }
+  }
+
+  // Ensure iframe is rendered after view init
+  ngAfterViewInit() {
+    // Initial render after iframe is available
+    setTimeout(() => this.updateIframe(), 0);
   }
 
   onHtmlChange(content: string) {
@@ -82,8 +89,6 @@ export class SnippetCodeEditorComponentComponent {
     minimap: { enabled: false },
     wordWrap: 'on'
   };
-
-  @ViewChild('previewIframe') previewIframe?: ElementRef<HTMLIFrameElement>;
 
   // Update iframe content (called by effect)
   updateIframe() {

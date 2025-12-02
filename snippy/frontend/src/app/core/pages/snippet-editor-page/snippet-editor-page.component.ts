@@ -42,7 +42,7 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
       // No snippet ID - create a new empty snippet
       this.snippetService.setSnippet({
         shortId: '',
-        name: 'Untitled Snippet',
+        name: 'Untitled',
         description: '',
         tags: [],
         isPrivate: false,

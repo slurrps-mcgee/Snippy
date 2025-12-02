@@ -2,20 +2,19 @@ import { Injectable } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { BehaviorSubject, Observable, of, switchMap, tap, filter, take, catchError } from 'rxjs';
 import { ApiService } from './api.service';
-import { USER_STORAGE_KEY } from '../helpers/constants';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UserResponse } from '../interfaces/userResponse.interface';
 import { User } from '../interfaces/user.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AuthLocalService {
-  private userSubject = new BehaviorSubject<User | null>(this.loadStoredUser());
+  private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
 
-  constructor(private auth0: AuthService, private api: ApiService) {
+  constructor(private auth0Service: AuthService, private apiService: ApiService) {
     
-    // When Auth0 logs out → clear local storage and state
-    this.auth0.isAuthenticated$
+    // When Auth0 logs out → clear state
+    this.auth0Service.isAuthenticated$
       .pipe(
         filter(isAuth => !isAuth),
         tap(() => this.clearUserState())
@@ -23,33 +22,22 @@ export class AuthLocalService {
       .subscribe();
 
     // When Auth0 logs in → sync or create backend user
-    this.auth0.isAuthenticated$
+    this.auth0Service.isAuthenticated$
       .pipe(
         filter(Boolean),
-        switchMap(() => this.auth0.user$.pipe(take(1))),
+        switchMap(() => this.auth0Service.user$.pipe(take(1))),
         switchMap((profile: any) => this.syncBackendUser(profile))
       )
       .subscribe();
   }
 
-  /** Restore cached user from storage */
-  private loadStoredUser() {
-    try {
-      return JSON.parse(localStorage.getItem(USER_STORAGE_KEY) || 'null');
-    } catch {
-      return null;
-    }
-  }
-
-  /** Save user to both subject and storage */
-  private setUser(user: any) {
-    localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(user));
+  /** Save user to subject */
+  private setUser(user: User) {
     this.userSubject.next(user);
   }
 
-  /** Remove user everywhere */
+  /** Clear user state */
   private clearUserState() {
-    localStorage.removeItem(USER_STORAGE_KEY);
     this.userSubject.next(null);
   }
 
@@ -60,7 +48,7 @@ export class AuthLocalService {
       pictureUrl: profile?.picture
     };
 
-    return this.api.request<UserResponse>({
+    return this.apiService.request<UserResponse>({
       path: '/users',
       method: 'POST',
       body: payload
@@ -79,7 +67,7 @@ export class AuthLocalService {
   /** Manual logout trigger */
   public logout() {
     this.clearUserState();
-    this.auth0.logout({ logoutParams: { returnTo: window.location.origin } });
+    this.auth0Service.logout({ logoutParams: { returnTo: window.location.origin } });
   }
 
   /** Returns current user synchronously */
@@ -89,21 +77,22 @@ export class AuthLocalService {
 
   /** Returns authentication observable */
   public isAuthenticated$(): Observable<boolean> {
-    return this.auth0.isAuthenticated$;
+    return this.auth0Service.isAuthenticated$;
   }
 
-  /** Manual backend refresh (optional) */
-  public refreshUserFromBackend() {
-    return this.api.request<any>({
+  /** Refresh user from backend */
+  public refreshUserFromBackend(): Observable<UserResponse | null> {
+    return this.apiService.request<UserResponse>({
       method: 'GET',
-      path: '/users'
+      path: '/users/me'
     }).pipe(
-      take(1),
       tap(res => {
-        const user = res?.data ?? res?.user ?? res;
-        if (user) this.setUser(user);
+        if (res?.user) this.setUser(res.user);
       }),
-      catchError(() => of(null))
-    ).subscribe();
+      catchError(() => {
+        console.warn('User refresh failed');
+        return of(null);
+      })
+    );
   }
 }
