@@ -10,13 +10,19 @@ export class SnippetService {
   snippet = signal<Snippet | null>(null);
   private originalSnippet = signal<Snippet | null>(null);
 
-  constructor(private apiService: ApiService, private snackbarService: SnackbarService) { }
+  constructor(private apiService: ApiService) { }
 
   isDirty = computed(() => {
     const s = this.snippet();
     const o = this.originalSnippet();
     if (!s || !o) return false;
     if (s.name !== o.name) return true;
+    if (s.description !== o.description) return true;
+    if (s.isPrivate !== o.isPrivate) return true;
+    if (s.tags.length !== o.tags.length) return true;
+    for (let i = 0; i < s.tags.length; i++) {
+      if (s.tags[i] !== o.tags[i]) return true;
+    }
     if (s.snippetFiles.length !== o.snippetFiles.length) return true;
     for (let i = 0; i < s.snippetFiles.length; i++) {
       if (s.snippetFiles[i].content !== o.snippetFiles[i].content) return true;
@@ -58,6 +64,16 @@ export class SnippetService {
     console.log('Updated snippet name to', name);
   }
 
+  updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[] }) {
+    this.snippet.update(s => ({
+      ...s!,
+      description: settings.description,
+      isPrivate: settings.isPrivate,
+      tags: settings.tags
+    }));
+    console.log('Updated snippet settings:', settings);
+  }
+
   saveSnippet(): Observable<SnippetResponse> {
     const s = this.snippet();
     if (!s) throw new Error('No snippet to save');
@@ -81,7 +97,6 @@ export class SnippetService {
         tap((response) => {
           // Update the snippet with the returned data (including shortId)
           this.setSnippet(response.snippet);
-          this.snackbarService.success('Snippet saved successfully');
         })
       );
     }
@@ -100,7 +115,6 @@ export class SnippetService {
       }).pipe(
         tap((response) => {
           this.setSnippet(response.snippet);
-          this.snackbarService.success('Snippet saved successfully');
         })
       );
     }

@@ -2,40 +2,62 @@
   <div class="container-fluid">
 
     @if (!(auth0Service.isLoading$ | async)) {
-      @if (auth0Service.isAuthenticated$ | async) {
-        @if (snippetService.snippet() && snippetService.snippet()!.isOwner) {
-          <a class="navbar-brand" href="/home">Snippy</a>
+    @if (auth0Service.isAuthenticated$ | async) {
+    @if (snippetService.snippet() && snippetService.snippet()!.isOwner) {
+    <div class="d-flex align-items-center gap-3">
+      <a class="navbar-brand" routerLink="/home">
+        <h2>Snippy</h2>
+      </a>
 
-          <!-- Snippet editor mode -->
-          <div class="d-flex align-items-center gap-3">
-            <mat-form-field appearance="outline" class="snippet-name-field">
-              <input matInput [ngModel]="snippetService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
-                placeholder="Snippet name">
-              <mat-icon matSuffix>mode_edit</mat-icon>
-            </mat-form-field>
+      <div class="d-flex flex-column">
 
-            <button mat-raised-button [color]="snippetService.isDirty() ? 'accent' : 'primary'" (click)="saveSnippet()"
-              [disabled]="!snippetService.isDirty()">
-              <mat-icon>save</mat-icon>
-              {{ snippetService.isDirty() ? 'Save Changes' : 'Saved' }}
-            </button>
-          </div>
-        } @else {
-          <a class="navbar-brand">Snippy</a>
+      </div>
 
-          <!-- Normal navigation mode -->
-          <mat-button-toggle-group name="pageNavigation" [(value)]="selectedPage" (change)="onPageChange($event)"
-            [hideSingleSelectionIndicator]="true">
-            <mat-button-toggle value="home">Your Snippets</mat-button-toggle>
-            <mat-button-toggle value="public" disabled="true">Public Snippets</mat-button-toggle>
-          </mat-button-toggle-group>
-        }
+      <!-- Snippet editor mode - input box -->
+      <mat-form-field appearance="outline">
+        <input matInput [ngModel]="snippetService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
+          placeholder="Snippet name">
+        <mat-icon matSuffix>mode_edit</mat-icon>
+      </mat-form-field>
+      <span>{{ snippetService.snippet()!.displayName }}</span>
 
-        <app-login></app-login>
-      } @else {
-        <a class="navbar-brand">Snippy</a>
-        <app-login></app-login>
-      }
+    </div>
+
+    <div class="d-flex align-items-center gap-3 ms-auto">
+      <button mat-raised-button [color]="snippetService.isDirty() ? 'accent' : 'primary'" (click)="saveSnippet()"
+        [disabled]="!snippetService.isDirty()">
+        <mat-icon>save</mat-icon>
+        {{ snippetService.isDirty() ? 'Save Changes' : 'Saved' }}
+      </button>
+
+      <button mat-icon-button (click)="openSettings()">
+        <mat-icon>settings</mat-icon>
+      </button>
+
+      <app-login></app-login>
+    </div>
+    } @else {
+    <div class="d-flex align-items-center gap-3">
+      <a class="navbar-brand">
+        <h2>Snippy</h2>
+      </a>
+
+      <!-- Normal navigation mode -->
+      <mat-button-toggle-group name="pageNavigation" [(value)]="selectedPage" (change)="onPageChange($event)"
+        [hideSingleSelectionIndicator]="true">
+        <mat-button-toggle value="home">Your Snippets</mat-button-toggle>
+        <mat-button-toggle value="public" disabled="true">Public Snippets</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    <app-login class="ms-auto"></app-login>
+    }
+    } @else {
+    <a class="navbar-brand">
+      <h2>Snippy</h2>
+    </a>
+    <app-login class="ms-auto"></app-login>
+    }
     }
   </div>
 </nav>

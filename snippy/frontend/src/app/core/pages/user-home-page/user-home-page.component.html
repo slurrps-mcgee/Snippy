@@ -1,29 +1,28 @@
 @if(user$()) {
-  <div class="user-home-container">
-    <div class="user-header">
-      <img [src]="user$()?.pictureUrl" alt="User Picture" class="user-avatar" />
-      <div class="user-info">
-        <h1>{{ user$()?.displayName }}</h1>
-        <p class="username">@{{ user$()?.userName }}</p>
-      </div>
-    </div>
-
-    <div class="snippets-section">
-      <h2>My Snippets</h2>
-      @if (isLoading) {
-        <div class="loading">Loading snippets...</div>
-      } @else {
-        <app-snippet-list-component 
-          [snippets]="snippets"
-          [total]="total"
-          [pageSize]="pageSize"
-          [pageIndex]="pageIndex"
-          (searchChange)="handleSearch($event)"
-          (pageChange)="handlePageChange($event)">
-        </app-snippet-list-component>
-      }
+<section class="container p-5">
+  <div class="user-header">
+    <img [src]="user$()?.pictureUrl" alt="User Picture" class="user-avatar" />
+    <div class="user-info">
+      <h1>{{ user$()?.displayName }}</h1>
+      <p class="username">@{{ user$()?.userName }}</p>
     </div>
   </div>
+
+  <div>
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+      <mat-tab label="Snippets">
+        @if (isLoading) {
+        <div class="text-center">Loading snippets...</div>
+        } @else {
+        <app-snippet-list-component class="container" [snippets]="snippets" [total]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
+          (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)">
+        </app-snippet-list-component>
+        }
+      </mat-tab>
+    </mat-tab-group>
+
+  </div>
+</section>
 } @else {
-  <div class="loading">Loading user data...</div>
+<div class="loading">Loading user data...</div>
 }

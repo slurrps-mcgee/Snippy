@@ -64,7 +64,7 @@ export async function ensureUserHandler(payload: any) {
 
 
         //testModels(auth0Id); // Remove after testing
-        testModels(auth0Id); // Remove after testing
+        //testModels(auth0Id); // Remove after testing
 
         // Fetch the user again to return
         user = await findById(auth0Id);

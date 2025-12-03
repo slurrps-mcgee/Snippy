@@ -7,18 +7,22 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterModule } from '@angular/router';
 import { SnippetService } from '../../services/snippet.service';
 import { AuthLocalService } from '../../services/auth.local.service';
+import { SnippetSettingsDialogComponent } from '../snippet-settings-dialog/snippet-settings-dialog.component';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { User } from '../../interfaces/user.interface';
+import { SnackbarService } from '../../services/snackbar.service';
 
 @Component({
   selector: 'app-navbar',
   imports: [
     LoginComponent, 
     CommonModule, 
+    RouterModule,
     MatButtonToggleModule, 
     MatButtonModule, 
     MatIconModule,
@@ -37,7 +41,9 @@ export class NavbarComponent implements OnInit {
     public auth0Service: AuthService,
     private router: Router,
     public snippetService: SnippetService,
-    private authLocalService: AuthLocalService
+    private authLocalService: AuthLocalService,
+    private dialog: MatDialog,
+    private snackbarService: SnackbarService
   ) {
     this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
   }
@@ -60,8 +66,7 @@ export class NavbarComponent implements OnInit {
     this.snippetService.saveSnippet().subscribe({
       next: (response: any) => {
 
-        //TODO: Add to a notification service instead of console logging
-        console.log('Snippet saved successfully', response);
+        this.snackbarService.success('Snippet saved');
         
         // If it's a new snippet, navigate to the snippet editor page
         if (isNew && response.snippet?.shortId) {
@@ -72,7 +77,23 @@ export class NavbarComponent implements OnInit {
         }
       },
       error: (err) => {
-        console.error('Failed to save snippet:', err);
+        this.snackbarService.error('Failed to save snippet');
+      }
+    });
+  }
+
+  openSettings() {
+    const snippet = this.snippetService.snippet();
+    if (!snippet) return;
+
+    const dialogRef = this.dialog.open(SnippetSettingsDialogComponent, {
+      width: '500px',
+      data: snippet
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      if (result) {
+        this.snippetService.updateSnippetSettings(result);
       }
     });
   }

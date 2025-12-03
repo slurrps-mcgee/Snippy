@@ -1,4 +1,4 @@
-<section class="container p-5">
+<section>
   <!-- Search Bar -->
   <div class="d-flex justify-content-between">
     <mat-form-field appearance="outline" class="w-50">
@@ -16,7 +16,7 @@
   </div>
 
   <!-- Snippet Cards Grid -->
-  <div>
+  <div class="overflow-hidden">
     <div class="row g-3">
       @for (snippet of snippets; track snippet.shortId) {
         <div class="col-12 col-md-6 col-lg-4">

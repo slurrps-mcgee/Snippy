@@ -1,8 +1,11 @@
 import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { SnippetCodeEditorComponentComponent } from "../../../shared/components/snippet-code-editor-component/snippet-code-editor-component.component";
 import { ActivatedRoute } from '@angular/router';
 import { SnippetService } from '../../../shared/services/snippet.service';
 import { CommonModule } from '@angular/common';
+import { AuthLocalService } from '../../../shared/services/auth.local.service';
+import { User } from '../../../shared/interfaces/user.interface';
 
 @Component({
   selector: 'app-snippet-editor-page',
@@ -13,6 +16,7 @@ import { CommonModule } from '@angular/common';
 export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   @ViewChild('editor') editor?: SnippetCodeEditorComponentComponent;
   
+  user$!: ReturnType<typeof toSignal<User | null>>;
   username: string | null = null;
   snippetId: string | null = null;
   loading = true;
@@ -20,8 +24,11 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   
   constructor(
     private route: ActivatedRoute,
-    public snippetService: SnippetService
-  ) { }
+    public snippetService: SnippetService,
+    private authLocalService: AuthLocalService
+  ) {
+    this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
+  }
 
   ngOnInit(): void {
     this.username = this.route.snapshot.paramMap.get('username');
@@ -52,6 +59,7 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
         favoriteCount: 0,
         parentShortId: '',
         isOwner: true,
+        displayName: this.user$()?.displayName || '',
         snippetFiles: [
           { fileType: 'html', content: '' },
           { fileType: 'css', content: '' },

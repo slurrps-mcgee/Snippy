@@ -56,7 +56,10 @@ export async function findByShortId(
 ): Promise<Snippets | null> {
     return await Snippets.findOne({
         where: { shortId },
-        include: [SnippetFiles],
+        include: [
+            SnippetFiles,
+            { model: Users, attributes: ['displayName'] }
+        ],
         transaction
     });
 }
@@ -82,7 +85,8 @@ export async function searchSnippets(
         order: [['created_at', 'DESC']], // Show newest first
         offset,
         limit,
-        transaction
+        transaction,
+        distinct: true
     });
 }
 // Get all public snippets
@@ -100,7 +104,8 @@ export async function getAllPublicSnippets(
         order: [['created_at', 'DESC']], // Show newest first
         offset,
         limit,
-        transaction
+        transaction,
+        distinct: true
     });
 }
 // Get public snippets for a specific user
@@ -119,7 +124,8 @@ export async function getUserPublicSnippets(
         order: [['created_at', 'DESC']], // Show newest first
         offset,
         limit,
-        transaction
+        transaction,
+        distinct: true
     });
 }
 // Get snippets for the current user
@@ -136,8 +142,10 @@ export async function getMySnippets(
             { model: Users, attributes: ['userName'] }
         ],
         order: [['created_at', 'DESC']], // Show newest first
+        offset,
         limit,
-        transaction
+        transaction,
+        distinct: true
     });
 }
 // #endregion

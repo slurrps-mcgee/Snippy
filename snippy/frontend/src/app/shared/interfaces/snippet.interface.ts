@@ -12,5 +12,6 @@ export interface Snippet {
     favoriteCount: number,
     parentShortId: string,
     isOwner: boolean,
+    displayName: string,
     snippetFiles: SnippetFile[];
 }

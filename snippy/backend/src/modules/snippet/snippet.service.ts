@@ -328,6 +328,7 @@ function sanitizeSnippet(snippet: Snippets, currentUser: string): any {
         favoriteCount: snippet.favoriteCount,
         parentShortId: snippet.parentShortId,
         isOwner: snippet.auth0Id === currentUser,
+        displayName: (snippet as any).user?.displayName,
         snippetFiles: snippet.snippetFiles?.map(file => ({
             fileType: file.fileType,
             content: file.content
