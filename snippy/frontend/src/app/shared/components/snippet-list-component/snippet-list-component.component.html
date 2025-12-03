@@ -1,0 +1,79 @@
+<section class="container p-5">
+  <!-- Search Bar -->
+  <div class="d-flex justify-content-between">
+    <mat-form-field appearance="outline" class="w-50">
+      <mat-label>Search Snippets</mat-label>
+      <input 
+        matInput 
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search by name or description...">
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+    
+    <button matButton="filled" (click)="createNewSnippet()">New Snippet</button>
+
+  </div>
+
+  <!-- Snippet Cards Grid -->
+  <div>
+    <div class="row g-3">
+      @for (snippet of snippets; track snippet.shortId) {
+        <div class="col-12 col-md-6 col-lg-4">
+          <mat-card class="h-100" (click)="viewSnippet(snippet)">
+            <mat-card-header>
+              <mat-card-title>{{ snippet.name }}</mat-card-title>
+              <mat-card-subtitle>by {{ snippet.userName }}</mat-card-subtitle>
+            </mat-card-header>
+            
+            <mat-card-content>
+              <p>{{ snippet.description || 'No description' }}</p>
+              
+              @if (snippet.tags && snippet.tags.length > 0) {
+                <mat-chip-set class="tags">
+                  @for (tag of snippet.tags; track tag) {
+                    <mat-chip>{{ tag }}</mat-chip>
+                  }
+                </mat-chip-set>
+              }
+              
+              <div class="d-flex border-top pt-2">
+                <span class="d-flex align-items-center pe-2 gap-1">
+                  <mat-icon>visibility</mat-icon>
+                  {{ snippet.viewCount }}
+                </span>
+                <span class="d-flex align-items-center pe-2 gap-1">
+                  <mat-icon>favorite</mat-icon>
+                  {{ snippet.favoriteCount }}
+                </span>
+                <span class="d-flex align-items-center pe-2 gap-1">
+                  <mat-icon>comment</mat-icon>
+                  {{ snippet.commentCount }}
+                </span>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      } @empty {
+        <div class="col-12">
+          <div class="d-flex flex-column align-items-center p-5">
+            <mat-icon>code_off</mat-icon>
+            <p>No snippets found</p>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Paginator -->
+  <div class="p-3 d-flex justify-content-center">
+    <mat-paginator 
+      [length]="total"
+      [pageSize]="pageSize"
+      [pageSizeOptions]="[6, 12, 24]"
+      [pageIndex]="pageIndex"
+      (page)="onPageChange($event)"
+      showFirstLastButtons>
+    </mat-paginator>
+  </div>
+</section>

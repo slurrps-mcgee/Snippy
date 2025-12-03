@@ -5,7 +5,7 @@ const createSnippetSchema = Joi.object({
     name: Joi.string().min(1).max(255).required(),
     parentSnippetId: Joi.string().uuid().optional().allow(null),
     description: Joi.string().max(1000).optional().allow(null, ''),
-    tags: Joi.array().items(Joi.string().max(50)).optional(),
+    tags: Joi.array().items(Joi.string().max(50)).optional().allow(null),
     isPrivate: Joi.boolean().optional(),
     snippetFiles: Joi.array().optional().items(
         Joi.object({
@@ -27,7 +27,7 @@ export const validateCreateSnippet = async (payload: any) => {
 const updateSnippetSchema = Joi.object({
     name: Joi.string().min(1).max(255).optional(),
     description: Joi.string().max(1000).optional().allow(null, ''),
-    tags: Joi.array().items(Joi.string().max(50)).optional(),
+    tags: Joi.array().items(Joi.string().max(50)).optional().allow(null),
     isPrivate: Joi.boolean().optional(),
     snippetFiles: Joi.array().items(
         Joi.object({

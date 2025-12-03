@@ -1,6 +1,7 @@
 import { Transaction } from "sequelize";
 import { Snippets } from "../../models/snippet.model";
 import { SnippetFiles } from "../../models/snippetFile.model";
+import { Users } from "../../models/user.model";
 import { Op } from "sequelize";
 
 // #region Snippet CREATE/UPDATE/DELETE
@@ -65,8 +66,8 @@ export async function searchSnippets(
     offset: number,
     limit: number,
     transaction?: Transaction
-): Promise<Snippets[]> {
-    return await Snippets.findAll({
+): Promise<{ rows: Snippets[]; count: number }> {
+    return await Snippets.findAndCountAll({
         where: { 
             isPrivate: false, // Only search public snippets
             [Op.or]: [
@@ -74,10 +75,13 @@ export async function searchSnippets(
                 { description: { [Op.like]: `%${query}%` } }
             ] 
         },
-        include: [SnippetFiles],
+        include: [
+            SnippetFiles,
+            { model: Users, attributes: ['userName'] }
+        ],
+        order: [['created_at', 'DESC']], // Show newest first
         offset,
         limit,
-        order: [['created_at', 'DESC']], // Show newest first
         transaction
     });
 }
@@ -86,10 +90,14 @@ export async function getAllPublicSnippets(
     offset: number,
     limit: number,
     transaction?: Transaction
-): Promise<Snippets[]> {
-    return await Snippets.findAll({
+): Promise<{ rows: Snippets[]; count: number }> {
+    return await Snippets.findAndCountAll({
         where: { isPrivate: false },
-        include: [SnippetFiles],
+        include: [
+            SnippetFiles,
+            { model: Users, attributes: ['userName'] }
+        ],
+        order: [['created_at', 'DESC']], // Show newest first
         offset,
         limit,
         transaction
@@ -101,10 +109,14 @@ export async function getUserPublicSnippets(
     offset: number,
     limit: number,
     transaction?: Transaction
-): Promise<Snippets[]> {
-    return await Snippets.findAll({
+): Promise<{ rows: Snippets[]; count: number }> {
+    return await Snippets.findAndCountAll({
         where: { auth0Id, isPrivate: false },
-        include: [SnippetFiles],
+        include: [
+            SnippetFiles,
+            { model: Users, attributes: ['userName'] }
+        ],
+        order: [['created_at', 'DESC']], // Show newest first
         offset,
         limit,
         transaction
@@ -116,11 +128,14 @@ export async function getMySnippets(
     offset: number,
     limit: number,
     transaction?: Transaction
-): Promise<Snippets[]> {
-    return await Snippets.findAll({
+): Promise<{ rows: Snippets[]; count: number }> {
+    return await Snippets.findAndCountAll({
         where: { auth0Id },
-        include: [SnippetFiles],
-        offset,
+        include: [
+            SnippetFiles,
+            { model: Users, attributes: ['userName'] }
+        ],
+        order: [['created_at', 'DESC']], // Show newest first
         limit,
         transaction
     });

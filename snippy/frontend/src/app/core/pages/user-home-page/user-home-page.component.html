@@ -1,13 +1,29 @@
-<p>user-home works!</p>
+@if(user$()) {
+  <div class="user-home-container">
+    <div class="user-header">
+      <img [src]="user$()?.pictureUrl" alt="User Picture" class="user-avatar" />
+      <div class="user-info">
+        <h1>{{ user$()?.displayName }}</h1>
+        <p class="username">@{{ user$()?.userName }}</p>
+      </div>
+    </div>
 
-<!-- @if directive for signals -->
- @if(user$()) {
-    <ul>
-        <li>{{ user$()?.userName }}</li>
-        <li>{{ user$()?.displayName }}</li>
-        <li><img [src]="user$()?.pictureUrl" alt="User Picture" /></li>
-    </ul>
- }
- @else {
-    loading
- }
+    <div class="snippets-section">
+      <h2>My Snippets</h2>
+      @if (isLoading) {
+        <div class="loading">Loading snippets...</div>
+      } @else {
+        <app-snippet-list-component 
+          [snippets]="snippets"
+          [total]="total"
+          [pageSize]="pageSize"
+          [pageIndex]="pageIndex"
+          (searchChange)="handleSearch($event)"
+          (pageChange)="handlePageChange($event)">
+        </app-snippet-list-component>
+      }
+    </div>
+  </div>
+} @else {
+  <div class="loading">Loading user data...</div>
+}

@@ -1,36 +1,41 @@
 <nav class="navbar navbar-dark bg-dark">
   <div class="container-fluid">
 
-    @if (auth0Service.isAuthenticated$ | async) {
-    @if (snippetService.snippet() && snippetService.snippet()!.isOwner) {
-    <a class="navbar-brand" href="/home">Snippy</a>
+    @if (!(auth0Service.isLoading$ | async)) {
+      @if (auth0Service.isAuthenticated$ | async) {
+        @if (snippetService.snippet() && snippetService.snippet()!.isOwner) {
+          <a class="navbar-brand" href="/home">Snippy</a>
 
-    <!-- Snippet editor mode -->
-    <div class="snippet-editor-controls">
-      <mat-form-field appearance="outline" class="snippet-name-field">
-        <input matInput [ngModel]="snippetService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
-          placeholder="Snippet name">
-      </mat-form-field>
+          <!-- Snippet editor mode -->
+          <div class="d-flex align-items-center gap-3">
+            <mat-form-field appearance="outline" class="snippet-name-field">
+              <input matInput [ngModel]="snippetService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
+                placeholder="Snippet name">
+              <mat-icon matSuffix>mode_edit</mat-icon>
+            </mat-form-field>
 
-      <button mat-raised-button [color]="snippetService.isDirty() ? 'accent' : 'primary'" (click)="saveSnippet()"
-        [disabled]="!snippetService.isDirty()">
-        <mat-icon>save</mat-icon>
-        {{ snippetService.isDirty() ? 'Save Changes' : 'Saved' }}
-      </button>
-    </div>
-    } @else {
-    <a class="navbar-brand">Snippy</a>
+            <button mat-raised-button [color]="snippetService.isDirty() ? 'accent' : 'primary'" (click)="saveSnippet()"
+              [disabled]="!snippetService.isDirty()">
+              <mat-icon>save</mat-icon>
+              {{ snippetService.isDirty() ? 'Save Changes' : 'Saved' }}
+            </button>
+          </div>
+        } @else {
+          <a class="navbar-brand">Snippy</a>
 
-    <!-- Normal navigation mode -->
-    <mat-button-toggle-group name="pageNavigation" [(value)]="selectedPage" (change)="onPageChange($event)"
-      [hideSingleSelectionIndicator]="true">
-      <mat-button-toggle value="home">Your Snippets</mat-button-toggle>
-      <mat-button-toggle value="Following" disabled="true">Following</mat-button-toggle>
-      <mat-button-toggle value="trending" disabled="true">Trending</mat-button-toggle>
-    </mat-button-toggle-group>
+          <!-- Normal navigation mode -->
+          <mat-button-toggle-group name="pageNavigation" [(value)]="selectedPage" (change)="onPageChange($event)"
+            [hideSingleSelectionIndicator]="true">
+            <mat-button-toggle value="home">Your Snippets</mat-button-toggle>
+            <mat-button-toggle value="public" disabled="true">Public Snippets</mat-button-toggle>
+          </mat-button-toggle-group>
+        }
+
+        <app-login></app-login>
+      } @else {
+        <a class="navbar-brand">Snippy</a>
+        <app-login></app-login>
+      }
     }
-    }
-
-    <app-login></app-login>
   </div>
 </nav>

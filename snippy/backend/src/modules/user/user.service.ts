@@ -62,10 +62,9 @@ export async function ensureUserHandler(payload: any) {
             created = true;
         }
 
-        // Dummy calls to ensure Models all work together
-        await testModels(auth0Id);
 
-
+        //testModels(auth0Id); // Remove after testing
+        testModels(auth0Id); // Remove after testing
 
         // Fetch the user again to return
         user = await findById(auth0Id);
@@ -91,8 +90,6 @@ export async function updateUserHandler(payload: any) {
     var patch = { ...payload.body } as any;
     delete patch.auth0Id;
     delete patch.isAdmin;
-
-    console.log(patch);
 
     try {
         var updated: any = await updateUser(auth0Id, patch);

@@ -242,9 +242,8 @@ export async function getAllPublicSnippetsHandler(payload: any) {
         const limit = parseInt(payload.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        const snippets = await getAllPublicSnippets(offset, limit);
-
-        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
+        const result = await getAllPublicSnippets(offset, limit);
+        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
     } catch (err: any) {
         handleError(err, 'getAllPublicSnippetsHandler');
     }
@@ -263,8 +262,8 @@ export async function getUserPublicSnippetsHandler(payload: any) {
             throw new CustomError("User not found", 404);
         }
 
-        const snippets = await getUserPublicSnippets(user.auth0Id, offset, limit);
-        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
+        const result = await getUserPublicSnippets(user.auth0Id, offset, limit);
+        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
     } catch (err: any) {
         handleError(err, 'getUserPublicSnippetsHandler');
     }
@@ -277,8 +276,8 @@ export async function getMySnippetsHandler(payload: any) {
         const limit = parseInt(payload.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        const snippets = await getMySnippets(auth0Id, offset, limit);
-        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
+        const result = await getMySnippets(auth0Id, offset, limit);
+        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
     } catch (err: any) {
         handleError(err, 'getMySnippetsHandler');
     }
@@ -307,9 +306,8 @@ export async function searchSnippetsHandler(payload: any) {
         const limit = parseInt(payload.query.limit) || 10;
         const offset = (page - 1) * limit;
 
-        const snippets = await searchSnippets(query, offset, limit);
-        
-        return { snippets: snippets.map(s => sanitizeSnippetList(s, auth0Id)) };
+        const result = await searchSnippets(query, offset, limit);
+        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
     } catch (err: any) {
         handleError(err, 'searchSnippetsHandler');
     }
@@ -343,6 +341,7 @@ function sanitizeSnippetList(snippet: Snippets, currentUser: string): any {
         name: snippet.name,
         description: snippet.description,
         tags: snippet.tags,
+        userName: (snippet as any).user?.userName,
         commentCount: snippet.commentCount,
         favoriteCount: snippet.favoriteCount,
         viewCount: snippet.viewCount,

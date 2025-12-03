@@ -185,8 +185,8 @@ export async function forkSnippet(req: Request, res: Response, next: NextFunctio
  */
 export async function getPublicSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippets } = await getAllPublicSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets });
+        const { snippets, totalCount } = await getAllPublicSnippetsHandler(req);
+        res.status(200).json({ success: true, snippets, totalCount });
     } catch (error) {
         next(error);
     }
@@ -207,8 +207,8 @@ export async function getPublicSnippets(req: Request, res: Response, next: NextF
  */
 export async function getCurrentUserSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippets } = await getMySnippetsHandler(req);
-        res.status(200).json({ success: true, snippets });
+        const { snippets, totalCount } = await getMySnippetsHandler(req);
+        res.status(200).json({ success: true, snippets, totalCount });
     } catch (error) {
         next(error);
     }
@@ -235,8 +235,8 @@ export async function getCurrentUserSnippets(req: Request, res: Response, next: 
  */
 export async function searchSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippets } = await searchSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets });
+        const { snippets, totalCount } = await searchSnippetsHandler(req);
+        res.status(200).json({ success: true, snippets, totalCount });
     } catch (error) {
         next(error);
     }
@@ -295,8 +295,8 @@ export async function getSnippetByShortId(req: Request, res: Response, next: Nex
  */
 export async function getUserPublicSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippets } = await getUserPublicSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets });
+        const { snippets, totalCount } = await getUserPublicSnippetsHandler(req);
+        res.status(200).json({ success: true, snippets, totalCount });
     } catch (error) {
         next(error);
     }

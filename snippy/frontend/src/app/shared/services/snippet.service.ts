@@ -3,13 +3,14 @@ import { Snippet } from '../interfaces/snippet.interface';
 import { ApiService } from './api.service';
 import { Observable, tap } from 'rxjs';
 import { SnippetResponse } from '../interfaces/snippetResponse.interface';
+import { SnackbarService } from './snackbar.service';
 
 @Injectable({ providedIn: 'root' })
 export class SnippetService {
   snippet = signal<Snippet | null>(null);
   private originalSnippet = signal<Snippet | null>(null);
 
-  constructor(private apiService: ApiService) { }
+  constructor(private apiService: ApiService, private snackbarService: SnackbarService) { }
 
   isDirty = computed(() => {
     const s = this.snippet();
@@ -80,6 +81,7 @@ export class SnippetService {
         tap((response) => {
           // Update the snippet with the returned data (including shortId)
           this.setSnippet(response.snippet);
+          this.snackbarService.success('Snippet saved successfully');
         })
       );
     }
@@ -98,10 +100,10 @@ export class SnippetService {
       }).pipe(
         tap((response) => {
           this.setSnippet(response.snippet);
+          this.snackbarService.success('Snippet saved successfully');
         })
       );
     }
-
   }
 
   clearSnippet() {

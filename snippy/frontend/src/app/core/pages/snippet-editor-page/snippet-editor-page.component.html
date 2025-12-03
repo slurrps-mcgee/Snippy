@@ -1,10 +1,11 @@
-<div class="editor-page-container">
+<div class="d-flex flex-column h-100">
   @if (loading) {
-    <div class="loading">Loading snippet...</div>
+    <div class="d-flex align-items-center justify-content-center h-100">Loading snippet...</div>
   } @else if (error) {
-    <div class="error">{{ error }}</div>
+    <div class="d-flex align-items-center justify-content-center h-100">{{ error }}</div>
   } @else if (snippetService.snippet()) {
-    <app-snippet-code-editor-component 
+    <app-snippet-code-editor-component
+      class="flex-grow-1 overflow-hidden" 
       #editor
       [snippet]="snippetService.snippet()!">
     </app-snippet-code-editor-component>

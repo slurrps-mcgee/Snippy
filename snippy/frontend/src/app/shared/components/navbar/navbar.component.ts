@@ -59,6 +59,8 @@ export class NavbarComponent implements OnInit {
     
     this.snippetService.saveSnippet().subscribe({
       next: (response: any) => {
+
+        //TODO: Add to a notification service instead of console logging
         console.log('Snippet saved successfully', response);
         
         // If it's a new snippet, navigate to the snippet editor page
