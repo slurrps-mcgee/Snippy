@@ -1,0 +1,43 @@
+<div class="d-flex flex-column vh-100">
+  <!-- Main vertical split: editors top, preview bottom -->
+  <as-split direction="vertical" unit="percent" [gutterSize]="8">
+    
+    <!-- Top: three resizable editors -->
+    <as-split-area size="50" [minSize]="20">
+      <as-split direction="horizontal" unit="percent" [gutterSize]="8">
+        <!-- HTML Editor -->
+        <as-split-area size="33" [minSize]="8">
+          <app-snippet-editor
+            [editorType]="'html'"
+            [fileContent]="htmlCode()"
+            (codeChange)="onHtmlCodeChange($event)">
+          </app-snippet-editor>
+        </as-split-area>
+
+        <!-- CSS Editor -->
+        <as-split-area size="33" [minSize]="8">
+          <app-snippet-editor
+            [editorType]="'css'"
+            [fileContent]="cssCode()"
+            (codeChange)="onCssCodeChange($event)">
+          </app-snippet-editor>
+        </as-split-area>
+
+        <!-- JS Editor -->
+        <as-split-area size="34" [minSize]="8">
+          <app-snippet-editor
+            [editorType]="'js'"
+            [fileContent]="jsCode()"
+            (codeChange)="onJsCodeChange($event)">
+          </app-snippet-editor>
+        </as-split-area>
+      </as-split>
+    </as-split-area>
+
+    <!-- Bottom: Live Preview -->
+    <as-split-area size="50" [minSize]="20">
+      <app-snippet-preview></app-snippet-preview>
+    </as-split-area>
+    
+  </as-split>
+</div>

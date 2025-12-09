@@ -1,0 +1,19 @@
+<div class="d-flex flex-column h-100">
+  <div class="d-flex align-items-center justify-content-between">
+    <span class="p-2">{{ editorType.toUpperCase() }}</span>
+    <button mat-icon-button [matMenuTriggerFor]="menu" class="">
+      <mat-icon>more_vert</mat-icon>
+    </button>
+    <mat-menu #menu="matMenu" xPosition="before">
+      <button mat-menu-item (click)="formatCode()">
+        <mat-icon>code</mat-icon>
+        <span>Format Code</span>
+      </button>
+      <button mat-menu-item (click)="analyzeCode()">
+        <mat-icon>analytics</mat-icon>
+        <span>Analyze Code</span>
+      </button>
+    </mat-menu>
+  </div>
+  <div #editor class="h-100"></div>
+</div>

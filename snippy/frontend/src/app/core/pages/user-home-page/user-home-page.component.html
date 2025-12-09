@@ -1,10 +1,10 @@
 @if(user$()) {
 <section class="container p-5">
-  <div class="user-header">
-    <img [src]="user$()?.pictureUrl" alt="User Picture" class="user-avatar" />
-    <div class="user-info">
+  <div class="d-flex align-items-center gap-3 pb-3 border-bottom border-dark">
+    <img [src]="user$()?.pictureUrl" alt="User Picture" class="rounded-circle" />
+    <div class="fw-bold">
       <h1>{{ user$()?.displayName }}</h1>
-      <p class="username">@{{ user$()?.userName }}</p>
+      <p class="opacity-50">@{{ user$()?.userName }}</p>
     </div>
   </div>
 

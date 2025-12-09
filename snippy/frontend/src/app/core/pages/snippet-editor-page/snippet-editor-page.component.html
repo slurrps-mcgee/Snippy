@@ -4,10 +4,10 @@
   } @else if (error) {
     <div class="d-flex align-items-center justify-content-center h-100">{{ error }}</div>
   } @else if (snippetService.snippet()) {
-    <app-snippet-code-editor-component
+    <app-snippet-web-view
       class="flex-grow-1 overflow-hidden" 
       #editor
       [snippet]="snippetService.snippet()!">
-    </app-snippet-code-editor-component>
+    </app-snippet-web-view>
   }
 </div>

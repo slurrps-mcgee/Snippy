@@ -3,7 +3,6 @@ import { provideRouter } from '@angular/router';
 import { routes } from './app.routes';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { AuthHttpInterceptor, provideAuth0 } from '@auth0/auth0-angular';
-import { provideMonacoEditor } from 'ngx-monaco-editor-v2';
 
 const win: any = window as any;
 
@@ -40,10 +39,6 @@ export const appConfig: ApplicationConfig = {
           }
         ]
       }
-    }),
-    provideMonacoEditor({
-      baseUrl: './assets/monaco/',
-      defaultOptions: { automaticLayout: true },
     })
   ]
 };
