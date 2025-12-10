@@ -8,7 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { User } from '../../interfaces/user.interface';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { SnippetService } from '../../services/snippet.service';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-login',

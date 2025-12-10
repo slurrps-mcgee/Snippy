@@ -12,10 +12,11 @@ import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SnippetService } from '../../services/snippet.service';
 import { AuthLocalService } from '../../services/auth.local.service';
-import { SnippetSettingsDialogComponent } from '../snippet-settings-dialog/snippet-settings-dialog.component';
+import { SnippetSettingsDialogComponent } from '../dialogs/snippet-settings-dialog/snippet-settings-dialog.component';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { User } from '../../interfaces/user.interface';
 import { SnackbarService } from '../../services/snackbar.service';
+import {MatTabsModule} from '@angular/material/tabs';
 
 @Component({
   selector: 'app-navbar',
@@ -28,13 +29,14 @@ import { SnackbarService } from '../../services/snackbar.service';
     MatIconModule,
     MatInputModule,
     MatFormFieldModule,
+    MatTabsModule,
     FormsModule
   ],
   templateUrl: './navbar.component.html',
   styleUrl: './navbar.component.scss'
 })
 export class NavbarComponent implements OnInit {
-  selectedPage = 'home';
+  selectedPageIndex = 0;
   user$!: ReturnType<typeof toSignal<User | null>>;
 
   constructor(
@@ -51,9 +53,13 @@ export class NavbarComponent implements OnInit {
   ngOnInit(): void {
   }
   
-  onPageChange(event: any) {
-    // Navigate to the selected page
-    this.router.navigate(['/', event.value]);
+  onPageTabChange(index: number) {
+    // Navigate based on tab index
+    if (index === 0) {
+      this.router.navigate(['/home']);
+    } else if (index === 1) {
+      this.router.navigate(['/public']);
+    }
   }
 
   onSnippetNameChange(newName: string) {

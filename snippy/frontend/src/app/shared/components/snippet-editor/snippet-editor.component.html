@@ -1,7 +1,8 @@
 <div class="d-flex flex-column h-100">
+  <!-- Header with editor type and menu -->
   <div class="d-flex align-items-center justify-content-between">
-    <span class="p-2">{{ editorType.toUpperCase() }}</span>
-    <button mat-icon-button [matMenuTriggerFor]="menu" class="">
+    <span class="p-2 fw-bold">{{ editorType.toUpperCase() }}</span>
+    <button mat-icon-button [matMenuTriggerFor]="menu">
       <mat-icon>more_vert</mat-icon>
     </button>
     <mat-menu #menu="matMenu" xPosition="before">
@@ -15,5 +16,6 @@
       </button>
     </mat-menu>
   </div>
+  <!-- CodeMirror Editor Container -->
   <div #editor class="h-100"></div>
 </div>

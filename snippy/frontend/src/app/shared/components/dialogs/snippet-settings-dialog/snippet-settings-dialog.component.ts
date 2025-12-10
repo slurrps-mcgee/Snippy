@@ -8,7 +8,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
-import { Snippet } from '../../interfaces/snippet.interface';
+import { Snippet } from '../../../interfaces/snippet.interface';
 
 @Component({
   selector: 'app-snippet-settings-dialog',

@@ -9,10 +9,11 @@ import { SnippetList } from '../../../shared/interfaces/snippetList.interface';
 import { SnippetListComponentComponent } from '../../../shared/components/snippet-list-component/snippet-list-component.component';
 import { SnippetListResponse } from '../../../shared/interfaces/snippetListResponse.interface';
 import {MatTabsModule} from '@angular/material/tabs';
+import {MatDividerModule} from '@angular/material/divider';
 
 @Component({
   selector: 'app-user-home-page',
-  imports: [SnippetListComponentComponent, MatTabsModule],
+  imports: [SnippetListComponentComponent, MatTabsModule, MatDividerModule],
   templateUrl: './user-home-page.component.html',
   styleUrl: './user-home-page.component.scss'
 })

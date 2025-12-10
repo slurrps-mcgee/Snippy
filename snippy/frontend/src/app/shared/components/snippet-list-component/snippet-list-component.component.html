@@ -21,9 +21,9 @@
       @for (snippet of snippets; track snippet.shortId) {
         <div class="col-12 col-md-6 col-lg-4">
           <mat-card class="h-100" (click)="viewSnippet(snippet)">
-            <mat-card-header>
-              <mat-card-title>{{ snippet.name }}</mat-card-title>
-              <mat-card-subtitle>by {{ snippet.userName }}</mat-card-subtitle>
+            <mat-card-header class="pb-2">
+              <mat-card-title class="py-2">{{ snippet.name }}</mat-card-title>
+              <mat-card-subtitle class="opacity-50">by {{ snippet.userName }}</mat-card-subtitle>
             </mat-card-header>
             
             <mat-card-content>
@@ -37,19 +37,21 @@
                 </mat-chip-set>
               }
               
-              <div class="d-flex border-top pt-2">
-                <span class="d-flex align-items-center pe-2 gap-1">
+              <mat-divider></mat-divider>
+
+              <div class="d-flex pt-2 gap-2">
+                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1" (click)="viewSnippet(snippet); $event.stopPropagation()" disabled>
                   <mat-icon>visibility</mat-icon>
                   {{ snippet.viewCount }}
-                </span>
-                <span class="d-flex align-items-center pe-2 gap-1">
+                </button>
+                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1" (click)="favoriteSnippet(snippet, $event)" disabled>
                   <mat-icon>favorite</mat-icon>
                   {{ snippet.favoriteCount }}
-                </span>
-                <span class="d-flex align-items-center pe-2 gap-1">
+                </button>
+                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1" (click)="commentOnSnippet(snippet, $event)" disabled>
                   <mat-icon>comment</mat-icon>
                   {{ snippet.commentCount }}
-                </span>
+                </button>
               </div>
             </mat-card-content>
           </mat-card>

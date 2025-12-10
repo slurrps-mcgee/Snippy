@@ -10,6 +10,10 @@ import { MatChipsModule } from '@angular/material/chips';
 import { Router } from '@angular/router';
 import { SnippetList } from '../../interfaces/snippetList.interface';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDividerModule } from '@angular/material/divider';
+import { MatDialog } from '@angular/material/dialog';
+import { SnippetService } from '../../services/snippet.service';
+import { SnackbarService } from '../../services/snackbar.service';
 
 @Component({
   selector: 'app-snippet-list-component',
@@ -22,7 +26,8 @@ import { MatButtonModule } from '@angular/material/button';
     MatFormFieldModule,
     MatIconModule,
     MatChipsModule,
-    MatButtonModule
+    MatButtonModule,
+    MatDividerModule
   ],
   templateUrl: './snippet-list-component.component.html',
   styleUrl: './snippet-list-component.component.scss',
@@ -37,7 +42,12 @@ export class SnippetListComponentComponent {
 
   searchQuery = '';
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private snippetService: SnippetService,
+    private snackbarService: SnackbarService,
+    private dialog: MatDialog
+  ) {}
 
   onSearchChange() {
     this.searchChange.emit(this.searchQuery);
@@ -47,12 +57,32 @@ export class SnippetListComponentComponent {
     this.pageChange.emit(event);
   }
 
-  viewSnippet(snippet: SnippetList) {
-    console.log('Navigating to snippet:', snippet.userName, snippet.shortId);
-    this.router.navigate([snippet.userName, 'snippet', snippet.shortId]);
-  }
-
   createNewSnippet() {
     this.router.navigate(['snippet']);
+  }
+
+  viewSnippet(snippet: SnippetList) {
+    // Navigate to snippet details or open in new tab
+    // this.router.navigate(['/view', snippet.shortId]);
+    // Also increment view count
+    //this.incrementViewCount(snippet.shortId);
+
+    this.snackbarService.success(`Viewed Snippet ${snippet.shortId}`);
+  }
+
+  favoriteSnippet(snippet: SnippetList, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    // Add favorite functionality
+    this.snackbarService.success(`Added to favorites ${snippet.shortId}`);
+  }
+
+  commentOnSnippet(snippet: SnippetList, event?: Event) {
+    if (event) {
+      event.stopPropagation();
+    }
+    this.snackbarService.success(`Added comment to ${snippet.shortId}`);
+
   }
 }

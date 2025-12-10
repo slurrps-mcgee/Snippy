@@ -1,6 +1,6 @@
 @if(user$()) {
 <section class="container p-5">
-  <div class="d-flex align-items-center gap-3 pb-3 border-bottom border-dark">
+  <div class="d-flex align-items-center gap-3 pb-3">
     <img [src]="user$()?.pictureUrl" alt="User Picture" class="rounded-circle" />
     <div class="fw-bold">
       <h1>{{ user$()?.displayName }}</h1>
@@ -14,10 +14,15 @@
         @if (isLoading) {
         <div class="text-center">Loading snippets...</div>
         } @else {
-        <app-snippet-list-component class="container" [snippets]="snippets" [total]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
-          (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)">
+        <app-snippet-list-component class="container" [snippets]="snippets" [total]="total" [pageSize]="pageSize"
+          [pageIndex]="pageIndex" (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)">
         </app-snippet-list-component>
         }
+      </mat-tab>
+      <mat-tab label="Projects">
+        <div class="text-center">
+          <p>Projects feature coming soon!</p>
+        </div>
       </mat-tab>
     </mat-tab-group>
 

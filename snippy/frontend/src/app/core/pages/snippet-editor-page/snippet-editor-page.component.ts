@@ -5,7 +5,7 @@ import { SnippetService } from '../../../shared/services/snippet.service';
 import { CommonModule } from '@angular/common';
 import { AuthLocalService } from '../../../shared/services/auth.local.service';
 import { User } from '../../../shared/interfaces/user.interface';
-import { SnippetWebViewComponent } from "../../../shared/components/snippet-web-view/snippet-web-view.component";
+import { SnippetWebViewComponent } from "../../../shared/components/views/snippet-web-view/snippet-web-view.component";
 
 @Component({
   selector: 'app-snippet-editor-page',

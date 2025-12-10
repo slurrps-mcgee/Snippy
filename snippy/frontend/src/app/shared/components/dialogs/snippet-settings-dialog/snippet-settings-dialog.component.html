@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>Snippet Settings</h2>
 
 <mat-dialog-content>
-  <div class="d-flex flex-column gap-3">
+  <div class="d-flex flex-column gap-3 pt-3">
     <!-- Description -->
     <mat-form-field appearance="outline" class="w-100">
       <mat-label>Description</mat-label>
@@ -17,7 +17,7 @@
     <div class="d-flex align-items-center justify-content-between">
       <div>
         <div class="fw-bold">Private Snippet</div>
-        <small class="text-muted">Only you can view this snippet</small>
+        <small class="opacity-50">Only you can view this snippet</small>
       </div>
       <mat-slide-toggle [(ngModel)]="isPrivate"></mat-slide-toggle>
     </div>
@@ -55,7 +55,7 @@
           }
         </mat-chip-set>
       } @else {
-        <p class="text-muted mb-0">No tags added</p>
+        <p class="opacity-50 mb-0">No tags added</p>
       }
     </div>
   </div>

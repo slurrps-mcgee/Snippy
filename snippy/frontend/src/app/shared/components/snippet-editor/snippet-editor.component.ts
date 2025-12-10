@@ -18,10 +18,12 @@ import { SnippetService } from '../../services/snippet.service';
   styleUrl: './snippet-editor.component.scss',
 })
 export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Inputs for editor type and initial content
   @Input() editorType: 'html' | 'css' | 'js' = 'html';
   @Input() fileContent: string = '';
+  // Reference to the editor container
   @ViewChild('editor', { static: false }) editorRef?: ElementRef<HTMLDivElement>;
-
+  // Output event for code changes
   @Output() codeChange = new EventEmitter<string>();
 
   // CodeMirror editor instance
@@ -39,6 +41,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
 
   ngAfterViewInit() {
     setTimeout(() => {
+      // Initialize the CodeMirror editor
       this.initializeEditor();
     }, 0);
   }
@@ -52,8 +55,10 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   private initializeEditor() {
     if (!this.editorRef) return;
 
+    // Get language extension
     const languageExtension = this.getLanguageExtension();
 
+    // Create editor instance
     this.editorInstance = new EditorView({
       state: EditorState.create({
         doc: this.code(),

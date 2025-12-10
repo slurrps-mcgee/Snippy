@@ -1,9 +1,9 @@
 import { Component, signal, ViewChild, ElementRef, effect, AfterViewInit, OnInit, OnDestroy, Input } from '@angular/core';
 import { AngularSplitModule } from 'angular-split';
 import { CommonModule } from '@angular/common';
-import { SnippetEditorComponent } from '../snippet-editor/snippet-editor.component';
-import { SnippetPreviewComponent } from '../snippet-preview/snippet-preview.component';
-import { Snippet } from '../../interfaces/snippet.interface';
+import { SnippetEditorComponent } from '../../snippet-editor/snippet-editor.component';
+import { SnippetPreviewComponent } from '../../snippet-preview/snippet-preview.component';
+import { Snippet } from '../../../interfaces/snippet.interface';
 
 @Component({
   selector: 'app-snippet-web-view',
@@ -12,7 +12,9 @@ import { Snippet } from '../../interfaces/snippet.interface';
   styleUrl: './snippet-web-view.component.scss',
 })
 export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy {
+  // Input snippet to load code from
   @Input() snippet!: Snippet;
+  // Reference to the preview component
   @ViewChild(SnippetPreviewComponent) previewComponent?: SnippetPreviewComponent;
 
   // Signals for code state
@@ -33,7 +35,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnInit() {
-    // Initialize with empty code
+    // Initialize code signals from snippet input if not null
     if (this.snippet) {
       const htmlFile = this.snippet.snippetFiles.find(f => f.fileType === 'html');
       const cssFile = this.snippet.snippetFiles.find(f => f.fileType === 'css');
@@ -67,7 +69,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
     }
   }
 
-  // Handle code changes from editor components
+  // Handle code changes from editor components to trigger the signals
   onHtmlCodeChange(code: string) {
     this.htmlCode.set(code);
   }

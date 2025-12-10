@@ -1,4 +1,4 @@
-<nav class="navbar navbar-dark bg-dark">
+<nav class="navbar">
   <div class="container-fluid">
 
     @if (!(auth0Service.isLoading$ | async)) {
@@ -8,10 +8,6 @@
       <a class="navbar-brand" routerLink="/home">
         <h2>Snippy</h2>
       </a>
-
-      <div class="d-flex flex-column">
-
-      </div>
 
       <!-- Snippet editor mode - input box -->
       <mat-form-field appearance="outline">
@@ -24,8 +20,7 @@
     </div>
 
     <div class="d-flex align-items-center gap-3 ms-auto">
-      <button mat-raised-button [color]="snippetService.isDirty() ? 'accent' : 'primary'" (click)="saveSnippet()"
-        [disabled]="!snippetService.isDirty()">
+      <button matButton="filled" (click)="saveSnippet()" [disabled]="!snippetService.isDirty()">
         <mat-icon>save</mat-icon>
         {{ snippetService.isDirty() ? 'Save Changes' : 'Saved' }}
       </button>
@@ -42,12 +37,14 @@
         <h2>Snippy</h2>
       </a>
 
-      <!-- Normal navigation mode -->
-      <mat-button-toggle-group name="pageNavigation" [(value)]="selectedPage" (change)="onPageChange($event)"
-        [hideSingleSelectionIndicator]="true">
-        <mat-button-toggle value="home">Your Snippets</mat-button-toggle>
-        <mat-button-toggle value="public" disabled="true">Public Snippets</mat-button-toggle>
-      </mat-button-toggle-group>
+      <mat-tab-group [(selectedIndex)]="selectedPageIndex" (selectedIndexChange)="onPageTabChange($event)">
+        <mat-tab label="Your Snippets">
+          <!-- Content for Your Snippets tab -->
+        </mat-tab>
+        <mat-tab label="Public Snippets">
+          <!-- Content for Public Snippets tab -->
+        </mat-tab>
+      </mat-tab-group>
     </div>
 
     <app-login class="ms-auto"></app-login>

@@ -2,7 +2,7 @@ import { CanDeactivateFn } from '@angular/router';
 import { inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { SnippetService } from '../services/snippet.service';
-import { ConfirmDialogComponent } from '../components/confirm-dialog/confirm-dialog.component';
+import { ConfirmDialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
