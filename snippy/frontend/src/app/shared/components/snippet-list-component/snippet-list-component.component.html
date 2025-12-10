@@ -3,14 +3,11 @@
   <div class="d-flex justify-content-between">
     <mat-form-field appearance="outline" class="w-50">
       <mat-label>Search Snippets</mat-label>
-      <input 
-        matInput 
-        [(ngModel)]="searchQuery"
-        (ngModelChange)="onSearchChange()"
+      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
         placeholder="Search by name or description...">
       <mat-icon matPrefix>search</mat-icon>
     </mat-form-field>
-    
+
     <button matButton="filled" (click)="createNewSnippet()">New Snippet</button>
 
   </div>
@@ -19,63 +16,74 @@
   <div class="overflow-hidden">
     <div class="row g-3">
       @for (snippet of snippets; track snippet.shortId) {
-        <div class="col-12 col-md-6 col-lg-4">
-          <mat-card class="h-100" (click)="openSnippet(snippet)">
-            <mat-card-header class="pb-2">
-              <mat-card-title class="py-2">{{ snippet.name }}</mat-card-title>
-              <mat-card-subtitle class="opacity-50">by {{ snippet.userName }}</mat-card-subtitle>
-            </mat-card-header>
-            
-            <mat-card-content>
-              <p>{{ snippet.description || 'No description' }}</p>
-              
-              @if (snippet.tags && snippet.tags.length > 0) {
-                <mat-chip-set class="tags">
-                  @for (tag of snippet.tags; track tag) {
-                    <mat-chip>{{ tag }}</mat-chip>
-                  }
-                </mat-chip-set>
-              }
-              
-              <mat-divider></mat-divider>
+      <div class="col-12 col-md-6 col-lg-4">
+        <mat-card class="h-100" (click)="openSnippet(snippet)">
+          <mat-card-header class="pb-2">
+            <mat-card-title class="py-2">{{ snippet.name }}</mat-card-title>
+            <mat-card-subtitle class="opacity-50">by {{ snippet.userName }}</mat-card-subtitle>
+          </mat-card-header>
 
-              <div class="d-flex pt-2 gap-2">
-                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1" (click)="viewSnippet(snippet); $event.stopPropagation()" disabled>
+          <mat-card-content>
+            <p>{{ snippet.description || 'No description' }}</p>
+
+            @if (snippet.tags && snippet.tags.length > 0) {
+            <mat-chip-set class="tags">
+              @for (tag of snippet.tags; track tag) {
+              <mat-chip>{{ tag }}</mat-chip>
+              }
+            </mat-chip-set>
+            }
+
+            <mat-divider></mat-divider>
+
+            <div class="d-flex align-items-center justify-content-between pt-2">
+              <div class="d-flex gap-2">
+                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
+                  (click)="viewSnippet(snippet); $event.stopPropagation()" disabled>
                   <mat-icon>visibility</mat-icon>
                   {{ snippet.viewCount }}
                 </button>
-                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1" (click)="favoriteSnippet(snippet, $event)" disabled>
+                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
+                  (click)="favoriteSnippet(snippet, $event)" disabled>
                   <mat-icon>favorite</mat-icon>
                   {{ snippet.favoriteCount }}
                 </button>
-                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1" (click)="commentOnSnippet(snippet, $event)" disabled>
+                <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
+                  (click)="commentOnSnippet(snippet, $event)" disabled>
                   <mat-icon>comment</mat-icon>
                   {{ snippet.commentCount }}
                 </button>
               </div>
-            </mat-card-content>
-          </mat-card>
-        </div>
+
+              <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="deleteSnippet(snippet)">
+                  <mat-icon>delete</mat-icon>
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
+            </div>
+
+          </mat-card-content>
+        </mat-card>
+      </div>
       } @empty {
-        <div class="col-12">
-          <div class="d-flex flex-column align-items-center p-5">
-            <mat-icon>code_off</mat-icon>
-            <p>No snippets found</p>
-          </div>
+      <div class="col-12">
+        <div class="d-flex flex-column align-items-center p-5">
+          <mat-icon>code_off</mat-icon>
+          <p>No snippets found</p>
         </div>
+      </div>
       }
     </div>
   </div>
 
   <!-- Paginator -->
   <div class="p-3 d-flex justify-content-center">
-    <mat-paginator 
-      [length]="total"
-      [pageSize]="pageSize"
-      [pageSizeOptions]="[6, 12, 24]"
-      [pageIndex]="pageIndex"
-      (page)="onPageChange($event)"
-      showFirstLastButtons>
+    <mat-paginator [length]="total" [pageSize]="pageSize" [pageSizeOptions]="[6, 12, 24]" [pageIndex]="pageIndex"
+      (page)="onPageChange($event)" showFirstLastButtons>
     </mat-paginator>
   </div>
 </section>

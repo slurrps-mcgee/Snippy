@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewChild, OnDestroy } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, OnInit, ViewChild, OnDestroy, DestroyRef, inject } from '@angular/core';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { SnippetService } from '../../../shared/services/snippet.service';
 import { CommonModule } from '@angular/common';
@@ -21,6 +21,7 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   snippetId: string | null = null;
   loading = true;
   error: string | null = null;
+  private destroyRef = inject(DestroyRef);
   
   constructor(
     private route: ActivatedRoute,
@@ -35,16 +36,18 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
     this.snippetId = this.route.snapshot.paramMap.get('id');
 
     if (this.snippetId) {
-      this.snippetService.fetchSnippet(this.snippetId).subscribe({
-        next: () => {
-          this.loading = false;
-        },
-        error: (err) => {
-          console.error('Failed to load snippet:', err);
-          this.error = 'Failed to load snippet';
-          this.loading = false;
-        }
-      });
+      this.snippetService.fetchSnippet(this.snippetId)
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe({
+          next: () => {
+            this.loading = false;
+          },
+          error: (err) => {
+            console.error('Failed to load snippet:', err);
+            this.error = 'Failed to load snippet';
+            this.loading = false;
+          }
+        });
     } else {
       // No snippet ID - create a new empty snippet
       this.snippetService.setSnippet({

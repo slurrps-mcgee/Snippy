@@ -1,5 +1,12 @@
-mat-dialog-content {
-  p {
-    margin: 0;
+::ng-deep {
+  .mat-mdc-dialog-container {
+    --mdc-theme-surface: var(--mat-sys-primary-container) !important;
+  }
+  
+  .mdc-dialog__surface {
+    background-color: var(--mat-sys-primary-container) !important;
+    border-radius: var(--mdc-shape-large, 28px) !important;
   }
 }
+
+

@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { LoginComponent } from "../login/login.component";
 import { AuthService } from '@auth0/auth0-angular';
 import { CommonModule } from '@angular/common';
@@ -13,7 +13,7 @@ import { Router, RouterModule } from '@angular/router';
 import { SnippetService } from '../../services/snippet.service';
 import { AuthLocalService } from '../../services/auth.local.service';
 import { SnippetSettingsDialogComponent } from '../dialogs/snippet-settings-dialog/snippet-settings-dialog.component';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { User } from '../../interfaces/user.interface';
 import { SnackbarService } from '../../services/snackbar.service';
 import {MatTabsModule} from '@angular/material/tabs';
@@ -38,6 +38,7 @@ import {MatTabsModule} from '@angular/material/tabs';
 export class NavbarComponent implements OnInit {
   selectedPageIndex = 0;
   user$!: ReturnType<typeof toSignal<User | null>>;
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     public auth0Service: AuthService,
@@ -69,23 +70,25 @@ export class NavbarComponent implements OnInit {
   saveSnippet() {
     const isNew = !this.snippetService.snippet()?.shortId;
     
-    this.snippetService.saveSnippet().subscribe({
-      next: (response: any) => {
+    this.snippetService.saveSnippet()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: any) => {
 
-        this.snackbarService.success('Snippet saved');
-        
-        // If it's a new snippet, navigate to the snippet editor page
-        if (isNew && response.snippet?.shortId) {
-          const currentUser = this.user$();
-          if (currentUser?.userName) {
-            this.router.navigate([currentUser.userName, 'snippet', response.snippet.shortId]);
+          this.snackbarService.success('Snippet saved');
+          
+          // If it's a new snippet, navigate to the snippet editor page
+          if (isNew && response.snippet?.shortId) {
+            const currentUser = this.user$();
+            if (currentUser?.userName) {
+              this.router.navigate([currentUser.userName, 'snippet', response.snippet.shortId]);
+            }
           }
+        },
+        error: (err) => {
+          this.snackbarService.error('Failed to save snippet');
         }
-      },
-      error: (err) => {
-        this.snackbarService.error('Failed to save snippet');
-      }
-    });
+      });
   }
 
   openSettings() {

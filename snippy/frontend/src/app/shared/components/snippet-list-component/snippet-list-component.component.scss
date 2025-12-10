@@ -1,3 +1,7 @@
 :host ::ng-deep mat-card {
     cursor: pointer;
 }
+
+:host ::ng-deep .mat-mdc-paginator {
+  background-color: var(--mat-sys-surface-container-low) !important;
+}

@@ -120,6 +120,13 @@ export class SnippetService {
     }
   }
 
+  deleteSnippet(shortId: string): Observable<any> {
+    return this.apiService.request<any>({ 
+      path: `/snippets/${shortId}`,
+      method: 'DELETE'
+    });
+  }
+
   clearSnippet() {
     this.snippet.set(null);
     this.originalSnippet.set(null);
