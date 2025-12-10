@@ -1,85 +1,70 @@
-import { Injectable, signal, computed } from '@angular/core';
+import { Injectable, inject, DestroyRef } from '@angular/core';
 import { Snippet } from '../interfaces/snippet.interface';
 import { ApiService } from './api.service';
 import { Observable, tap } from 'rxjs';
 import { SnippetResponse } from '../interfaces/snippetResponse.interface';
-import { SnackbarService } from './snackbar.service';
+import { SnippetListResponse } from '../interfaces/snippetListResponse.interface';
+import { SnippetStateService } from './snippet-state.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 @Injectable({ providedIn: 'root' })
 export class SnippetService {
-  snippet = signal<Snippet | null>(null);
-  private originalSnippet = signal<Snippet | null>(null);
+  private destroyRef = inject(DestroyRef);
+  private snippetStateService = inject(SnippetStateService);
 
   constructor(private apiService: ApiService) { }
 
-  isDirty = computed(() => {
-    const s = this.snippet();
-    const o = this.originalSnippet();
-    if (!s || !o) return false;
-    if (s.name !== o.name) return true;
-    if (s.description !== o.description) return true;
-    if (s.isPrivate !== o.isPrivate) return true;
-    if (s.tags.length !== o.tags.length) return true;
-    for (let i = 0; i < s.tags.length; i++) {
-      if (s.tags[i] !== o.tags[i]) return true;
-    }
-    if (s.snippetFiles.length !== o.snippetFiles.length) return true;
-    for (let i = 0; i < s.snippetFiles.length; i++) {
-      if (s.snippetFiles[i].content !== o.snippetFiles[i].content) return true;
-    }
-    return false;
-  });
-
-  fetchSnippet(shortId: string): Observable<SnippetResponse> {
+  // Fetch a snippet by its shortId
+  getSnippet(shortId: string): Observable<SnippetResponse> {
     return this.apiService.request<SnippetResponse>({
       path: `/snippets/${shortId}`,
       method: 'GET'
     }).pipe(
-      tap(response => this.setSnippet(response.snippet))
+      takeUntilDestroyed(this.destroyRef),
+      tap({
+        next: (response) => {
+          this.snippetStateService.setSnippet(response.snippet)
+        },
+        error: (error) => {
+          console.error('Failed to load snippet:', error);
+        }
+      })
     );
   }
 
-  setSnippet(snippet: Snippet) {
-    // Ensure tags is always an array
-    if (!snippet.tags) {
-      snippet.tags = [];
-    }
-
-    this.snippet.set(snippet);
-    this.originalSnippet.set(JSON.parse(JSON.stringify(snippet)));
+  // Get snippets belonging to the authenticated user
+  getUserSnippets(page: number, limit: number): Observable<SnippetListResponse> {
+    return this.apiService.request<SnippetListResponse>({
+      path: `/snippets/me`,
+      method: 'GET',
+      params: { page, limit }
+    });
   }
 
-  updateSnippetFile(fileType: string, content: string) {
-    this.snippet.update(s => ({
-      ...s!,
-      snippetFiles: s!.snippetFiles.map(f =>
-        f.fileType === fileType ? { ...f, content } : f
-      )
-    }));
-    console.log(`Updated ${fileType} file content`);
+  // Get public snippets with page and limit
+  getPublicSnippets(page: number, limit: number): Observable<SnippetListResponse> {
+    return this.apiService.request<SnippetListResponse>({
+      path: `/snippets/public`,
+      method: 'GET',
+      params: { page, limit }
+    });
   }
 
-  updateSnippetName(name: string) {
-    this.snippet.update(s => ({ ...s!, name }));
-    console.log('Updated snippet name to', name);
+  // Search snippets by query with page and limit
+  searchSnippets(query: string, page: number, limit: number): Observable<SnippetListResponse> {
+    return this.apiService.request<SnippetListResponse>({
+      path: `/snippets/search`,
+      method: 'GET',
+      params: { query, page, limit }
+    });
   }
 
-  updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[] }) {
-    this.snippet.update(s => ({
-      ...s!,
-      description: settings.description,
-      isPrivate: settings.isPrivate,
-      tags: settings.tags
-    }));
-    console.log('Updated snippet settings:', settings);
-  }
-
+  // Save the current snippet (create or update)
   saveSnippet(): Observable<SnippetResponse> {
-    const s = this.snippet();
+    const s = this.snippetStateService.getSnippet();
     if (!s) throw new Error('No snippet to save');
 
     console.log('SnippetFiles being saved:', s.snippetFiles);
-
 
     if (!s.shortId) {
       // New snippet - create
@@ -96,7 +81,7 @@ export class SnippetService {
       }).pipe(
         tap((response) => {
           // Update the snippet with the returned data (including shortId)
-          this.setSnippet(response.snippet);
+          this.snippetStateService.setSnippet(response.snippet);
         })
       );
     }
@@ -114,21 +99,17 @@ export class SnippetService {
         }
       }).pipe(
         tap((response) => {
-          this.setSnippet(response.snippet);
+          this.snippetStateService.setSnippet(response.snippet);
         })
       );
     }
   }
 
+  // Delete a snippet by its shortId
   deleteSnippet(shortId: string): Observable<any> {
     return this.apiService.request<any>({ 
       path: `/snippets/${shortId}`,
       method: 'DELETE'
     });
-  }
-
-  clearSnippet() {
-    this.snippet.set(null);
-    this.originalSnippet.set(null);
   }
 }

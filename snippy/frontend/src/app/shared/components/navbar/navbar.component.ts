@@ -11,6 +11,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
 import { SnippetService } from '../../services/snippet.service';
+import { SnippetStateService } from '../../services/snippet-state.service';
 import { AuthLocalService } from '../../services/auth.local.service';
 import { SnippetSettingsDialogComponent } from '../dialogs/snippet-settings-dialog/snippet-settings-dialog.component';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -44,6 +45,7 @@ export class NavbarComponent implements OnInit {
     public auth0Service: AuthService,
     private router: Router,
     public snippetService: SnippetService,
+    public snippetStateService: SnippetStateService,
     private authLocalService: AuthLocalService,
     private dialog: MatDialog,
     private snackbarService: SnackbarService
@@ -64,11 +66,11 @@ export class NavbarComponent implements OnInit {
   }
 
   onSnippetNameChange(newName: string) {
-    this.snippetService.updateSnippetName(newName);
+    this.snippetStateService.updateSnippetName(newName);
   }
 
   saveSnippet() {
-    const isNew = !this.snippetService.snippet()?.shortId;
+    const isNew = !this.snippetStateService.getSnippet()?.shortId;
     
     this.snippetService.saveSnippet()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -92,7 +94,7 @@ export class NavbarComponent implements OnInit {
   }
 
   openSettings() {
-    const snippet = this.snippetService.snippet();
+    const snippet = this.snippetStateService.getSnippet();
     if (!snippet) return;
 
     const dialogRef = this.dialog.open(SnippetSettingsDialogComponent, {
@@ -100,9 +102,11 @@ export class NavbarComponent implements OnInit {
       data: snippet
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed()
+    .pipe(takeUntilDestroyed(this.destroyRef))
+    .subscribe(result => {
       if (result) {
-        this.snippetService.updateSnippetSettings(result);
+        this.snippetStateService.updateSnippetSettings(result);
       }
     });
   }

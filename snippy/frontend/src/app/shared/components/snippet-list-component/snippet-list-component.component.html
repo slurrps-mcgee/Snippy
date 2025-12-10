@@ -27,7 +27,7 @@
             <p>{{ snippet.description || 'No description' }}</p>
 
             @if (snippet.tags && snippet.tags.length > 0) {
-            <mat-chip-set class="tags">
+            <mat-chip-set class="pb-2">
               @for (tag of snippet.tags; track tag) {
               <mat-chip>{{ tag }}</mat-chip>
               }

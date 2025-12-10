@@ -1,4 +1,16 @@
-mat-dialog-content {
-  min-width: 400px;
-  max-width: 600px;
+::ng-deep {
+  mat-form-field {
+    .mat-mdc-form-field-bottom-align {
+      display: none !important;
+    }
+  }
+  
+  .mat-mdc-dialog-container {
+    --mdc-theme-surface: var(--mat-sys-primary-container) !important;
+  }
+  
+  .mdc-dialog__surface {
+    background-color: var(--mat-sys-primary-container) !important;
+    border-radius: var(--mdc-shape-large, 28px) !important;
+  }
 }

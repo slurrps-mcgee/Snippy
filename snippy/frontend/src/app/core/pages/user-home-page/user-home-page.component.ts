@@ -1,13 +1,12 @@
-import { AfterViewInit, Component, OnInit, effect } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { AfterViewInit, Component, OnInit, effect, DestroyRef, inject } from '@angular/core';
+import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthService } from '@auth0/auth0-angular';
 import { PageEvent } from '@angular/material/paginator';
 import { AuthLocalService } from '../../../shared/services/auth.local.service';
-import { ApiService } from '../../../shared/services/api.service';
+import { SnippetService } from '../../../shared/services/snippet.service';
 import { User } from '../../../shared/interfaces/user.interface';
 import { SnippetList } from '../../../shared/interfaces/snippetList.interface';
 import { SnippetListComponentComponent } from '../../../shared/components/snippet-list-component/snippet-list-component.component';
-import { SnippetListResponse } from '../../../shared/interfaces/snippetListResponse.interface';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatDividerModule} from '@angular/material/divider';
 
@@ -25,11 +24,12 @@ export class UserHomePageComponent implements OnInit {
   pageIndex: number = 0;
   isLoading = false;
   searchQuery: string = '';
+  private destroyRef = inject(DestroyRef);
 
   constructor(
     public auth0Service: AuthService,
     private authLocalService: AuthLocalService,
-    private apiService: ApiService
+    private snippetService: SnippetService
   ) {
     this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
   }
@@ -40,23 +40,21 @@ export class UserHomePageComponent implements OnInit {
 
   loadUserSnippets(page: number, limit: number) {
     this.isLoading = true;
-    this.apiService.request<SnippetListResponse>({
-      path: `/snippets/me`,
-      method: 'GET',
-      params: { page, limit }
-    }).subscribe({
-      next: (response) => {
-        this.snippets = response.snippets;
-        this.total = response.totalCount;
-        this.isLoading = false;
-      },
-      error: (error) => {
-        console.error('Error loading user snippets:', error);
-        this.snippets = [];
-        this.total = 0;
-        this.isLoading = false;
-      }
-    });
+    this.snippetService.getUserSnippets(page, limit)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response) => {
+          this.snippets = response.snippets;
+          this.total = response.totalCount;
+          this.isLoading = false;
+        },
+        error: (error) => {
+          console.error('Error loading user snippets:', error);
+          this.snippets = [];
+          this.total = 0;
+          this.isLoading = false;
+        }
+      });
   }
 
   handleSearch(searchQuery: string) {

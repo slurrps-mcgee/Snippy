@@ -1,5 +1,5 @@
 <section class="container-fluid">
-    @if (snippetService.snippet() && snippetService.snippet()!.isOwner) {
+    @if (snippetStateService.snippet() && snippetStateService.snippet()!.isOwner) {
         <!--Snippet Editor footer settings-->
     } @else {
         <div class="text-center py-3">

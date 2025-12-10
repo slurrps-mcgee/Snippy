@@ -1,16 +1,16 @@
 import { CanDeactivateFn } from '@angular/router';
 import { inject } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { SnippetService } from '../services/snippet.service';
+import { SnippetStateService } from '../services/snippet-state.service';
 import { ConfirmDialogComponent } from '../components/dialogs/confirm-dialog/confirm-dialog.component';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 export const unsavedChangesGuard: CanDeactivateFn<any> = () => {
-  const snippetService = inject(SnippetService);
+  const snippetStateService = inject(SnippetStateService);
   const dialog = inject(MatDialog);
 
-  if (!snippetService.isDirty()) {
+  if (!snippetStateService.isDirty()) {
     return true;
   }
 

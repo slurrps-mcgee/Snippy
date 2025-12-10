@@ -1,6 +1,7 @@
-import { Injectable } from '@angular/core';
+import { Injectable, DestroyRef, inject } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { BehaviorSubject, Observable, of, switchMap, tap, filter, take, catchError } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ApiService } from './api.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { UserResponse } from '../interfaces/userResponse.interface';
@@ -10,6 +11,7 @@ import { User } from '../interfaces/user.interface';
 export class AuthLocalService {
   private userSubject = new BehaviorSubject<User | null>(null);
   public user$ = this.userSubject.asObservable();
+  private destroyRef = inject(DestroyRef);
 
   constructor(private auth0Service: AuthService, private apiService: ApiService) {
     
@@ -17,7 +19,8 @@ export class AuthLocalService {
     this.auth0Service.isAuthenticated$
       .pipe(
         filter(isAuth => !isAuth),
-        tap(() => this.clearUserState())
+        tap(() => this.clearUserState()),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
 
@@ -26,7 +29,8 @@ export class AuthLocalService {
       .pipe(
         filter(Boolean),
         switchMap(() => this.auth0Service.user$.pipe(take(1))),
-        switchMap((profile: any) => this.syncBackendUser(profile))
+        switchMap((profile: any) => this.syncBackendUser(profile)),
+        takeUntilDestroyed(this.destroyRef)
       )
       .subscribe();
   }

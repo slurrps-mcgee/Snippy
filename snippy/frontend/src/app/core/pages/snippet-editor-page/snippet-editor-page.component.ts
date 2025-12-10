@@ -2,6 +2,7 @@ import { Component, OnInit, ViewChild, OnDestroy, DestroyRef, inject } from '@an
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { SnippetService } from '../../../shared/services/snippet.service';
+import { SnippetStateService } from '../../../shared/services/snippet-state.service';
 import { CommonModule } from '@angular/common';
 import { AuthLocalService } from '../../../shared/services/auth.local.service';
 import { User } from '../../../shared/interfaces/user.interface';
@@ -26,6 +27,7 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   constructor(
     private route: ActivatedRoute,
     public snippetService: SnippetService,
+    public snippetStateService: SnippetStateService,
     private authLocalService: AuthLocalService
   ) {
     this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
@@ -36,7 +38,7 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
     this.snippetId = this.route.snapshot.paramMap.get('id');
 
     if (this.snippetId) {
-      this.snippetService.fetchSnippet(this.snippetId)
+      this.snippetService.getSnippet(this.snippetId)
         .pipe(takeUntilDestroyed(this.destroyRef))
         .subscribe({
           next: () => {
@@ -50,7 +52,7 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
         });
     } else {
       // No snippet ID - create a new empty snippet
-      this.snippetService.setSnippet({
+      this.snippetStateService.setSnippet({
         shortId: '',
         name: 'Untitled',
         description: '',
@@ -74,6 +76,6 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.snippetService.clearSnippet();
+    this.snippetStateService.clearSnippet();
   }
 }

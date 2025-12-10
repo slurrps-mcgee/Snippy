@@ -1,4 +1,4 @@
-import { Component, Inject, DOCUMENT } from '@angular/core';
+import { Component, Inject, DOCUMENT, inject, DestroyRef } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { CommonModule } from '@angular/common';
 import { AuthLocalService } from '../../services/auth.local.service';
@@ -6,8 +6,8 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { User } from '../../interfaces/user.interface';
-import { toSignal } from '@angular/core/rxjs-interop';
-import { SnippetService } from '../../services/snippet.service';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { SnippetStateService } from '../../services/snippet-state.service';
 import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -18,13 +18,15 @@ import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog
 })
 export class LoginComponent {
   user$!: ReturnType<typeof toSignal<User | null>>; // signal type
+  
+  private destroyRef = inject(DestroyRef);
 
   // Inject the AuthService to enable authentication features.
   constructor(
     @Inject(DOCUMENT) public document: Document,
     public auth0Service: AuthService,
     private authLocalService: AuthLocalService,
-    private snippetService: SnippetService,
+    private snippetStateService: SnippetStateService,
     private dialog: MatDialog
   ) {
     this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
@@ -35,7 +37,7 @@ export class LoginComponent {
   }
 
   logout() {
-    if (this.snippetService.isDirty()) {
+    if (this.snippetStateService.isDirty()) {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         width: '400px',
         data: {
@@ -46,7 +48,9 @@ export class LoginComponent {
         }
       });
 
-      dialogRef.afterClosed().subscribe(result => {
+      dialogRef.afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
         if (result) {
           this.authLocalService.logout();
         }

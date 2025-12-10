@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { SnippetService } from '../../services/snippet.service';
 import { AuthLocalService } from '../../services/auth.local.service';
 import { CommonModule } from '@angular/common';
+import { SnippetStateService } from '../../services/snippet-state.service';
 
 @Component({
   selector: 'app-footer',
@@ -16,6 +17,7 @@ constructor(
     public auth0Service: AuthService,
     private router: Router,
     public snippetService: SnippetService,
+    public snippetStateService: SnippetStateService,
     private authLocalService: AuthLocalService,
   ) {
   }

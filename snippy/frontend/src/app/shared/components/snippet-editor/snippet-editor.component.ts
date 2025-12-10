@@ -9,7 +9,7 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { SnippetService } from '../../services/snippet.service';
+import { SnippetStateService } from '../../services/snippet-state.service';
 
 @Component({
   selector: 'app-snippet-editor',
@@ -32,7 +32,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   // Code content signal
   private code = signal('');
 
-  constructor(private snippetService: SnippetService) {}
+  constructor(private snippetStateService: SnippetStateService) {}
 
   ngOnInit() {
     // Initialize code from input
@@ -71,7 +71,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
               const value = update.state.doc.toString();
               this.code.set(value);
               this.codeChange.emit(value);
-              this.snippetService.updateSnippetFile(this.editorType, value);
+              this.snippetStateService.updateSnippetFile(this.editorType, value);
             }
           })
         ]
