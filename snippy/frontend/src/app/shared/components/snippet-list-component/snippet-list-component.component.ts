@@ -57,6 +57,11 @@ export class SnippetListComponentComponent {
     this.pageChange.emit(event);
   }
 
+  openSnippet(snippet: SnippetList) {
+    console.log('Navigating to snippet:', snippet.userName, snippet.shortId);
+    this.router.navigate([snippet.userName, 'snippet', snippet.shortId]);
+  }
+
   createNewSnippet() {
     this.router.navigate(['snippet']);
   }

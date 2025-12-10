@@ -20,7 +20,7 @@
     <div class="row g-3">
       @for (snippet of snippets; track snippet.shortId) {
         <div class="col-12 col-md-6 col-lg-4">
-          <mat-card class="h-100" (click)="viewSnippet(snippet)">
+          <mat-card class="h-100" (click)="openSnippet(snippet)">
             <mat-card-header class="pb-2">
               <mat-card-title class="py-2">{{ snippet.name }}</mat-card-title>
               <mat-card-subtitle class="opacity-50">by {{ snippet.userName }}</mat-card-subtitle>
