@@ -1,8 +1,9 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Output, EventEmitter, Input, OnInit, signal } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { html } from '@codemirror/lang-html';
@@ -10,6 +11,7 @@ import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { SnippetStateService } from '../../services/snippet-state.service';
+import { AlertDialogComponent } from '../dialogs/alert-dialog/alert-dialog.component';
 
 @Component({
   selector: 'app-snippet-editor',
@@ -18,13 +20,10 @@ import { SnippetStateService } from '../../services/snippet-state.service';
   styleUrl: './snippet-editor.component.scss',
 })
 export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy {
-  // Inputs for editor type and initial content
+  // Input for editor type only
   @Input() editorType: 'html' | 'css' | 'js' = 'html';
-  @Input() fileContent: string = '';
   // Reference to the editor container
   @ViewChild('editor', { static: false }) editorRef?: ElementRef<HTMLDivElement>;
-  // Output event for code changes
-  @Output() codeChange = new EventEmitter<string>();
 
   // CodeMirror editor instance
   private editorInstance?: EditorView;
@@ -32,11 +31,25 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   // Code content signal
   private code = signal('');
 
-  constructor(private snippetStateService: SnippetStateService) {}
+  constructor(private snippetStateService: SnippetStateService, private dialog: MatDialog) {
+    // Watch state service for changes to this editor's file type
+    effect(() => {
+      const snippet = this.snippetStateService.snippet();
+      if (snippet?.snippetFiles) {
+        const file = snippet.snippetFiles.find(f => f.fileType === this.editorType);
+        if (file && file.content !== this.code()) {
+          this.code.set(file.content);
+          // Update editor content if it's already initialized
+          if (this.editorInstance) {
+            this.updateEditorContent(file.content);
+          }
+        }
+      }
+    });
+  }
 
   ngOnInit() {
-    // Initialize code from input
-    this.code.set(this.fileContent);
+    // Initialization handled by effect watching state service
   }
 
   ngAfterViewInit() {
@@ -49,6 +62,14 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   ngOnDestroy() {
     // Clean up editor instance
     this.editorInstance?.destroy();
+  }
+
+  // Update editor content programmatically
+  private updateEditorContent(content: string) {
+    if (!this.editorInstance) return;
+    this.editorInstance.dispatch({
+      changes: { from: 0, to: this.editorInstance.state.doc.length, insert: content }
+    });
   }
 
   // Initialize CodeMirror editor based on type
@@ -70,7 +91,6 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
             if (update.docChanged) {
               const value = update.state.doc.toString();
               this.code.set(value);
-              this.codeChange.emit(value);
               this.snippetStateService.updateSnippetFile(this.editorType, value);
             }
           })
@@ -94,6 +114,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
+  //#region Code Formatting and Analysis
   // Format code
   formatCode() {
     if (!this.editorInstance) return;
@@ -197,9 +218,21 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     if (issues.length === 0) {
-      alert(`No issues found in ${this.editorType.toUpperCase()}`);
+      this.dialog.open(AlertDialogComponent, {
+        data: {
+          title: 'Analysis',
+          message: `No issues found in ${this.editorType.toUpperCase()}`,
+          type: 'success'
+        }
+      });
     } else {
-      alert(`Issues found in ${this.editorType.toUpperCase()}:\n\n` + issues.join('\n'));
+      this.dialog.open(AlertDialogComponent, {
+        data: {
+          title: 'Issues Found',
+          message: `Issues found in ${this.editorType.toUpperCase()}:\n\n${issues.join('\n')}`,
+          type: 'warning'
+        }
+      });
     }
   }
 
@@ -255,4 +288,5 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     
     return issues;
   }
+  // #endregion Code Formatting and Analysis
 }

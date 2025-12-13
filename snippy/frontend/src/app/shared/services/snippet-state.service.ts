@@ -4,6 +4,8 @@ import { Snippet } from '../interfaces/snippet.interface';
 @Injectable({ providedIn: 'root' })
 export class SnippetStateService {
   snippet = signal<Snippet | null>(null);
+  previewUpdateType = signal<string | null>(null);
+
   private originalSnippet = signal<Snippet | null>(null);
 
   // Determine if the snippet has unsaved changes
@@ -25,10 +27,8 @@ export class SnippetStateService {
     return false;
   });
 
-  constructor() { }
-
   // Set the current snippet
-  setSnippet(snippet: Snippet) {
+  setSnippet(snippet: Snippet, updatePreview: boolean = false) {
     // Ensure tags is always an array
     if (!snippet.tags) {
       snippet.tags = [];
@@ -36,44 +36,44 @@ export class SnippetStateService {
 
     this.snippet.set(snippet);
     this.originalSnippet.set(JSON.parse(JSON.stringify(snippet)));
+
+    // If updating from API response, trigger preview update for all code files
+    if (updatePreview) {
+      this.previewUpdateType.set('full'); // Set to trigger preview update
+    }
   }
 
   // Update the content of a specific snippet file
   updateSnippetFile(fileType: string, content: string) {
+    this.previewUpdateType.set((fileType.toLowerCase() === 'html' || fileType.toLowerCase() === 'js') ? 'full' : 'partial');
     this.snippet.update(s => ({
       ...s!,
       snippetFiles: s!.snippetFiles.map(f =>
         f.fileType === fileType ? { ...f, content } : f
       )
     }));
-    console.log(`Updated ${fileType} file content`);
   }
 
   // Update snippet name
   updateSnippetName(name: string) {
+    this.previewUpdateType.set(null);
     this.snippet.update(s => ({ ...s!, name }));
-    console.log('Updated snippet name to', name);
   }
 
   // Update snippet settings: description, isPrivate, tags
   updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[] }) {
+    this.previewUpdateType.set(null);
     this.snippet.update(s => ({
       ...s!,
       description: settings.description,
       isPrivate: settings.isPrivate,
       tags: settings.tags
     }));
-    console.log('Updated snippet settings:', settings);
   }
 
   // Clear the current snippet
   clearSnippet() {
     this.snippet.set(null);
     this.originalSnippet.set(null);
-  }
-
-  // Get current snippet synchronously
-  getSnippet(): Snippet | null {
-    return this.snippet();
   }
 }

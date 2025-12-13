@@ -70,7 +70,7 @@ export class NavbarComponent implements OnInit {
   }
 
   saveSnippet() {
-    const isNew = !this.snippetStateService.getSnippet()?.shortId;
+    const isNew = !this.snippetStateService.snippet()?.shortId;
     
     this.snippetService.saveSnippet()
       .pipe(takeUntilDestroyed(this.destroyRef))
@@ -94,7 +94,7 @@ export class NavbarComponent implements OnInit {
   }
 
   openSettings() {
-    const snippet = this.snippetStateService.getSnippet();
+    const snippet = this.snippetStateService.snippet();
     if (!snippet) return;
 
     const dialogRef = this.dialog.open(SnippetSettingsDialogComponent, {

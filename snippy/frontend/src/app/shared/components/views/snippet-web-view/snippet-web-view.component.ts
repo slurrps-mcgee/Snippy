@@ -1,9 +1,10 @@
-import { Component, signal, ViewChild, ElementRef, effect, AfterViewInit, OnInit, OnDestroy, Input } from '@angular/core';
+import { Component, ViewChild, ElementRef, effect, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
 import { AngularSplitModule } from 'angular-split';
 import { CommonModule } from '@angular/common';
 import { SnippetEditorComponent } from '../../snippet-editor/snippet-editor.component';
 import { SnippetPreviewComponent } from '../../snippet-preview/snippet-preview.component';
 import { Snippet } from '../../../interfaces/snippet.interface';
+import { SnippetStateService } from '../../../services/snippet-state.service';
 
 @Component({
   selector: 'app-snippet-web-view',
@@ -12,46 +13,37 @@ import { Snippet } from '../../../interfaces/snippet.interface';
   styleUrl: './snippet-web-view.component.scss',
 })
 export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy {
-  // Input snippet to load code from
-  @Input() snippet!: Snippet;
   // Reference to the preview component
   @ViewChild(SnippetPreviewComponent) previewComponent?: SnippetPreviewComponent;
 
-  // Signals for code state
-  htmlCode = signal('');
-  cssCode = signal('');
-  jsCode = signal('');
-
-  constructor() {
-    // Reactive preview update whenever any code changes
+  constructor(public snippetStateService: SnippetStateService) {
+    // Watch snippet state service for code changes and update preview
     effect(() => {
-      // Read all signals to trigger effect
-      this.htmlCode();
-      this.cssCode();
-      this.jsCode();
-      // Update preview
-      this.updatePreview();
+      const snippet = this.snippetStateService.snippet();
+      const previewUpdateType = this.snippetStateService.previewUpdateType();
+      
+      // Only update preview if a code file actually changed
+      if (!previewUpdateType || !snippet?.snippetFiles) return;
+      
+      const htmlFile = snippet.snippetFiles.find(f => f.fileType === 'html');
+      const cssFile = snippet.snippetFiles.find(f => f.fileType === 'css');
+      const jsFile = snippet.snippetFiles.find(f => f.fileType === 'js');
+      
+      this.updatePreview(
+        htmlFile?.content || '',
+        cssFile?.content || '',
+        jsFile?.content || '',
+        previewUpdateType
+      );
     });
   }
 
   ngOnInit() {
-    // Initialize code signals from snippet input if not null
-    if (this.snippet) {
-      const htmlFile = this.snippet.snippetFiles.find(f => f.fileType === 'html');
-      const cssFile = this.snippet.snippetFiles.find(f => f.fileType === 'css');
-      const jsFile = this.snippet.snippetFiles.find(f => f.fileType === 'js');
-      
-      this.htmlCode.set(htmlFile?.content || '');
-      this.cssCode.set(cssFile?.content || '');
-      this.jsCode.set(jsFile?.content || '');
-    }
+    // Initialization handled by effect watching state service
   }
 
   ngAfterViewInit() {
-    setTimeout(() => {
-      // Update preview after view is initialized
-      this.updatePreview();
-    }, 0);
+    // Initial preview update handled by effect
   }
 
   ngOnDestroy() {
@@ -59,26 +51,17 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   // Update preview by passing code to preview component
-  private updatePreview() {
-    if (this.previewComponent) {
-      this.previewComponent.updatePreview(
-        this.htmlCode(),
-        this.cssCode(),
-        this.jsCode()
-      );
+  private updatePreview(html: string, css: string, js: string, previewUpdateType: string| null) {
+    if (!this.previewComponent) {
+      // If preview component not ready, retry after a short delay
+      setTimeout(() => {
+        if (this.previewComponent) {
+          this.previewComponent.updatePreview(html, css, js, previewUpdateType);
+        }
+      }, 100);
+      return;
     }
-  }
-
-  // Handle code changes from editor components to trigger the signals
-  onHtmlCodeChange(code: string) {
-    this.htmlCode.set(code);
-  }
-
-  onCssCodeChange(code: string) {
-    this.cssCode.set(code);
-  }
-
-  onJsCodeChange(code: string) {
-    this.jsCode.set(code);
+    
+    this.previewComponent.updatePreview(html, css, js, previewUpdateType);
   }
 }

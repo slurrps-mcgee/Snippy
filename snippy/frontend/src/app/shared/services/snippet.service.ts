@@ -23,7 +23,7 @@ export class SnippetService {
       takeUntilDestroyed(this.destroyRef),
       tap({
         next: (response) => {
-          this.snippetStateService.setSnippet(response.snippet)
+          this.snippetStateService.setSnippet(response.snippet, true);
         },
         error: (error) => {
           console.error('Failed to load snippet:', error);
@@ -61,10 +61,8 @@ export class SnippetService {
 
   // Save the current snippet (create or update)
   saveSnippet(): Observable<SnippetResponse> {
-    const s = this.snippetStateService.getSnippet();
+    const s = this.snippetStateService.snippet();
     if (!s) throw new Error('No snippet to save');
-
-    console.log('SnippetFiles being saved:', s.snippetFiles);
 
     if (!s.shortId) {
       // New snippet - create
@@ -81,7 +79,7 @@ export class SnippetService {
       }).pipe(
         tap((response) => {
           // Update the snippet with the returned data (including shortId)
-          this.snippetStateService.setSnippet(response.snippet);
+          this.snippetStateService.setSnippet(response.snippet, true);
         })
       );
     }
@@ -99,7 +97,7 @@ export class SnippetService {
         }
       }).pipe(
         tap((response) => {
-          this.snippetStateService.setSnippet(response.snippet);
+          this.snippetStateService.setSnippet(response.snippet, false);
         })
       );
     }

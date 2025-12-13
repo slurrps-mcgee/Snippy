@@ -1,12 +1,14 @@
 import { Component, OnInit, ViewChild, OnDestroy, DestroyRef, inject } from '@angular/core';
 import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { SnippetService } from '../../../shared/services/snippet.service';
 import { SnippetStateService } from '../../../shared/services/snippet-state.service';
 import { CommonModule } from '@angular/common';
 import { AuthLocalService } from '../../../shared/services/auth.local.service';
 import { User } from '../../../shared/interfaces/user.interface';
 import { SnippetWebViewComponent } from "../../../shared/components/views/snippet-web-view/snippet-web-view.component";
+import { HostListener } from '@angular/core';
+import { SnackbarService } from '../../../shared/services/snackbar.service';
 
 @Component({
   selector: 'app-snippet-editor-page',
@@ -16,25 +18,31 @@ import { SnippetWebViewComponent } from "../../../shared/components/views/snippe
 })
 export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   @ViewChild('editor') editor?: SnippetWebViewComponent;
-  
+
   user$!: ReturnType<typeof toSignal<User | null>>;
-  username: string | null = null;
   snippetId: string | null = null;
   loading = true;
   error: string | null = null;
   private destroyRef = inject(DestroyRef);
-  
+
+  @HostListener('window:keydown.control.s', ['$event'])
+  onSaveShortcut(event: Event) {
+    event.preventDefault();
+    this.saveSnippet();
+  }
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     public snippetService: SnippetService,
     public snippetStateService: SnippetStateService,
-    private authLocalService: AuthLocalService
+    private authLocalService: AuthLocalService,
+    private snackbarService: SnackbarService
   ) {
     this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
   }
 
   ngOnInit(): void {
-    this.username = this.route.snapshot.paramMap.get('username');
     this.snippetId = this.route.snapshot.paramMap.get('id');
 
     if (this.snippetId) {
@@ -46,7 +54,6 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
           },
           error: (err) => {
             console.error('Failed to load snippet:', err);
-            this.error = 'Failed to load snippet';
             this.loading = false;
           }
         });
@@ -70,12 +77,38 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
           { fileType: 'css', content: '' },
           { fileType: 'js', content: '' }
         ]
-      });
+      }, false);
       this.loading = false;
     }
   }
 
   ngOnDestroy(): void {
     this.snippetStateService.clearSnippet();
+  }
+
+  saveSnippet() {
+    const isNew = !this.snippetStateService.snippet()?.shortId;
+
+    if (!this.snippetStateService.isDirty()) return;
+
+    this.snippetService.saveSnippet()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: any) => {
+
+          this.snackbarService.success('Snippet saved');
+
+          // If it's a new snippet, navigate to the snippet editor page
+          if (isNew && response.snippet?.shortId) {
+            const currentUser = this.user$();
+            if (currentUser?.userName) {
+              this.router.navigate([currentUser.userName, 'snippet', response.snippet.shortId]);
+            }
+          }
+        },
+        error: (err) => {
+          this.snackbarService.error('Failed to save snippet');
+        }
+      });
   }
 }

@@ -6,8 +6,7 @@
   } @else if (snippetStateService.snippet()) {
     <app-snippet-web-view
       class="flex-grow-1 overflow-hidden" 
-      #editor
-      [snippet]="snippetStateService.snippet()!">
+      #editor>
     </app-snippet-web-view>
   }
 </div>
