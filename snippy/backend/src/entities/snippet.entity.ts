@@ -9,11 +9,11 @@ import {
   BelongsTo,
   BeforeCreate,
 } from "sequelize-typescript";
-import { SnippetFiles } from "./snippetFile.model";
-import { Users } from "./user.model";
-import { Favorites } from "./favorite.model";
-import { Comments } from "./comment.model";
-import { createUniqueShortName } from "../utils/helper";
+import { SnippetFiles } from "./snippetFile.entity";
+import { Users } from "./user.entity";
+import { Favorites } from "./favorite.entity";
+import { Comments } from "./comment.entity";
+import { createUniqueShortName } from "../common/utils/helper";
 
 @Table({
   tableName: "snippets",

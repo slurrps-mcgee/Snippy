@@ -1,7 +1,7 @@
 import { Transaction } from "sequelize";
-import { Snippets } from "../../models/snippet.model";
-import { SnippetFiles } from "../../models/snippetFile.model";
-import { Users } from "../../models/user.model";
+import { Snippets } from "../../entities/snippet.entity";
+import { SnippetFiles } from "../../entities/snippetFile.entity";
+import { Users } from "../../entities/user.entity";
 import { Op } from "sequelize";
 
 // #region Snippet CREATE/UPDATE/DELETE

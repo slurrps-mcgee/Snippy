@@ -1,4 +1,4 @@
-import { Users } from '../../models/user.model';
+import { Users } from '../../entities/user.entity';
 
 // #region User CRUD
 export async function createUser(

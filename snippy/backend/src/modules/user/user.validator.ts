@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { CustomError } from '../../utils/custom-error';
+import { CustomError } from '../../common/exceptions/custom-error';
 
 const registerSchema = Joi.object({
     name: Joi.string().min(2).max(100).optional(),

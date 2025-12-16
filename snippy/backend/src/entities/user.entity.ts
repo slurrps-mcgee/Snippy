@@ -7,10 +7,10 @@ import {
   HasMany,
   BeforeCreate,
 } from 'sequelize-typescript';
-import { Snippets } from './snippet.model';
-import { Favorites } from './favorite.model';
-import { Comments } from './comment.model';
-import { createUniqueUsername } from '../utils/helper';
+import { Snippets } from './snippet.entity';
+import { Favorites } from './favorite.entity';
+import { Comments } from './comment.entity';
+import { createUniqueUsername } from '../common/utils/helper';
 
 @Table({
   tableName: 'users',

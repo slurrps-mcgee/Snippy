@@ -1,5 +1,5 @@
 import Joi from 'joi';
-import { CustomError } from '../../utils/custom-error';
+import { CustomError } from '../../common/exceptions/custom-error';
 
 const createSnippetSchema = Joi.object({
     name: Joi.string().min(1).max(255).required(),

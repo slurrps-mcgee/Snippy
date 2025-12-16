@@ -1,6 +1,6 @@
 import path from 'path';
 import swaggerJSDoc from 'swagger-jsdoc';
-import { version } from '../../package.json';
+import { version } from '../../../package.json';
 
 const options = {
   definition: {

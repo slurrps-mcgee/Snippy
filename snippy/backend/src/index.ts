@@ -1,15 +1,15 @@
 import express from 'express';
 import cors from "cors";
-import { setupSwaggerDocs } from './utils/swaggerDocs';
+import { setupSwaggerDocs } from './common/utils/swaggerDocs';
 import router from './routes/routes';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from "express-rate-limit";
-import connectWithRetry from './config/sequelize';
-import { errorHandler } from './utils/error-handler';
+import connectWithRetry from './database/sequelize';
+import { errorHandler } from './common/utils/error-handler';
 import { version } from '../package.json';
-import logger from './utils/logger';
-import { jwtCheck } from './middleware/jwt.service';
+import logger from './common/utils/logger';
+import { jwtCheck } from './common/middleware/jwt.service';
 import cookie from 'cookie-parser';
 
 // Load environment variables from .env file

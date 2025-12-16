@@ -1,9 +1,9 @@
 import { randomInt } from 'crypto';
-import { Users } from '../models/user.model';
-import { Snippets } from '../models/snippet.model';
+import { Users } from '../../entities/user.entity';
+import { Snippets } from '../../entities/snippet.entity';
 import { customAlphabet } from 'nanoid';
 import { shortIdRetryPolicy, usernameRetryPolicy } from './resiliance';
-import { findByShortId } from '../modules/snippet/snippet.repo';
+import { findByShortId } from '../../modules/snippet/snippet.repo';
 
 // Nanoid setup for shortId generation
 const alphabet = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';

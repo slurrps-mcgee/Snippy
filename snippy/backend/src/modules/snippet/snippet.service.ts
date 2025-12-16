@@ -1,7 +1,7 @@
-import { sequelize } from "../../config/sequelize";
-import { Snippets } from "../../models/snippet.model";
-import { CustomError } from "../../utils/custom-error";
-import { handleError } from "../../utils/error-handler";
+import { sequelize } from "../../database/sequelize";
+import { Snippets } from "../../entities/snippet.entity";
+import { CustomError } from "../../common/exceptions/custom-error";
+import { handleError } from "../../common/utils/error-handler";
 import { findByUsername } from "../user/user.repo";
 import {
     createSnippet,

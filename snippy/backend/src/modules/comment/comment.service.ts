@@ -1,7 +1,7 @@
-import { sequelize } from "../../config/sequelize";
-import { CustomError } from "../../utils/custom-error";
-import { handleError } from "../../utils/error-handler";
-import { Comments } from "../../models/comment.model";
+import { sequelize } from "../../database/sequelize";
+import { CustomError } from "../../common/exceptions/custom-error";
+import { handleError } from "../../common/utils/error-handler";
+import { Comments } from "../../entities/comment.entity";
 import {
     createComment,
     deleteComment,

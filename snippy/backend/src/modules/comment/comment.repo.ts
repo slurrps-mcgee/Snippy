@@ -1,5 +1,5 @@
 import { Transaction } from "sequelize";
-import { Comments } from "../../models/comment.model";
+import { Comments } from "../../entities/comment.entity";
 
 // #region Comment CREATE/UPDATE/DELETE
 // Create Comment

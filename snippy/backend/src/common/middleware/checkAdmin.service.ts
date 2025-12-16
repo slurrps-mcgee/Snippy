@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from "express";
-import { findById } from "../modules/user/user.repo";
+import { findById } from "../../modules/user/user.repo";
 import logger from '../utils/logger';
 
 /**

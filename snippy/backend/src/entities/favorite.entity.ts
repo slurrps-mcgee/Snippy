@@ -7,8 +7,8 @@ import {
     ForeignKey,
     BelongsTo,
 } from "sequelize-typescript";
-import { Snippets } from "./snippet.model";
-import { Users } from "./user.model";
+import { Snippets } from "./snippet.entity";
+import { Users } from "./user.entity";
 import { allow } from "joi";
 
 @Table({

@@ -1,11 +1,11 @@
 import { Sequelize } from 'sequelize-typescript';
-import { Users } from '../models/user.model'; // Adjust the import path as necessary
-import { Snippets } from '../models/snippet.model';
-import { SnippetFiles } from '../models/snippetFile.model';
-import { Favorites } from '../models/favorite.model';
-import { Comments } from '../models/comment.model';
-import { dbConnectionPolicy, defaultPolicy } from '../utils/resiliance';
-import logger from '../utils/logger';
+import { Users } from '../entities/user.entity'; // Adjust the import path as necessary
+import { Snippets } from '../entities/snippet.entity';
+import { SnippetFiles } from '../entities/snippetFile.entity';
+import { Favorites } from '../entities/favorite.entity';
+import { Comments } from '../entities/comment.entity';
+import { dbConnectionPolicy } from '../common/utils/resiliance';
+import logger from '../common/utils/logger';
 
 // Initialize Sequelize with MySQL configuration
 export const sequelize = new Sequelize({

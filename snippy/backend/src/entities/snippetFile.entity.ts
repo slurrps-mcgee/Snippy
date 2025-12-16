@@ -7,7 +7,7 @@ import {
   ForeignKey,
   BelongsTo,
 } from "sequelize-typescript";
-import { Snippets } from "./snippet.model";
+import { Snippets } from "./snippet.entity";
 
 @Table({
   tableName: "snippet_files",

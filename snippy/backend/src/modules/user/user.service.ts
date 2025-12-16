@@ -1,13 +1,8 @@
-import { Users } from "../../models/user.model";
-import { CustomError } from "../../utils/custom-error";
-import logger from '../../utils/logger';
-import { fileTypes, invalidUsernames } from "../../utils/helper";
+import { Users } from "../../entities/user.entity";
+import { CustomError } from "../../common/exceptions/custom-error";
+import { invalidUsernames } from "../../common/utils/helper";
 import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
-import { Snippets } from "../../models/snippet.model";
-import { SnippetFiles } from "../../models/snippetFile.model";
-import { Comments } from "../../models/comment.model";
-import { Favorites } from "../../models/favorite.model";
-import { handleError } from "../../utils/error-handler";
+import { handleError } from "../../common/utils/error-handler";
 
 export async function ensureUserHandler(payload: any) {
     const auth0Id = payload.auth?.payload?.sub;
