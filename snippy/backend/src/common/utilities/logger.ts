@@ -38,9 +38,11 @@ const consoleTransport = new winston.transports.Console({
     format: winston.format.combine(winston.format.colorize(), logFormatter),
 });
 
+import { config } from '../../config';
+
 // Winston Logger Configuration
 const logger = winston.createLogger({
-    level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+    level: config.logging.level,
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.printf(({ timestamp, level, message }) => {

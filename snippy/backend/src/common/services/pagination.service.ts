@@ -1,4 +1,4 @@
-import { PAGINATION } from '../constants/app.constants';
+import { config } from '../../config';
 
 /**
  * Pagination helper service
@@ -19,10 +19,10 @@ export class PaginationService {
      * Extract and validate pagination parameters from query
      */
     static getPaginationParams(query: PaginationQuery): PaginationParams {
-        const page = Math.max(1, parseInt(String(query.page || PAGINATION.DEFAULT_PAGE)));
+        const page = Math.max(1, parseInt(String(query.page || config.pagination.defaultPage)));
         const limit = Math.min(
-            PAGINATION.MAX_LIMIT,
-            Math.max(1, parseInt(String(query.limit || PAGINATION.DEFAULT_LIMIT)))
+            config.pagination.maxLimit,
+            Math.max(1, parseInt(String(query.limit || config.pagination.defaultLimit)))
         );
         const offset = (page - 1) * limit;
 

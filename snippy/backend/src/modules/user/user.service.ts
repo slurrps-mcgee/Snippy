@@ -1,6 +1,6 @@
 import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
-import { USERNAME } from "../../common/constants/app.constants";
+import { config } from '../../config/index';
 import { UserMapper } from "./user.mapper";
 import { UserDTO } from "./dto/user.dto";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
@@ -187,7 +187,7 @@ export async function getCurrentUserHandler(payload: ServicePayload): Promise<Se
 export async function checkUserNameAvailabilityHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
     try {
         const userName = payload.params?.userName;
-        if (!userName || userName.trim() === '' || USERNAME.INVALID_USERNAMES.includes(userName.toLowerCase())) {
+        if (!userName || userName.trim() === '' || config.username.invalidUsernames.includes(userName.toLowerCase())) {
             throw new CustomError('Invalid username', 400);
         }
 

@@ -4,14 +4,15 @@ import { Snippets } from '../../entities/snippet.entity';
 import { customAlphabet } from 'nanoid';
 import { shortIdRetryPolicy, usernameRetryPolicy } from './resiliance';
 import { findByShortId } from '../../modules/snippet/snippet.repo';
-import { SHORT_ID, USERNAME, FileType } from '../constants/app.constants';
+import { FileType } from '../constants/app.constants';
+import { config } from '../../config';
 import logger from './logger';
 
 // Nanoid setup for shortId generation
-const nano = customAlphabet(SHORT_ID.ALPHABET, SHORT_ID.LENGTH);
+const nano = customAlphabet(config.shortId.alphabet, config.shortId.length);
 
 // Re-export for backward compatibility
-export const invalidUsernames = USERNAME.INVALID_USERNAMES;
+export const invalidUsernames = config.username.invalidUsernames;
 export const fileTypes = FileType;
 
 // Generate a unique username for a user
@@ -22,13 +23,13 @@ export const createUniqueUsername = async (user: Users): Promise<void> => {
 	if (user.displayName) {
 		base = user.displayName.replace(/[^a-zA-Z0-9]/g, '').toLowerCase();
 		if (!base) {
-			const adj = USERNAME.ADJECTIVES[randomInt(0, USERNAME.ADJECTIVES.length)];
-			const noun = USERNAME.NOUNS[randomInt(0, USERNAME.NOUNS.length)];
+			const adj = config.username.adjectives[randomInt(0, config.username.adjectives.length)];
+			const noun = config.username.nouns[randomInt(0, config.username.nouns.length)];
 			base = `${adj}-${noun}`;
 		}
 	} else {
-		const adj = USERNAME.ADJECTIVES[randomInt(0, USERNAME.ADJECTIVES.length)];
-		const noun = USERNAME.NOUNS[randomInt(0, USERNAME.NOUNS.length)];
+		const adj = config.username.adjectives[randomInt(0, config.username.adjectives.length)];
+		const noun = config.username.nouns[randomInt(0, config.username.nouns.length)];
 		base = `${adj}-${noun}`;
 	}
 

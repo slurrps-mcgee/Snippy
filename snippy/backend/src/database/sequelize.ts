@@ -1,20 +1,21 @@
 import { Sequelize } from 'sequelize-typescript';
-import { Users } from '../entities/user.entity'; // Adjust the import path as necessary
+import { Users } from '../entities/user.entity';
 import { Snippets } from '../entities/snippet.entity';
 import { SnippetFiles } from '../entities/snippetFile.entity';
 import { Favorites } from '../entities/favorite.entity';
 import { Comments } from '../entities/comment.entity';
 import { dbConnectionPolicy } from '../common/utilities/resiliance';
 import logger from '../common/utilities/logger';
+import { config } from '../config';
 
 // Initialize Sequelize with MySQL configuration
 export const sequelize = new Sequelize({
-  database: process.env.DB_NAME || 'snippy',
-  username: process.env.DB_USER || 'snippy_api',
-  password: process.env.DB_PASS,
-  host: process.env.DB_HOST || 'db',
-  port: Number(process.env.DB_PORT) || 3306,
-  dialect: 'mysql',
+  database: config.database.name,
+  username: config.database.username,
+  password: config.database.password,
+  host: config.database.host,
+  port: config.database.port,
+  dialect: config.database.dialect,
   logging: false,
 });
 
