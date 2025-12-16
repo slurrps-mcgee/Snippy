@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { addCommentHandler, updateCommentHandler, getCommentsBySnippetIdHandler, deleteCommentHandler } from './comment.service';
+import { validateCreateComment, validateUpdateComment } from './comment.validator';
 
 export async function getComments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
@@ -12,6 +13,7 @@ export async function getComments(req: Request, res: Response, next: NextFunctio
 
 export async function createComment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+        validateCreateComment(req.body);
         const { comment } = await addCommentHandler(req);
         res.status(201).json({ success: true, comment });
     } catch (error) {
@@ -21,6 +23,7 @@ export async function createComment(req: Request, res: Response, next: NextFunct
 
 export async function updateComment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
+        validateUpdateComment(req.body);
         const { comment } = await updateCommentHandler(req);
         res.status(200).json({ success: true, comment });
         

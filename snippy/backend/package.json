@@ -9,7 +9,13 @@
     "build:watch": "tsc --watch",
     "docker-start": "npm run build && npm run start"
   },
-  "keywords": ["Express", "Nodejs", "typescript", "API", "Snippy"],
+  "keywords": [
+    "Express",
+    "Nodejs",
+    "typescript",
+    "API",
+    "Snippy"
+  ],
   "author": "Kenneth Lamb",
   "license": "MIT",
   "description": "Backend API for Snippy application",
@@ -24,6 +30,7 @@
     "express-oauth2-jwt-bearer": "^1.7.1",
     "express-rate-limit": "^8.0.1",
     "helmet": "^8.1.0",
+    "isomorphic-dompurify": "^2.34.0",
     "joi": "^18.0.0",
     "jsonwebtoken": "^9.0.2",
     "jwks-rsa": "^3.2.0",
@@ -44,6 +51,7 @@
     "@types/bcrypt": "^6.0.0",
     "@types/cookie-parser": "^1.4.9",
     "@types/cors": "^2.8.19",
+    "@types/dompurify": "^3.0.5",
     "@types/express": "^5.0.3",
     "@types/joi": "^17.2.2",
     "@types/jsonwebtoken": "^9.0.10",
