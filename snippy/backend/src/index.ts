@@ -3,7 +3,7 @@ import cors from "cors";
 import { setupSwaggerDocs } from './common/utilities/swaggerDocs';
 import router from './routes/routes';
 import helmet from 'helmet';
-import rateLimit from "express-rate-limit";
+import { globalLimiter } from './common/middleware/rate-limit.service';
 import connectWithRetry from './database/sequelize';
 import { errorHandler } from './common/utilities/error-handler';
 import { version } from '../package.json';
@@ -33,13 +33,8 @@ app.use(cors({
   credentials: true
 }));
 
-// Rate limiting
-const limiter = rateLimit({
-  windowMs: config.rateLimit.windowMs,
-  max: config.rateLimit.maxRequests,
-});
-
-app.use(limiter);
+// Global rate limiting - baseline protection
+app.use(globalLimiter);
 
 app.use(express.json());
 

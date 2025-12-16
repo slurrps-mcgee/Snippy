@@ -38,7 +38,12 @@ export const config = {
     // Rate Limiting
     rateLimit: {
         windowMs: 15 * 60 * 1000, // 15 minutes
-        maxRequests: 100,
+        authWindowMs: 15 * 60 * 1000, // 15 minutes for auth endpoints
+        global: 200, // Global baseline limit
+        publicReads: 150, // Higher limit for browsing/reading
+        writes: 50, // Lower limit for write operations
+        auth: 20, // Strictest limit for authentication
+        search: 60, // Moderate limit for search operations
     },
 
     // Pagination
