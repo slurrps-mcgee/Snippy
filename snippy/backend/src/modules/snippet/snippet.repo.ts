@@ -26,18 +26,22 @@ export async function updateSnippet(
     shortId: string,
     patch: Partial<Snippets>,
     transaction?: Transaction
-): Promise<boolean> {
-    const updated = await Snippets.update(patch, { where: { shortId }, transaction });
-    return updated[0] > 0;
+): Promise<void> {
+    const [updated] = await Snippets.update(patch, { where: { shortId }, transaction });
+    if (updated === 0) {
+        throw new Error('Snippet not found or no changes made');
+    }
 }
 // Update SnippetFiles
 export async function updateSnippetFiles(
     snippetFileID: string,
     patch: Partial<SnippetFiles>,
     transaction?: Transaction
-): Promise<boolean> {
-    const updated = await SnippetFiles.update( patch, { where: { snippetFileID }, transaction });
-    return updated[0] > 0;
+): Promise<void> {
+    const [updated] = await SnippetFiles.update( patch, { where: { snippetFileID }, transaction });
+    if (updated === 0) {
+        throw new Error('Snippet file not found or no changes made');
+    }
 }
 // Delete Snippet will cascade deleting snippetFiles, comments, favorites, etc.
 export async function deleteSnippet(

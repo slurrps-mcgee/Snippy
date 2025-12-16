@@ -16,11 +16,9 @@ const createSnippetSchema = Joi.object({
 });
 
 
-export const validateCreateSnippet = async (payload: any) => {
+export const validateCreateSnippet = (payload: any): void => {
     const { error } = createSnippetSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
-
-    return true;
 };
 
 
@@ -37,20 +35,16 @@ const updateSnippetSchema = Joi.object({
     ).optional(),
 });
 
-export const validateUpdateSnippet = async (payload: any) => {
+export const validateUpdateSnippet = (payload: any): void => {
     const { error } = updateSnippetSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
-
-    return true;
-}
+};
 
 const forkSnippetSchema = Joi.object({
     shortId: Joi.string().required(),
 });
 
-export const validateForkSnippet = async (payload: any) => {
+export const validateForkSnippet = (payload: any): void => {
     const { error } = forkSnippetSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
-
-    return true;
-}
+};

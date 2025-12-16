@@ -39,11 +39,7 @@ export async function ensureUserHandler(payload: ServicePayload<EnsureUserReques
 
                 if (Object.keys(patch).length) {
                     // call your update routine that sanitizes the result
-                    const updated = await updateUser(auth0Id, patch, t);
-
-                    if (!updated) {
-                        throw new CustomError('Failed to update user', 500);
-                    }
+                    await updateUser(auth0Id, patch, t);
                 }
             }
             else {
@@ -104,10 +100,7 @@ export async function updateUserHandler(payload: ServicePayload<UpdateUserReques
 
     try {
         return await sequelize.transaction(async (t) => {
-            const updated = await updateUser(auth0Id, patch as any, t);
-            if (!updated) {
-                throw new CustomError('User not found', 404);
-            }
+            await updateUser(auth0Id, patch as any, t);
 
             // Get complete user data then sanitize for frontend response
             const user = await findById(auth0Id, t);

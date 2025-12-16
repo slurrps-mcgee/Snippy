@@ -6,11 +6,9 @@ const registerSchema = Joi.object({
     pictureUrl: Joi.string().uri().optional(),
 });
 
-
-export const validateRegister = async (payload: any) => {
+export const validateRegister = (payload: any): void => {
     const { error } = registerSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
-    return true;
 };
 
 const updateUserSchema = Joi.object({
@@ -20,8 +18,7 @@ const updateUserSchema = Joi.object({
     pictureUrl: Joi.string().uri().optional(),
 });
 
-export const validateUpdateUser = async (payload: any) => {
+export const validateUpdateUser = (payload: any): void => {
     const { error } = updateUserSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
-    return true;
 };

@@ -13,16 +13,20 @@ export async function createUser(
 export async function updateUser(
 	auth0Id: string, 
 	patch: Partial<Users>,
-	transaction?: Transaction): Promise<boolean> {
-	const updated = await Users.update(patch, { where: { auth0Id: auth0Id }, transaction });
-	return updated[0] > 0;
+	transaction?: Transaction): Promise<void> {
+	const [updated] = await Users.update(patch, { where: { auth0Id: auth0Id }, transaction });
+	if (updated === 0) {
+		throw new Error('User not found or no changes made');
+	}
 }
 
 export async function deleteUser(
 	auth0Id: string,
-	transaction?: Transaction): Promise<boolean> {
+	transaction?: Transaction): Promise<void> {
 	const deleted = await Users.destroy({ where: { auth0Id: auth0Id }, transaction });
-	return deleted > 0;
+	if (deleted === 0) {
+		throw new Error('User not found');
+	}
 }
 // #endregion
 

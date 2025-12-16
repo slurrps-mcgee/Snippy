@@ -49,7 +49,7 @@ import { validateCreateSnippet, validateForkSnippet, validateUpdateSnippet } fro
  */
 export async function createSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await validateCreateSnippet(req.body);
+        validateCreateSnippet(req.body);
 
         const { snippet } = await createSnippetHandler(req);
         res.status(201).json({ success: true, snippet });
@@ -96,7 +96,7 @@ export async function createSnippet(req: Request, res: Response, next: NextFunct
  */
 export async function updateSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await validateUpdateSnippet(req.body);
+        validateUpdateSnippet(req.body);
 
         const { snippet } = await updateSnippetHandler(req);
         res.status(200).json({ success: true, snippet });
@@ -161,7 +161,7 @@ export async function deleteSnippet(req: Request, res: Response, next: NextFunct
  */
 export async function forkSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await validateForkSnippet(req.body);
+        validateForkSnippet(req.body);
 
         const { snippet } = await forkSnippetHandler(req);
         res.status(201).json({ success: true, snippet });

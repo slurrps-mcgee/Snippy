@@ -37,7 +37,7 @@ import { validateRegister, validateUpdateUser } from './user.validator';
  */
 export async function ensureUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await validateRegister(req.body);
+        validateRegister(req.body);
 
         const result = await ensureUserHandler(req);
         const status = result?.created ? 201 : 200;
@@ -81,7 +81,7 @@ export async function ensureUser(req: Request, res: Response, next: NextFunction
  */
 export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        await validateUpdateUser(req.body);
+        validateUpdateUser(req.body);
 
         const { user } = await updateUserHandler(req);
 

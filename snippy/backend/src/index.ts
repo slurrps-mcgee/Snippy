@@ -65,16 +65,17 @@ app.use(errorHandler);
 // Start the server after ensuring DB connection
 const startServer = async () => {
   try {
-    // Connect to the database
-    await connectWithRetry()
-      .then(() => logger.info('Database connection established.'))
-      .catch((err) => logger.error('Unable to connect to the database:', err));
+    // Connect to the database - must succeed before starting server
+    await connectWithRetry();
+    logger.info('✅ Database connection established.');
 
     app.listen(config.server.port, () => {
-      logger.info(`🚀 Snippy API v${version} starting on port ${config.server.port}`);
+      logger.info(`🚀 Snippy API v${version} started on port ${config.server.port}`);
     });
   } catch (error) {
-    logger.error('Unable to connect to the database or start server:', error);
+    logger.error('❌ Failed to start server:', error);
+    logger.error('Database connection required - server will not start');
+    process.exit(1); // Exit with error code to prevent silent failures
   }
 };
 

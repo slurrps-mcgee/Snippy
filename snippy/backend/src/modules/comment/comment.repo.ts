@@ -16,9 +16,11 @@ export async function updateComment(
     commentId: string,
     patch: Partial<Comments>,
     transaction?: Transaction
-): Promise<boolean> {
-    const updated = await Comments.update(patch, { where: { commentId }, transaction });
-    return updated[0] > 0;
+): Promise<void> {
+    const [updated] = await Comments.update(patch, { where: { commentId }, transaction });
+    if (updated === 0) {
+        throw new Error('Comment not found or no changes made');
+    }
 }
 
 // Delete Comment

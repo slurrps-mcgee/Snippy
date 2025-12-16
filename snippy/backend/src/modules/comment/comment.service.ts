@@ -89,15 +89,10 @@ export async function updateCommentHandler(payload: ServicePayload<UpdateComment
                 throw new CustomError('No update data provided', 400);
             }
 
-            const updated = await updateComment(commentId, patch as any, t);
+            await updateComment(commentId, patch as any, t);
 
-            if (updated) {
-                comment = await findCommentByCommentId(commentId, t);
-                return { comment: CommentMapper.toDTO(comment!) };
-            }
-            else {
-                throw new CustomError('Failed to update comment', 500);
-            }
+            comment = await findCommentByCommentId(commentId, t);
+            return { comment: CommentMapper.toDTO(comment!) };
         });
     } catch (error) {
         handleError(error, 'updateComment');
