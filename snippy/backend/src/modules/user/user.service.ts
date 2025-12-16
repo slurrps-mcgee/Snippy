@@ -1,15 +1,15 @@
 import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
-import { config } from '../../config/index';
 import { UserMapper } from "./user.mapper";
-import { UserDTO } from "./dto/user.dto";
+import { UserDTO, EnsureUserRequest, UpdateUserRequest } from "./dto/user.dto";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
 import { handleError } from "../../common/utilities/error-handler";
 import { AuthorizationService } from "../../common/services/authorization.service";
+import { config } from "../../config";
 
-export async function ensureUserHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
+export async function ensureUserHandler(payload: ServicePayload<EnsureUserRequest>): Promise<ServiceResponse<UserDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
     if (!auth0Id) {
         throw new CustomError("Authentication required", 401);
@@ -84,20 +84,27 @@ export async function ensureUserHandler(payload: ServicePayload): Promise<Servic
     }
 }
 
-export async function updateUserHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
+export async function updateUserHandler(payload: ServicePayload<UpdateUserRequest>): Promise<ServiceResponse<UserDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
     if (!auth0Id) {
         throw new CustomError("Authentication required", 401);
     }
 
     // Prevent updating sensitive fields from this endpoint
-    const patch = { ...payload.body };
-    delete patch.auth0Id;
-    delete patch.isAdmin;
+    const patch = payload.body;
+
+    if (patch) {
+        delete (patch as any).auth0Id;
+        delete (patch as any).isAdmin;
+    }
+
+    if (!patch) {
+        throw new CustomError('No update data provided', 400);
+    }
 
     try {
         return await sequelize.transaction(async (t) => {
-            const updated = await updateUser(auth0Id, patch, t);
+            const updated = await updateUser(auth0Id, patch as any, t);
             if (!updated) {
                 throw new CustomError('User not found', 404);
             }
@@ -116,7 +123,7 @@ export async function updateUserHandler(payload: ServicePayload): Promise<Servic
     }
 }
 
-export async function deleteUserHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
+export async function deleteUserHandler(payload: ServicePayload<unknown>): Promise<ServiceResponse<null>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
@@ -140,9 +147,13 @@ export async function deleteUserHandler(payload: ServicePayload): Promise<Servic
     }
 }
 
-export async function getUserProfileHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
+export async function getUserProfileHandler(payload: ServicePayload<unknown, { userName: string }>): Promise<ServiceResponse<UserDTO>> {
     try {
         const userName = payload.params?.userName;
+
+        if (!userName) {
+            throw new CustomError("Username required", 400);
+        }
 
         return await sequelize.transaction(async (t) => {
             const user = await findByUsername(userName, t);
@@ -162,7 +173,7 @@ export async function getUserProfileHandler(payload: ServicePayload): Promise<Se
     }
 }
 
-export async function getCurrentUserHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
+export async function getCurrentUserHandler(payload: ServicePayload<unknown>): Promise<ServiceResponse<UserDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
@@ -184,7 +195,7 @@ export async function getCurrentUserHandler(payload: ServicePayload): Promise<Se
     }
 }
 
-export async function checkUserNameAvailabilityHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
+export async function checkUserNameAvailabilityHandler(payload: ServicePayload<unknown, { userName: string }>): Promise<ServiceResponse<{ available: boolean }>> {
     try {
         const userName = payload.params?.userName;
         if (!userName || userName.trim() === '' || config.username.invalidUsernames.includes(userName.toLowerCase())) {

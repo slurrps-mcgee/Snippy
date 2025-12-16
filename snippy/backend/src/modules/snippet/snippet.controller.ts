@@ -6,7 +6,7 @@ import {
     getAllPublicSnippetsHandler,
     getUserPublicSnippetsHandler,
     getMySnippetsHandler,
-    getSnippetHandler,
+    getSnippetByShortIdHandler,
     updateSnippetHandler,
     updateSnippetViewCountHandler,
     searchSnippetsHandler
@@ -265,7 +265,7 @@ export async function searchSnippets(req: Request, res: Response, next: NextFunc
  */
 export async function getSnippetByShortId(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippet } = await getSnippetHandler(req);
+        const { snippet } = await getSnippetByShortIdHandler(req);
         res.status(200).json({ success: true, snippet });
     } catch (error) {
         next(error);

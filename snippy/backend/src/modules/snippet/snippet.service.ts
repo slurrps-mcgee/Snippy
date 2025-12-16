@@ -3,9 +3,9 @@ import { Snippets } from "../../entities/snippet.entity";
 import { CustomError } from "../../common/exceptions/custom-error";
 import { handleError } from "../../common/utilities/error-handler";
 import { AuthorizationService } from "../../common/services/authorization.service";
-import { PaginationService } from "../../common/services/pagination.service";
+import { PaginationService, PaginationQuery } from "../../common/services/pagination.service";
 import { SnippetMapper } from "./snippet.mapper";
-import { SnippetDTO, SnippetListDTO } from "./dto/snippet.dto";
+import { SnippetDTO, SnippetListDTO, CreateSnippetRequest, UpdateSnippetRequest } from "./dto/snippet.dto";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { findByUsername } from "../user/user.repo";
@@ -26,7 +26,7 @@ import {
 } from "./snippet.repo";
 
 // Create Snippet
-export async function createSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
+export async function createSnippetHandler(payload: ServicePayload<CreateSnippetRequest>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -34,17 +34,21 @@ export async function createSnippetHandler(payload: ServicePayload): Promise<Ser
         }
 
         return await sequelize.transaction(async (t) => {
+            const { snippetFiles, ...snippetData } = payload.body || {};
+            
             let newSnippet = await createSnippet({
                 auth0Id,
-                ...payload.body,
+                ...snippetData,
                 shortId: ''
             }, t);
 
-            for (const file of payload.body?.snippetFiles || []) {
-                file.snippetId = newSnippet.snippetId;
+            if (snippetFiles && snippetFiles.length > 0) {
+                const filesWithSnippetId = snippetFiles.map(file => ({
+                    ...file,
+                    snippetId: newSnippet.snippetId
+                }));
+                await createSnippetFiles(filesWithSnippetId as any, t);
             }
-
-            await createSnippetFiles(payload.body?.snippetFiles || [], t);
 
             newSnippet = await findByShortId(newSnippet.shortId, t) as Snippets;
 
@@ -56,7 +60,7 @@ export async function createSnippetHandler(payload: ServicePayload): Promise<Ser
 }
 
 // Fork Snippet
-export async function forkSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
+export async function forkSnippetHandler(payload: ServicePayload<{ shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -64,6 +68,10 @@ export async function forkSnippetHandler(payload: ServicePayload): Promise<Servi
         }
 
         const originalShortId = payload.body?.shortId;
+
+        if (!originalShortId) {
+            throw new CustomError("Original snippet ID required", 400);
+        }
 
         return await sequelize.transaction(async (t) => {
             const originalSnippet = await findByShortId(originalShortId, t);
@@ -109,7 +117,7 @@ export async function forkSnippetHandler(payload: ServicePayload): Promise<Servi
 }
 
 // Update Snippet
-export async function updateSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
+export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippetRequest, { shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -119,11 +127,17 @@ export async function updateSnippetHandler(payload: ServicePayload): Promise<Ser
         const shortId = payload.params?.shortId;
         const patch = payload.body;
 
+        if (!shortId) {
+            throw new CustomError("Snippet ID required", 400);
+        }
+
         // Prevent updating system fields
-        delete patch.snippetId;
-        delete patch.auth0Id;
-        delete patch.shortId;
-        delete patch.parentShortId;
+        if (patch) {
+            delete (patch as any).snippetId;
+            delete (patch as any).auth0Id;
+            delete (patch as any).shortId;
+            delete (patch as any).parentShortId;
+        }
 
         return await sequelize.transaction(async (t) => {
             let snippet = await findByShortId(shortId, t);
@@ -134,7 +148,11 @@ export async function updateSnippetHandler(payload: ServicePayload): Promise<Ser
 
             AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
 
-            await updateSnippet(shortId, patch, t);
+            if (!patch) {
+                throw new CustomError('No update data provided', 400);
+            }
+
+            await updateSnippet(shortId, patch as any, t);
 
             // Update snippet files - match by index or create mapping
             const existingFiles = snippet.snippetFiles || [];
@@ -146,14 +164,14 @@ export async function updateSnippetHandler(payload: ServicePayload): Promise<Ser
                 if (i < existingFiles.length) {
                     // Update existing file using its ID
                     const existingFile = existingFiles[i];
-                    await updateSnippetFiles(existingFile.snippetFileID, filePatch, t);
+                    await updateSnippetFiles(existingFile.snippetFileID, filePatch as any, t);
                 } else {
                     // If more files in patch than exist, create new ones
                     const newFile = {
                         ...filePatch,
                         snippetId: snippet.snippetId
                     };
-                    await createSnippetFiles([newFile], t);
+                    await createSnippetFiles([newFile as any], t);
                 }
             }
 
@@ -167,10 +185,14 @@ export async function updateSnippetHandler(payload: ServicePayload): Promise<Ser
 }
 
 // Update Snippet View Count
-export async function updateSnippetViewCountHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
+export async function updateSnippetViewCountHandler(payload: ServicePayload<unknown, { shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         const shortId = payload.params?.shortId;
+
+        if (!shortId) {
+            throw new CustomError("Snippet ID required", 400);
+        }
 
         return await sequelize.transaction(async (t) => {
             await incrementSnippetViewCount(shortId, t);
@@ -185,7 +207,7 @@ export async function updateSnippetViewCountHandler(payload: ServicePayload): Pr
 }
 
 // Delete Snippet
-export async function deleteSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
+export async function deleteSnippetHandler(payload: ServicePayload<unknown, { shortId: string }>): Promise<ServiceResponse<null>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -193,6 +215,10 @@ export async function deleteSnippetHandler(payload: ServicePayload): Promise<Ser
         }
 
         const shortId = payload.params?.shortId;
+
+        if (!shortId) {
+            throw new CustomError("Snippet ID required", 400);
+        }
 
         return await sequelize.transaction(async (t) => {
             const snippet = await findByShortId(shortId, t);
@@ -216,9 +242,13 @@ export async function deleteSnippetHandler(payload: ServicePayload): Promise<Ser
 }
 
 // Get Snippet by ShortId
-export async function getSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
+export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown, { shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
     const shortId = payload.params?.shortId;
+
+    if (!shortId) {
+        throw new CustomError("Snippet ID required", 400);
+    }
 
     try {
         return await sequelize.transaction(async (t) => {
@@ -239,10 +269,10 @@ export async function getSnippetHandler(payload: ServicePayload): Promise<Servic
     }
 }
 // Get All Public Snippets (Pagination)
-export async function getAllPublicSnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
+export async function getAllPublicSnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery>): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
         return await sequelize.transaction(async (t) => {
             const result = await getAllPublicSnippets(offset, limit, t);
@@ -257,11 +287,15 @@ export async function getAllPublicSnippetsHandler(payload: ServicePayload): Prom
 }
 
 // Get Public Snippets by User
-export async function getUserPublicSnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
+export async function getUserPublicSnippetsHandler(payload: ServicePayload<unknown, { userName: string }, PaginationQuery>): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         const userName = payload.params?.userName;
-        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+
+        if (!userName) {
+            throw new CustomError("Username required", 400);
+        }
 
         return await sequelize.transaction(async (t) => {
             const user = await findByUsername(userName, t);
@@ -281,14 +315,14 @@ export async function getUserPublicSnippetsHandler(payload: ServicePayload): Pro
 }
 
 // Get Current User's Snippets
-export async function getMySnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
+export async function getMySnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery>): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
             throw new CustomError("Authentication required", 401);
         }
 
-        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
         return await sequelize.transaction(async (t) => {
             const result = await getMySnippets(auth0Id, offset, limit, t);
@@ -303,7 +337,7 @@ export async function getMySnippetsHandler(payload: ServicePayload): Promise<Ser
 }
 
 // Search Snippets
-export async function searchSnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
+export async function searchSnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery & { q?: string; name?: string; description?: string }>): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
@@ -322,7 +356,7 @@ export async function searchSnippetsHandler(payload: ServicePayload): Promise<Se
             return { snippets: [] };
         }
         
-        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
         return await sequelize.transaction(async (t) => {
             const result = await searchSnippets(query, offset, limit, t);
