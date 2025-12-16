@@ -1,7 +1,13 @@
 import { sequelize } from "../../database/sequelize";
 import { Snippets } from "../../entities/snippet.entity";
 import { CustomError } from "../../common/exceptions/custom-error";
-import { handleError } from "../../common/utils/error-handler";
+import { handleError } from "../../common/utilities/error-handler";
+import { AuthorizationService } from "../../common/services/authorization.service";
+import { PaginationService } from "../../common/services/pagination.service";
+import { SnippetMapper } from "./snippet.mapper";
+import { SnippetDTO, SnippetListDTO } from "./dto/snippet.dto";
+import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
+import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { findByUsername } from "../user/user.repo";
 import {
     createSnippet,
@@ -19,70 +25,69 @@ import {
     searchSnippets,
 } from "./snippet.repo";
 
-// #region CREATE
 // Create Snippet
-export async function createSnippetHandler(payload: any) {
+export async function createSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
 
-        // Use transaction to ensure atomicity
         return await sequelize.transaction(async (t) => {
-            // Create the snippet (shortId resilience handled in @BeforeCreate hook)
-            var newSnippet = await createSnippet({
+            let newSnippet = await createSnippet({
                 auth0Id,
                 ...payload.body,
-                shortId: '' // auto-generated with resilience in createUniqueShortName
+                shortId: ''
             }, t);
 
-            // Set snippetId for each snippet file from newSnippet
-            for (const file of payload.body.snippetFiles || []) {
+            for (const file of payload.body?.snippetFiles || []) {
                 file.snippetId = newSnippet.snippetId;
             }
 
-            // Create snippet files
-            await createSnippetFiles(payload.body.snippetFiles || [], t);
+            await createSnippetFiles(payload.body?.snippetFiles || [], t);
 
-            // Query back the new snippet with its files
-            newSnippet = await findByShortId(newSnippet.shortId, t) as any;
+            newSnippet = await findByShortId(newSnippet.shortId, t) as Snippets;
 
-            return { snippet: sanitizeSnippet(newSnippet, auth0Id) };
+            return { snippet: SnippetMapper.toDTO(newSnippet, auth0Id) };
         });
     } catch (err: any) {
         handleError(err, 'createSnippetHandler');
     }
 }
+
 // Fork Snippet
-export async function forkSnippetHandler(payload: any) {
+export async function forkSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const originalShortId = payload.body.shortId;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const originalShortId = payload.body?.shortId;
 
         return await sequelize.transaction(async (t) => {
-
             const originalSnippet = await findByShortId(originalShortId, t);
 
             if (!originalSnippet) {
                 throw new CustomError("Original snippet not found", 404);
             }
 
-            if(originalSnippet.isPrivate && originalSnippet.auth0Id !== auth0Id) {
+            if (originalSnippet.isPrivate && originalSnippet.auth0Id !== auth0Id) {
                 throw new CustomError("Unauthorized to fork private snippet", 401);
             }
 
-            // Create fork data with only the necessary fields
             const forkData = {
-                auth0Id: auth0Id,
+                auth0Id,
                 parentShortId: originalSnippet.shortId,
                 name: originalSnippet.name,
                 description: originalSnippet.description,
                 tags: originalSnippet.tags,
                 isPrivate: originalSnippet.isPrivate,
-                shortId: '' // auto-generated with resilience in createUniqueShortName
+                shortId: ''
             };
 
-            var forkedSnippet = await createSnippet(forkData as any, t);
+            let forkedSnippet = await createSnippet(forkData, t);
 
-            // Create snippet files for the fork, associating them with the new snippet
             if (originalSnippet.snippetFiles && originalSnippet.snippetFiles.length > 0) {
                 const forkFiles = originalSnippet.snippetFiles.map((file: any) => ({
                     snippetId: forkedSnippet.snippetId,
@@ -94,22 +99,24 @@ export async function forkSnippetHandler(payload: any) {
 
             await incrementSnippetForkCount(originalShortId, t);
 
-            forkedSnippet = await findByShortId(forkedSnippet.shortId, t) as any;
+            forkedSnippet = await findByShortId(forkedSnippet.shortId, t) as Snippets;
 
-            return { snippet: sanitizeSnippet(forkedSnippet, auth0Id) };
+            return { snippet: SnippetMapper.toDTO(forkedSnippet, auth0Id) };
         });
-
     } catch (err: any) {
         handleError(err, 'forkSnippetHandler');
     }
 }
-// #endregion
 
-// #region UPDATE
-export async function updateSnippetHandler(payload: any) {
+// Update Snippet
+export async function updateSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const shortId = payload.params.shortId;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const shortId = payload.params?.shortId;
         const patch = payload.body;
 
         // Prevent updating system fields
@@ -119,22 +126,19 @@ export async function updateSnippetHandler(payload: any) {
         delete patch.parentShortId;
 
         return await sequelize.transaction(async (t) => {
-            var snippet = await findByShortId(shortId, t);
+            let snippet = await findByShortId(shortId, t);
             
             if (!snippet) {
                 throw new CustomError("Snippet not found", 404);
             }
 
-            const ownsSnippet = snippet.auth0Id === auth0Id;
-            if (!ownsSnippet) {
-                throw new CustomError("Unauthorized: not snippet owner", 401);
-            }
+            AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
 
             await updateSnippet(shortId, patch, t);
 
             // Update snippet files - match by index or create mapping
             const existingFiles = snippet.snippetFiles || [];
-            const patchFiles = payload.body.snippetFiles || [];
+            const patchFiles = payload.body?.snippetFiles || [];
 
             for (let i = 0; i < patchFiles.length; i++) {
                 const filePatch = patchFiles[i];
@@ -153,38 +157,42 @@ export async function updateSnippetHandler(payload: any) {
                 }
             }
 
-            snippet = await findByShortId(shortId, t);
+            snippet = await findByShortId(shortId, t) as Snippets;
 
-            return { snippet: sanitizeSnippet(snippet!, auth0Id) };
+            return { snippet: SnippetMapper.toDTO(snippet, auth0Id) };
         });
     } catch (err: any) {
         handleError(err, 'updateSnippetHandler');
     }
 }
+
 // Update Snippet View Count
-export async function updateSnippetViewCountHandler(payload: any) {
+export async function updateSnippetViewCountHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const shortId = payload.params.shortId;
+        const shortId = payload.params?.shortId;
 
         return await sequelize.transaction(async (t) => {
             await incrementSnippetViewCount(shortId, t);
 
-            const updatedSnippet = await findByShortId(shortId, t);
+            const updatedSnippet = await findByShortId(shortId, t) as Snippets;
 
-            return { snippet: sanitizeSnippet(updatedSnippet!, auth0Id) };
+            return { snippet: SnippetMapper.toDTO(updatedSnippet, auth0Id) };
         });
     } catch (err: any) {
         handleError(err, 'updateSnippetViewCountHandler');
     }
 }
-// #endregion
 
-// #region DELETE
-export async function deleteSnippetHandler(payload: any) {
+// Delete Snippet
+export async function deleteSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const shortId = payload.params.shortId;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const shortId = payload.params?.shortId;
 
         return await sequelize.transaction(async (t) => {
             const snippet = await findByShortId(shortId, t);
@@ -192,10 +200,7 @@ export async function deleteSnippetHandler(payload: any) {
                 throw new CustomError("Snippet not found", 404);
             }
 
-            const ownsSnippet = snippet.auth0Id === auth0Id;
-            if (!ownsSnippet) {
-                throw new CustomError("Unauthorized: not snippet owner", 401);
-            }
+            AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
 
             if (snippet.parentShortId) {
                 await decrementSnippetForkCount(snippet.parentShortId, t);
@@ -210,80 +215,95 @@ export async function deleteSnippetHandler(payload: any) {
     }
 }
 
-// #endregion
-
-// #region READ Handlers
 // Get Snippet by ShortId
-export async function getSnippetHandler(payload: any) {
+export async function getSnippetHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
-    const shortId = payload.params.shortId;
+    const shortId = payload.params?.shortId;
 
     try {
-        const snippet = await findByShortId(shortId);
+        return await sequelize.transaction(async (t) => {
+            const snippet = await findByShortId(shortId, t);
 
-        if (!snippet) {
-            throw new CustomError("Snippet not found", 404);
-        }
+            if (!snippet) {
+                throw new CustomError("Snippet not found", 404);
+            }
 
-        if (snippet?.auth0Id !== auth0Id && snippet?.isPrivate) {
-            throw new CustomError("Unauthorized", 401);
-        }
+            if (snippet.auth0Id !== auth0Id && snippet.isPrivate) {
+                throw new CustomError("Unauthorized", 401);
+            }
 
-        return { snippet: sanitizeSnippet(snippet, auth0Id) };
+            return { snippet: SnippetMapper.toDTO(snippet, auth0Id) };
+        });
     } catch (err: any) {
         handleError(err, 'getSnippetHandler');
     }
 }
 // Get All Public Snippets (Pagination)
-export async function getAllPublicSnippetsHandler(payload: any) {
+export async function getAllPublicSnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const page = parseInt(payload.query.page) || 1;
-        const limit = parseInt(payload.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
 
-        const result = await getAllPublicSnippets(offset, limit);
-        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
+        return await sequelize.transaction(async (t) => {
+            const result = await getAllPublicSnippets(offset, limit, t);
+            return { 
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
+                totalCount: result.count
+            };
+        });
     } catch (err: any) {
         handleError(err, 'getAllPublicSnippetsHandler');
     }
 }
+
 // Get Public Snippets by User
-export async function getUserPublicSnippetsHandler(payload: any) {
+export async function getUserPublicSnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const userName = payload.params.userName;
-        const page = parseInt(payload.query.page) || 1;
-        const limit = parseInt(payload.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        const userName = payload.params?.userName;
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
 
-        const user = await findByUsername(userName);
-        if (!user) {
-            throw new CustomError("User not found", 404);
-        }
+        return await sequelize.transaction(async (t) => {
+            const user = await findByUsername(userName, t);
+            if (!user) {
+                throw new CustomError("User not found", 404);
+            }
 
-        const result = await getUserPublicSnippets(user.auth0Id, offset, limit);
-        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
+            const result = await getUserPublicSnippets(user.auth0Id, offset, limit, t);
+            return { 
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
+                totalCount: result.count 
+            };
+        });
     } catch (err: any) {
         handleError(err, 'getUserPublicSnippetsHandler');
     }
 }
+
 // Get Current User's Snippets
-export async function getMySnippetsHandler(payload: any) {
+export async function getMySnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const page = parseInt(payload.query.page) || 1;
-        const limit = parseInt(payload.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
 
-        const result = await getMySnippets(auth0Id, offset, limit);
-        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
+
+        return await sequelize.transaction(async (t) => {
+            const result = await getMySnippets(auth0Id, offset, limit, t);
+            return { 
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
+                totalCount: result.count 
+            };
+        });
     } catch (err: any) {
         handleError(err, 'getMySnippetsHandler');
     }
 }
+
 // Search Snippets
-export async function searchSnippetsHandler(payload: any) {
+export async function searchSnippetsHandler(payload: ServicePayload): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
@@ -291,9 +311,9 @@ export async function searchSnippetsHandler(payload: any) {
         // ?q=searchterm (general search)
         // ?name=searchterm (search by name)
         // ?description=searchterm (search by description)
-        const generalQuery = payload.query.q || '';
-        const nameQuery = payload.query.name || '';
-        const descriptionQuery = payload.query.description || '';
+        const generalQuery = payload.query?.q || '';
+        const nameQuery = payload.query?.name || '';
+        const descriptionQuery = payload.query?.description || '';
         
         // Combine all search terms into a single query string
         const query = generalQuery || nameQuery || descriptionQuery || '';
@@ -302,50 +322,16 @@ export async function searchSnippetsHandler(payload: any) {
             return { snippets: [] };
         }
         
-        const page = parseInt(payload.query.page) || 1;
-        const limit = parseInt(payload.query.limit) || 10;
-        const offset = (page - 1) * limit;
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
 
-        const result = await searchSnippets(query, offset, limit);
-        return { snippets: result.rows.map(s => sanitizeSnippetList(s, auth0Id)), totalCount: result.count };
+        return await sequelize.transaction(async (t) => {
+            const result = await searchSnippets(query, offset, limit, t);
+            return { 
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
+                totalCount: result.count 
+            };
+        });
     } catch (err: any) {
         handleError(err, 'searchSnippetsHandler');
-    }
-}
-// #endregion
-
-// Sanitize Snippet before returning to client
-function sanitizeSnippet(snippet: Snippets, currentUser: string): any {
-    return {
-        shortId: snippet.shortId,
-        name: snippet.name,
-        description: snippet.description,
-        tags: snippet.tags,
-        isPrivate: snippet.isPrivate,
-        forkCount: snippet.forkCount,
-        viewCount: snippet.viewCount,
-        commentCount: snippet.commentCount,
-        favoriteCount: snippet.favoriteCount,
-        parentShortId: snippet.parentShortId,
-        isOwner: snippet.auth0Id === currentUser,
-        displayName: (snippet as any).user?.displayName,
-        snippetFiles: snippet.snippetFiles?.map(file => ({
-            fileType: file.fileType,
-            content: file.content
-        })),
-    }
-}
-
-function sanitizeSnippetList(snippet: Snippets, currentUser: string): any {
-    return {
-        shortId: snippet.shortId,
-        name: snippet.name,
-        description: snippet.description,
-        tags: snippet.tags,
-        userName: (snippet as any).user?.userName,
-        commentCount: snippet.commentCount,
-        favoriteCount: snippet.favoriteCount,
-        viewCount: snippet.viewCount,
-        isOwner: snippet.auth0Id === currentUser
     }
 }

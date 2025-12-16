@@ -1,16 +1,17 @@
 import express from 'express';
 import cors from "cors";
-import { setupSwaggerDocs } from './common/utils/swaggerDocs';
+import { setupSwaggerDocs } from './common/utilities/swaggerDocs';
 import router from './routes/routes';
 import dotenv from 'dotenv';
 import helmet from 'helmet';
 import rateLimit from "express-rate-limit";
 import connectWithRetry from './database/sequelize';
-import { errorHandler } from './common/utils/error-handler';
+import { errorHandler } from './common/utilities/error-handler';
 import { version } from '../package.json';
-import logger from './common/utils/logger';
-import { jwtCheck } from './common/middleware/jwt.service';
+import logger from './common/utilities/logger';
+import { auth0Check } from './common/middleware/auth0.service';
 import cookie from 'cookie-parser';
+import { SERVER_PORT, RATE_LIMIT } from './common/constants/app.constants';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -26,7 +27,7 @@ app.use(cookie());
 //Security middleware
 app.use(helmet());
 
-//CORS setup — allow only your frontend
+//TODO: CORS setup — update to only allow frontend
 app.use(cors({
   origin: '*',
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -35,8 +36,8 @@ app.use(cors({
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests
+  windowMs: RATE_LIMIT.WINDOW_MS,
+  max: RATE_LIMIT.MAX_REQUESTS,
 });
 
 app.use(limiter);
@@ -53,7 +54,7 @@ const jwtWhitelist: Array<{ method: string; path: string }> = [
 app.use((req, res, next) => {
   const isWhitelisted = jwtWhitelist.some(w => w.method === req.method && w.path === req.path);
   if (isWhitelisted) return next();
-  return jwtCheck(req as any, res as any, next as any);
+  return auth0Check(req as any, res as any, next as any);
 });
 
 // Routes
@@ -68,13 +69,13 @@ const startServer = async () => {
     // Connect to the database
     await connectWithRetry()
       .then(() => logger.info('Database connection established.'))
-      .catch((err) => logger.info('Unable to connect to the database:', err));
+      .catch((err) => logger.error('Unable to connect to the database:', err));
 
-    app.listen(3000, () => {
-      logger.info(`🚀 Snippy API v${version} starting on port 3000`);
+    app.listen(SERVER_PORT, () => {
+      logger.info(`🚀 Snippy API v${version} starting on port ${SERVER_PORT}`);
     });
   } catch (error) {
-    logger.info('Unable to connect to the database or start server:', error);
+    logger.error('Unable to connect to the database or start server:', error);
   }
 };
 

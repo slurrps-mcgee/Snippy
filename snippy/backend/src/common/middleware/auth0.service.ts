@@ -9,7 +9,7 @@ import { auth } from 'express-oauth2-jwt-bearer';
 const AUTH0_AUDIENCE = process.env.AUTH0_AUDIENCE || 'http://localhost:3000'; // e.g. 'your-tenant.us.auth0.com'
 const AUTH0_DOMAIN = process.env.AUTH0_DOMAIN; // expected audience (optional)
 
-export const jwtCheck = auth({
+export const auth0Check = auth({
   audience: AUTH0_AUDIENCE,
   issuerBaseURL: `https://${AUTH0_DOMAIN}/`,
   tokenSigningAlg: 'RS256'

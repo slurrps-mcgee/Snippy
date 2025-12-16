@@ -10,7 +10,6 @@ const registerSchema = Joi.object({
 export const validateRegister = async (payload: any) => {
     const { error } = registerSchema.validate(payload);
     if (error) throw new CustomError(error.message, 400);
-
     return true;
 };
 

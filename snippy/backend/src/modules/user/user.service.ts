@@ -1,113 +1,122 @@
-import { Users } from "../../entities/user.entity";
+import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
-import { invalidUsernames } from "../../common/utils/helper";
+import { USERNAME } from "../../common/constants/app.constants";
+import { UserMapper } from "./user.mapper";
+import { UserDTO } from "./dto/user.dto";
+import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
+import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
-import { handleError } from "../../common/utils/error-handler";
+import { handleError } from "../../common/utilities/error-handler";
+import { AuthorizationService } from "../../common/services/authorization.service";
 
-export async function ensureUserHandler(payload: any) {
+export async function ensureUserHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
-    var created = false;
+    if (!auth0Id) {
+        throw new CustomError("Authentication required", 401);
+    }
+
+    let created = false;
 
     try {
-        var user = await findById(auth0Id);
+        return await sequelize.transaction(async (t) => {
+            let user = await findById(auth0Id, t);
 
-        // Check if the user exists
-        if (user) {
-            // incoming values from Auth0 profile (you already extract these)
-            const pictureUrl = payload?.body?.pictureUrl;
+            // Check if the user exists
+            if (user) {
+                AuthorizationService.verifyOwnership(auth0Id, user.auth0Id, 'user'); // just to confirm ownership
 
-            // Build a patch only for allowed fields
-            const patch: any = {};
+                // incoming values from Auth0 profile (you already extract these)
+                const pictureUrl = payload?.body?.pictureUrl;
 
-            // Update picture_url if different and not empty this usually updates from Auth0 profile only as no bucket for images yet
-            if (pictureUrl && pictureUrl !== user.pictureUrl) {
-                // Optionally check last_synced_at or last_modified_by to avoid clobbering manual changes
-                patch.pictureUrl = pictureUrl;
-            }
+                // Build a patch only for allowed fields
+                const patch: any = {};
 
-            if (Object.keys(patch).length) {
-                // call your update routine that sanitizes the result
-                const updated = await updateUser(auth0Id, patch);
+                // Update picture_url if different and not empty this usually updates from Auth0 profile only as no bucket for images yet
+                if (pictureUrl && pictureUrl !== user.pictureUrl) {
+                    // Optionally check last_synced_at or last_modified_by to avoid clobbering manual changes
+                    patch.pictureUrl = pictureUrl;
+                }
 
-                if (!updated) {
-                    throw new CustomError('Failed to update user', 500);
+                if (Object.keys(patch).length) {
+                    // call your update routine that sanitizes the result
+                    const updated = await updateUser(auth0Id, patch, t);
+
+                    if (!updated) {
+                        throw new CustomError('Failed to update user', 500);
+                    }
                 }
             }
-        }
-        else {
-            // Check if any users exist to set isAdmin flag to true for the first user
-            const usersExist = await haveUsers();
-            
-            const details = {
-                name: payload?.body?.name,
-                pictureUrl: payload?.body?.pictureUrl
+            else {
+                // Check if any users exist to set isAdmin flag to true for the first user
+                const usersExist = await haveUsers(t);
+                
+                const details = {
+                    name: payload?.body?.name,
+                    pictureUrl: payload?.body?.pictureUrl
+                }
+
+                const createdUser = await createUser({
+                    auth0Id: auth0Id,
+                    userName: details.name || '',
+                    displayName: details.name,
+                    bio: null,
+                    pictureUrl: details.pictureUrl,
+                    isAdmin: usersExist ? false : true
+                } as any, t);
+
+                if (!createdUser) throw new CustomError('Failed to create user', 500);
+
+                created = true;
             }
 
-            const createdUser: Users = await createUser({
-                auth0Id: auth0Id,
-                userName: details.name || '',
-                displayName: details.name,
-                bio: null,
-                pictureUrl: details.pictureUrl,
-                isAdmin: usersExist ? false : true
-            } as any);
+            // Fetch the user again to return
+            user = await findById(auth0Id, t);
 
-            if (!createdUser) throw new CustomError('Failed to create user', 500);
+            if (!user) {
+                throw new CustomError('User not found after ensure', 500);
+            }
 
-            created = true;
-        }
-
-
-        //testModels(auth0Id); // Remove after testing
-        //testModels(auth0Id); // Remove after testing
-
-        // Fetch the user again to return
-        user = await findById(auth0Id);
-
-        if (!user) {
-            throw new CustomError('User not found after ensure', 500);
-        }
-
-        // Sanitize user before returning
-        user = sanitizeUser(user!);
-        // Return user and created flag
-        return { user, created };
+            // Return user and created flag
+            return { user: UserMapper.toDTO(user, true), created };
+        });
     } catch (err: any) {
         handleError(err, 'ensureUserHandler');
     }
 }
 
-export async function updateUserHandler(payload: any) {
-
+export async function updateUserHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
+    if (!auth0Id) {
+        throw new CustomError("Authentication required", 401);
+    }
 
     // Prevent updating sensitive fields from this endpoint
-    var patch = { ...payload.body } as any;
+    const patch = { ...payload.body };
     delete patch.auth0Id;
     delete patch.isAdmin;
 
     try {
-        var updated: any = await updateUser(auth0Id, patch);
-        if (!updated) {
-            throw new CustomError('User not found', 404);
-        }
+        return await sequelize.transaction(async (t) => {
+            const updated = await updateUser(auth0Id, patch, t);
+            if (!updated) {
+                throw new CustomError('User not found', 404);
+            }
 
-        // Get complete user data then sanitize for frontend response
-        var user = await findById(auth0Id);
+            // Get complete user data then sanitize for frontend response
+            const user = await findById(auth0Id, t);
 
-        if (!user) {
-            throw new CustomError('User not found after update', 404);
-        }
+            if (!user) {
+                throw new CustomError('User not found after update', 404);
+            }
 
-        user = sanitizeUser(user);
-
-        return { user };
+            return { user: UserMapper.toDTO(user, true) };
+        });
     } catch (err: any) {
         handleError(err, 'updateUserHandler');
     }
 }
 
-export async function deleteUserHandler(payload: any) {
+export async function deleteUserHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
@@ -115,44 +124,45 @@ export async function deleteUserHandler(payload: any) {
             throw new CustomError('Unauthorized', 401);
         }
 
-        const user = await findById(auth0Id);
+        return await sequelize.transaction(async (t) => {
+            const user = await findById(auth0Id, t);
 
-        if (!user) {
-            throw new CustomError('User not found', 404);
-        }
+            if (!user) {
+                throw new CustomError('User not found', 404);
+            }
 
-        await deleteUser(auth0Id);
+            await deleteUser(auth0Id, t);
 
-        return { message: 'User deleted successfully' };
+            return { message: 'User deleted successfully' };
+        });
     } catch (err: any) {
         handleError(err, 'deleteUserHandler');
     }
 }
 
-export async function getUserProfileHandler(payload: any) {
+export async function getUserProfileHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
     try {
-        const userName = payload.params.userName;
+        const userName = payload.params?.userName;
 
-        // Get user data (already sanitized by findByUsername)
-        var user = await findByUsername(userName);
+        return await sequelize.transaction(async (t) => {
+            const user = await findByUsername(userName, t);
 
-        if (!user) {
-            throw new CustomError('User not found', 404);
-        }
+            if (!user) {
+                throw new CustomError('User not found', 404);
+            }
 
-        if (user.isPrivate) {
-            throw new CustomError('User profile is private', 403);
-        }
+            if (user.isPrivate) {
+                throw new CustomError('User profile is private', 403);
+            }
 
-        user = sanitizeUser(user);
-
-        return { user };
+            return { user: UserMapper.toDTO(user) };
+        });
     } catch (err: any) {
         handleError(err, 'getUserProfileHandler');
     }
 }
 
-export async function getCurrentUserHandler(payload: any) {
+export async function getCurrentUserHandler(payload: ServicePayload): Promise<ServiceResponse<UserDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
@@ -160,41 +170,33 @@ export async function getCurrentUserHandler(payload: any) {
             throw new CustomError('Unauthorized', 401);
         }
 
-        var user = await findById(auth0Id);
+        return await sequelize.transaction(async (t) => {
+            const user = await findById(auth0Id, t);
 
-        if (!user) {
-            throw new CustomError('User not found', 404);
-        }
+            if (!user) {
+                throw new CustomError('User not found', 404);
+            }
 
-        user = sanitizeUser(user);
-
-        return { user };
+            return { user: UserMapper.toDTO(user, true) };
+        });
     } catch (err: any) {
         handleError(err, 'getCurrentUserHandler');
     }
 }
 
-export async function checkUserNameAvailabilityHandler(payload: any) {
+export async function checkUserNameAvailabilityHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
     try {
-        const userName = payload.params.userName;
-        if (!userName || userName.trim() === '' || invalidUsernames.includes(userName.toLowerCase())) {
+        const userName = payload.params?.userName;
+        if (!userName || userName.trim() === '' || USERNAME.INVALID_USERNAMES.includes(userName.toLowerCase())) {
             throw new CustomError('Invalid username', 400);
         }
 
-        const user = await findByUsername(userName);
+        return await sequelize.transaction(async (t) => {
+            const user = await findByUsername(userName, t);
 
-        return { available: !user };
+            return { available: !user };
+        });
     } catch (err: any) {
         handleError(err, 'checkUserNameAvailabilityHandler');
     }
-}
-
-// Sanitize User before returning to client
-function sanitizeUser(user: Users): any {
-    return {
-        userName: user.userName,
-        displayName: user.displayName,
-        bio: user.bio,
-        pictureUrl: user.pictureUrl
-    };
 }

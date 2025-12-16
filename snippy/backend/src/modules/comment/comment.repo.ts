@@ -34,12 +34,17 @@ export async function deleteComment(
 // Find comments by snippetId
 export async function findCommentsBySnippetId(
     snippetId: string,
+    offset?: number,
+    limit?: number,
     transaction?: Transaction
-): Promise<Comments[] | null> {
-    return await Comments.findAll({
+): Promise<{ rows: Comments[]; count: number }> {
+    return await Comments.findAndCountAll({
         where: { snippetId },
         order: [['created_at', 'ASC']],
-        transaction
+        offset,
+        limit,
+        transaction,
+        distinct: true
     });
 }
 

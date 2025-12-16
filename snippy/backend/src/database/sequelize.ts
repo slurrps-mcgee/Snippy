@@ -4,8 +4,8 @@ import { Snippets } from '../entities/snippet.entity';
 import { SnippetFiles } from '../entities/snippetFile.entity';
 import { Favorites } from '../entities/favorite.entity';
 import { Comments } from '../entities/comment.entity';
-import { dbConnectionPolicy } from '../common/utils/resiliance';
-import logger from '../common/utils/logger';
+import { dbConnectionPolicy } from '../common/utilities/resiliance';
+import logger from '../common/utilities/logger';
 
 // Initialize Sequelize with MySQL configuration
 export const sequelize = new Sequelize({

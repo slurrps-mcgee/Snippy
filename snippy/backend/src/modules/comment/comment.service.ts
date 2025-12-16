@@ -1,7 +1,12 @@
 import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
-import { handleError } from "../../common/utils/error-handler";
-import { Comments } from "../../entities/comment.entity";
+import { handleError } from "../../common/utilities/error-handler";
+import { AuthorizationService } from "../../common/services/authorization.service";
+import { PaginationService } from "../../common/services/pagination.service";
+import { CommentMapper } from "./comment.mapper";
+import { CommentDTO } from "./dto/comment.dto";
+import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
+import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import {
     createComment,
     deleteComment,
@@ -11,19 +16,21 @@ import {
 } from "./comment.repo";
 import { decrementSnippetCommentCount, findByShortId, incrementSnippetCommentCount } from "../snippet/snippet.repo";
 
-// do so as async functions
-export async function addCommentHandler(payload: any) {
+export async function addCommentHandler(payload: ServicePayload): Promise<ServiceResponse<CommentDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
 
-        const snippet = await findByShortId(payload.params.shortId);
+        const snippet = await findByShortId(payload.params?.shortId);
 
         if (!snippet) {
             throw new CustomError('Snippet not found', 404);
         }
 
         return await sequelize.transaction(async (t) => {
-            var newComment = await createComment(
+            const createdComment = await createComment(
                 {
                     auth0Id,
                     ...payload.body,
@@ -31,9 +38,13 @@ export async function addCommentHandler(payload: any) {
                 }, t);
 
             await incrementSnippetCommentCount(snippet.shortId, t);
-            newComment = await findCommentByCommentId(newComment.commentId, t) as any;
+            const newComment = await findCommentByCommentId(createdComment.commentId, t);
 
-            return { comment: sanitizeComment(newComment) };
+            if (!newComment) {
+                throw new CustomError('Failed to retrieve created comment', 500);
+            }
+
+            return { comment: CommentMapper.toDTO(newComment) };
         });
 
     } catch (error) {
@@ -41,10 +52,14 @@ export async function addCommentHandler(payload: any) {
     }
 }
 
-export async function updateCommentHandler(payload: any) {
+export async function updateCommentHandler(payload: ServicePayload): Promise<ServiceResponse<CommentDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const commentId = payload.params.commentId;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const commentId = payload.params?.commentId;
         const patch = payload.body;
 
         delete patch.auth0Id; // Prevent changing ownership
@@ -52,23 +67,19 @@ export async function updateCommentHandler(payload: any) {
         delete patch.commentId; // Prevent changing comment ID
 
         return await sequelize.transaction(async (t) => {
-            var comment = await findCommentByCommentId(commentId, t);
+            let comment = await findCommentByCommentId(commentId, t);
 
             if (!comment) {
                 throw new CustomError('Comment not found', 404);
             }
 
-            const ownsComment = comment.auth0Id === auth0Id;
-
-            if (!ownsComment) {
-                throw new CustomError('Unauthorized to update this comment', 401);
-            }
+            AuthorizationService.verifyOwnership(comment.auth0Id, auth0Id, 'comment');
 
             const updated = await updateComment(commentId, patch, t);
 
             if (updated) {
-                comment = await findCommentByCommentId(commentId, t) as any;
-                return { comment: sanitizeComment(comment!) };
+                comment = await findCommentByCommentId(commentId, t);
+                return { comment: CommentMapper.toDTO(comment!) };
             }
             else {
                 throw new CustomError('Failed to update comment', 500);
@@ -79,10 +90,14 @@ export async function updateCommentHandler(payload: any) {
     }
 }
 
-export async function deleteCommentHandler(payload: any) {
+export async function deleteCommentHandler(payload: ServicePayload): Promise<ServiceResponse<never>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const commentId = payload.params.commentId;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const commentId = payload.params?.commentId;
 
         return await sequelize.transaction(async (t) => {
             const comment = await findCommentByCommentId(commentId, t);
@@ -91,11 +106,7 @@ export async function deleteCommentHandler(payload: any) {
                 throw new CustomError('Comment not found', 404);
             }
 
-            const ownsComment = comment.auth0Id === auth0Id;
-
-            if (!ownsComment) {
-                throw new CustomError('Unauthorized to delete this comment', 401);
-            }
+            AuthorizationService.verifyOwnership(comment.auth0Id, auth0Id, 'comment');
 
             await deleteComment(commentId, t);
             await decrementSnippetCommentCount(comment.snippetId, t);
@@ -108,31 +119,31 @@ export async function deleteCommentHandler(payload: any) {
     }
 }
 
-export async function getCommentsBySnippetIdHandler(payload: any){
+export async function getCommentsBySnippetIdHandler(payload: ServicePayload): Promise<ServiceResponse<CommentDTO>> {
     try {
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query);
+        const auth0Id = payload.auth?.payload?.sub;
+
         return await sequelize.transaction(async (t) => {
-            const snippet = await findByShortId(payload.params.shortId);
+            const snippet = await findByShortId(payload.params?.shortId);
 
             if (!snippet) {
                 throw new CustomError('Snippet not found', 404);
             }
 
-            const comments = await findCommentsBySnippetId(
+            const { rows: comments, count } = await findCommentsBySnippetId(
                 snippet.snippetId,
+                offset,
+                limit,
                 t
             );
 
-            return { comments: comments?.map(sanitizeComment)}
+            return { 
+                comments: CommentMapper.toDTOs(comments || [], auth0Id),
+                total: count
+            };
         });
     } catch (error) {
         handleError(error, 'getCommentsBySnippetId');
     }
-}
-
-function sanitizeComment(comment: Comments) {
-    return {
-        auth0Id: comment.auth0Id,
-        commentId: comment.commentId,
-        content: comment.content,
-    };
 }

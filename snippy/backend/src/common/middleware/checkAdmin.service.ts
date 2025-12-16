@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { findById } from "../../modules/user/user.repo";
-import logger from '../utils/logger';
+import logger from '../utilities/logger';
 
 /**
  * Checks if the authenticated user is an admin.

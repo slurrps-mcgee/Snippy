@@ -13,7 +13,7 @@ import { SnippetFiles } from "./snippetFile.entity";
 import { Users } from "./user.entity";
 import { Favorites } from "./favorite.entity";
 import { Comments } from "./comment.entity";
-import { createUniqueShortName } from "../common/utils/helper";
+import { createUniqueShortName } from "../common/utilities/helper";
 
 @Table({
   tableName: "snippets",

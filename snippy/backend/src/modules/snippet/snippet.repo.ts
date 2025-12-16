@@ -54,14 +54,22 @@ export async function findByShortId(
     shortId: string,
     transaction?: Transaction
 ): Promise<Snippets | null> {
-    return await Snippets.findOne({
-        where: { shortId },
-        include: [
+    try {
+        return await Snippets.findOne({
+            where: { shortId },
+            include: [
             SnippetFiles,
             { model: Users, attributes: ['displayName'] }
         ],
-        transaction
-    });
+            transaction
+        });
+    } catch (error) {
+        // If include fails, try without includes for shortId uniqueness check
+        return await Snippets.findOne({
+            where: { shortId },
+            transaction
+        });
+    }
 }
 // Search snippets by query (name, description, etc.)
 export async function searchSnippets(
@@ -89,6 +97,7 @@ export async function searchSnippets(
         distinct: true
     });
 }
+
 // Get all public snippets
 export async function getAllPublicSnippets(
     offset: number,
@@ -108,6 +117,7 @@ export async function getAllPublicSnippets(
         distinct: true
     });
 }
+
 // Get public snippets for a specific user
 export async function getUserPublicSnippets(
     auth0Id: string,
@@ -128,6 +138,7 @@ export async function getUserPublicSnippets(
         distinct: true
     });
 }
+
 // Get snippets for the current user
 export async function getMySnippets(
     auth0Id: string,
@@ -155,59 +166,49 @@ export async function incrementSnippetForkCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet) await snippet.increment("forkCount", { transaction });
+    await Snippets.increment("forkCount", { where: { shortId }, transaction });
 }
 
 export async function decrementSnippetForkCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet && snippet.forkCount > 0)
-        await snippet.decrement("forkCount", { transaction });
+    await Snippets.decrement("forkCount", { where: { shortId }, transaction });
 }
 
 export async function incrementSnippetViewCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet) await snippet.increment("viewCount", { transaction });
+    await Snippets.increment("viewCount", { where: { shortId }, transaction });
 }
 
 export async function incrementSnippetCommentCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet) await snippet.increment("commentCount", { transaction });
+    await Snippets.increment("commentCount", { where: { shortId }, transaction });
 }
 
 export async function decrementSnippetCommentCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet && snippet.commentCount > 0)
-        await snippet.decrement("commentCount", { transaction });
+    await Snippets.decrement("commentCount", { where: { shortId }, transaction });
 }
 
 export async function incrementSnippetFavoriteCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet) await snippet.increment("favoriteCount", { transaction });
+    await Snippets.increment("favoriteCount", { where: { shortId }, transaction });
 }
 
 export async function decrementSnippetFavoriteCount(
     shortId: string,
     transaction?: Transaction
 ): Promise<void> {
-    const snippet = await Snippets.findOne({ where: { shortId }, transaction });
-    if (snippet && snippet.favoriteCount > 0)
-        await snippet.decrement("favoriteCount", { transaction });
+    await Snippets.decrement("favoriteCount", { where: { shortId }, transaction });
 }
 
 // #endregion

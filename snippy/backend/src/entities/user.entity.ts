@@ -10,7 +10,7 @@ import {
 import { Snippets } from './snippet.entity';
 import { Favorites } from './favorite.entity';
 import { Comments } from './comment.entity';
-import { createUniqueUsername } from '../common/utils/helper';
+import { createUniqueUsername } from '../common/utilities/helper';
 
 @Table({
   tableName: 'users',

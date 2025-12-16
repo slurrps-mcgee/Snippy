@@ -3,7 +3,7 @@ import { CustomError } from '../../common/exceptions/custom-error';
 
 const createSnippetSchema = Joi.object({
     name: Joi.string().min(1).max(255).required(),
-    parentSnippetId: Joi.string().uuid().optional().allow(null),
+    parentShortId: Joi.string().length(7).optional().allow(null),
     description: Joi.string().max(1000).optional().allow(null, ''),
     tags: Joi.array().items(Joi.string().max(50)).optional().allow(null),
     isPrivate: Joi.boolean().optional(),

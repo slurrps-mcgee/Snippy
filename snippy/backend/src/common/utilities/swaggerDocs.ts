@@ -1,7 +1,7 @@
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 import { Express } from 'express';
-import logger from '../utils/logger';
+import logger from './logger';
 
 export function setupSwaggerDocs(app: Express) {
   const env = process.env.NODE_ENV || 'development';
