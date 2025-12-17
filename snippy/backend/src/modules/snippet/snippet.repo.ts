@@ -1,9 +1,8 @@
-import { Transaction } from "sequelize";
+import { Transaction, Sequelize } from "sequelize";
 import { Snippets } from "../../entities/snippet.entity";
 import { SnippetFiles } from "../../entities/snippetFile.entity";
 import { Users } from "../../entities/user.entity";
 import { Op } from "sequelize";
-import { sequelize } from "../../database/sequelize";
 
 // #region Snippet CREATE/UPDATE/DELETE
 // Create Snippet
@@ -101,21 +100,21 @@ export async function searchSnippets(
             isPrivate: false, // Only search public snippets
             [Op.or]: [
                 // Case-insensitive search in name
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('name')),
+                Sequelize.where(
+                    Sequelize.fn('LOWER', Sequelize.col('Snippets.name')),
                     Op.like,
                     searchPattern
                 ),
                 // Case-insensitive search in description
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.col('description')),
+                Sequelize.where(
+                    Sequelize.fn('LOWER', Sequelize.col('Snippets.description')),
                     Op.like,
                     searchPattern
                 ),
                 // Search in tags array (JSON column)
                 // This checks if any tag contains the search query
-                sequelize.where(
-                    sequelize.fn('LOWER', sequelize.cast(sequelize.col('tags'), 'CHAR')),
+                Sequelize.where(
+                    Sequelize.fn('LOWER', Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR')),
                     Op.like,
                     searchPattern
                 )
