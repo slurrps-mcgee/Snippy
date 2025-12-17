@@ -9,13 +9,27 @@ import {
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.entity";
 import { Users } from "./user.entity";
-import { allow } from "joi";
 
 @Table({
     tableName: "favorites",
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+    indexes: [
+        {
+            name: 'idx_favorites_auth0',
+            fields: ['auth0_id']
+        },
+        {
+            name: 'idx_favorites_snippet',
+            fields: ['snippet_id']
+        },
+        {
+            name: 'idx_favorites_user_snippet',
+            unique: true,
+            fields: ['auth0_id', 'snippet_id']
+        }
+    ]
 })
 export class Favorites extends Model<Favorites> {
     @PrimaryKey

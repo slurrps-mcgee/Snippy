@@ -20,6 +20,48 @@ import { createUniqueShortName } from "../common/utilities/helper";
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  indexes: [
+    {
+      name: 'idx_snippets_auth0',
+      fields: ['auth0_id']
+    },
+    {
+      name: 'idx_snippets_short_id',
+      fields: ['short_id']
+    },
+    {
+      name: 'idx_snippets_parent',
+      fields: ['parent_snippet_short_id']
+    },
+    {
+      name: 'idx_snippets_view_count',
+      fields: ['view_count']
+    },
+    {
+      name: 'idx_snippets_fork_count',
+      fields: ['fork_count']
+    },
+    {
+      name: 'idx_snippets_favorite_count',
+      fields: ['favorite_count']
+    },
+    {
+      name: 'idx_snippets_auth0_private',
+      fields: ['auth0_id', 'is_private']
+    },
+    {
+      name: 'idx_snippets_private_created',
+      fields: ['is_private', 'created_at']
+    },
+    {
+      name: 'idx_snippets_name_search',
+      fields: ['name']
+    },
+    {
+      name: 'idx_snippets_description_search',
+      fields: ['description']
+    }
+  ]
 })
 export class Snippets extends Model<Snippets> {
   @PrimaryKey

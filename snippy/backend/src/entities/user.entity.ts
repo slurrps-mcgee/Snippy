@@ -17,6 +17,16 @@ import { createUniqueUsername } from '../common/utilities/helper';
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
+  indexes: [
+    {
+      name: 'idx_users_username',
+      fields: ['user_name']
+    },
+    {
+      name: 'idx_users_display_name',
+      fields: ['display_name']
+    }
+  ]
 })
 export class Users extends Model<Users> {
   @PrimaryKey

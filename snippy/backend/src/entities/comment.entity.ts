@@ -9,13 +9,26 @@ import {
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.entity";
 import { Users } from "./user.entity";
-import { allow } from "joi";
 
 @Table({
     tableName: "comments",
     timestamps: true,
     createdAt: 'created_at',
     updatedAt: 'updated_at',
+    indexes: [
+        {
+            name: 'idx_comments_auth0',
+            fields: ['auth0_id']
+        },
+        {
+            name: 'idx_comments_snippet',
+            fields: ['snippet_id']
+        },
+        {
+            name: 'idx_comments_snippet_created',
+            fields: ['snippet_id', 'created_at']
+        }
+    ]
 })
 export class Comments extends Model<Comments> {
     @PrimaryKey
