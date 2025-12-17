@@ -2,6 +2,7 @@ import { sequelize } from "../../database/sequelize";
 import { Snippets } from "../../entities/snippet.entity";
 import { CustomError } from "../../common/exceptions/custom-error";
 import { handleError } from "../../common/utilities/error-handler";
+import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { PaginationService, PaginationQuery } from "../../common/services/pagination.service";
 import { SnippetMapper } from "./snippet.mapper";
@@ -33,7 +34,7 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
             throw new CustomError("Authentication required", 401);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const { snippetFiles, ...snippetData } = payload.body || {};
             
             let newSnippet = await createSnippet({
@@ -53,7 +54,7 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
             newSnippet = await findByShortId(newSnippet.shortId, t) as Snippets;
 
             return { snippet: SnippetMapper.toDTO(newSnippet, auth0Id) };
-        });
+        }, 'createSnippet');
     } catch (err: any) {
         handleError(err, 'createSnippetHandler');
     }
@@ -73,7 +74,7 @@ export async function forkSnippetHandler(payload: ServicePayload<{ shortId: stri
             throw new CustomError("Original snippet ID required", 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const originalSnippet = await findByShortId(originalShortId, t);
 
             if (!originalSnippet) {
@@ -139,7 +140,7 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
             delete (patch as any).parentShortId;
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             let snippet = await findByShortId(shortId, t);
             
             if (!snippet) {
@@ -194,7 +195,7 @@ export async function updateSnippetViewCountHandler(payload: ServicePayload<unkn
             throw new CustomError("Snippet ID required", 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             await incrementSnippetViewCount(shortId, t);
 
             const updatedSnippet = await findByShortId(shortId, t) as Snippets;
@@ -220,7 +221,7 @@ export async function deleteSnippetHandler(payload: ServicePayload<unknown, { sh
             throw new CustomError("Snippet ID required", 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const snippet = await findByShortId(shortId, t);
             if (!snippet) {
                 throw new CustomError("Snippet not found", 404);
@@ -251,7 +252,7 @@ export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown
     }
 
     try {
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const snippet = await findByShortId(shortId, t);
 
             if (!snippet) {
@@ -274,7 +275,7 @@ export async function getAllPublicSnippetsHandler(payload: ServicePayload<unknow
         const auth0Id = payload.auth?.payload?.sub;
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const result = await getAllPublicSnippets(offset, limit, t);
             return { 
                 snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
@@ -297,7 +298,7 @@ export async function getUserPublicSnippetsHandler(payload: ServicePayload<unkno
             throw new CustomError("Username required", 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const user = await findByUsername(userName, t);
             if (!user) {
                 throw new CustomError("User not found", 404);
@@ -324,7 +325,7 @@ export async function getMySnippetsHandler(payload: ServicePayload<unknown, unkn
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const result = await getMySnippets(auth0Id, offset, limit, t);
             return { 
                 snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
@@ -358,7 +359,7 @@ export async function searchSnippetsHandler(payload: ServicePayload<unknown, unk
         
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const result = await searchSnippets(query, offset, limit, t);
             return { 
                 snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 

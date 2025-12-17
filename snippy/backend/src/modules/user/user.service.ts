@@ -6,6 +6,7 @@ import { ServicePayload } from "../../common/interfaces/servicePayload.interface
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
 import { handleError } from "../../common/utilities/error-handler";
+import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { config } from "../../config";
 
@@ -18,7 +19,7 @@ export async function ensureUserHandler(payload: ServicePayload<EnsureUserReques
     let created = false;
 
     try {
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             let user = await findById(auth0Id, t);
 
             // Check if the user exists
@@ -74,7 +75,7 @@ export async function ensureUserHandler(payload: ServicePayload<EnsureUserReques
 
             // Return user and created flag
             return { user: UserMapper.toDTO(user, true), created };
-        });
+        }, 'ensureUser');
     } catch (err: any) {
         handleError(err, 'ensureUserHandler');
     }
@@ -99,7 +100,7 @@ export async function updateUserHandler(payload: ServicePayload<UpdateUserReques
     }
 
     try {
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             await updateUser(auth0Id, patch as any, t);
 
             // Get complete user data then sanitize for frontend response
@@ -124,7 +125,7 @@ export async function deleteUserHandler(payload: ServicePayload<unknown>): Promi
             throw new CustomError('Unauthorized', 401);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const user = await findById(auth0Id, t);
 
             if (!user) {
@@ -148,7 +149,7 @@ export async function getUserProfileHandler(payload: ServicePayload<unknown, { u
             throw new CustomError("Username required", 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const user = await findByUsername(userName, t);
 
             if (!user) {
@@ -174,7 +175,7 @@ export async function getCurrentUserHandler(payload: ServicePayload<unknown>): P
             throw new CustomError('Unauthorized', 401);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const user = await findById(auth0Id, t);
 
             if (!user) {
@@ -195,7 +196,7 @@ export async function checkUserNameAvailabilityHandler(payload: ServicePayload<u
             throw new CustomError('Invalid username', 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const user = await findByUsername(userName, t);
 
             return { available: !user };

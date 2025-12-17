@@ -1,6 +1,7 @@
 import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
 import { handleError } from "../../common/utilities/error-handler";
+import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { PaginationService, PaginationQuery } from "../../common/services/pagination.service";
 import { CommentMapper } from "./comment.mapper";
@@ -34,7 +35,7 @@ export async function addCommentHandler(payload: ServicePayload<CreateCommentReq
             throw new CustomError('Snippet not found', 404);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const createdComment = await createComment(
                 {
                     auth0Id,
@@ -50,7 +51,7 @@ export async function addCommentHandler(payload: ServicePayload<CreateCommentReq
             }
 
             return { comment: CommentMapper.toDTO(newComment) };
-        });
+        }, 'addComment');
 
     } catch (error) {
         handleError(error, 'addComment');
@@ -76,7 +77,7 @@ export async function updateCommentHandler(payload: ServicePayload<UpdateComment
             delete (patch as any).commentId; // Prevent changing comment ID
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             let comment = await findCommentByCommentId(commentId, t);
 
             if (!comment) {
@@ -111,7 +112,7 @@ export async function deleteCommentHandler(payload: ServicePayload<unknown, { co
             throw new CustomError("Comment ID required", 400);
         }
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const comment = await findCommentByCommentId(commentId, t);
             
             if (!comment) {
@@ -141,7 +142,7 @@ export async function getCommentsBySnippetIdHandler(payload: ServicePayload<unkn
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
         const auth0Id = payload.auth?.payload?.sub;
 
-        return await sequelize.transaction(async (t) => {
+        return await executeInTransaction(async (t) => {
             const snippet = await findByShortId(shortId);
 
             if (!snippet) {
