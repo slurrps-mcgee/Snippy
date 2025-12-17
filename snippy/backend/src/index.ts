@@ -5,7 +5,7 @@ import router from './routes/routes';
 import helmet from 'helmet';
 import { globalLimiter } from './common/middleware/rate-limit.service';
 import connectWithRetry from './database/sequelize';
-import { errorHandler } from './common/utilities/error-handler';
+import { errorHandler } from './common/middleware/error-handler';
 import { version } from '../package.json';
 import logger from './common/utilities/logger';
 import { auth0Check } from './common/middleware/auth0.service';

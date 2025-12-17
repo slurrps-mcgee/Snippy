@@ -1,6 +1,6 @@
 import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
-import { handleError } from "../../common/utilities/error-handler";
+import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { PaginationService, PaginationQuery } from "../../common/services/pagination.service";

@@ -5,7 +5,7 @@ import { UserDTO, EnsureUserRequest, UpdateUserRequest } from "./dto/user.dto";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
-import { handleError } from "../../common/utilities/error-handler";
+import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { config } from "../../config";
