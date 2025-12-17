@@ -3,6 +3,7 @@ import { Snippets } from "../../entities/snippet.entity";
 import { SnippetFiles } from "../../entities/snippetFile.entity";
 import { Users } from "../../entities/user.entity";
 import { Op } from "sequelize";
+import { sequelize } from "../../database/sequelize";
 
 // #region Snippet CREATE/UPDATE/DELETE
 // Create Snippet
@@ -75,19 +76,49 @@ export async function findByShortId(
         });
     }
 }
-// Search snippets by query (name, description, etc.)
+// Search snippets by query (name, description, tags)
 export async function searchSnippets(
     query: string,
     offset: number,
     limit: number,
     transaction?: Transaction
 ): Promise<{ rows: Snippets[]; count: number }> {
+    // Sanitize query to prevent SQL injection
+    // Remove SQL special characters that could be used maliciously
+    const sanitizedQuery = query.replace(/[%_\\]/g, '\\$&').trim();
+    
+    if (!sanitizedQuery) {
+        // Return empty results for empty queries
+        return { rows: [], count: 0 };
+    }
+
+    // Use LOWER() for case-insensitive search on MySQL
+    // Sequelize doesn't support Op.iLike for MySQL, so we use Op.like with LOWER
+    const searchPattern = `%${sanitizedQuery.toLowerCase()}%`;
+
     return await Snippets.findAndCountAll({
         where: { 
             isPrivate: false, // Only search public snippets
             [Op.or]: [
-                { name: { [Op.like]: `%${query}%` } }, 
-                { description: { [Op.like]: `%${query}%` } }
+                // Case-insensitive search in name
+                sequelize.where(
+                    sequelize.fn('LOWER', sequelize.col('name')),
+                    Op.like,
+                    searchPattern
+                ),
+                // Case-insensitive search in description
+                sequelize.where(
+                    sequelize.fn('LOWER', sequelize.col('description')),
+                    Op.like,
+                    searchPattern
+                ),
+                // Search in tags array (JSON column)
+                // This checks if any tag contains the search query
+                sequelize.where(
+                    sequelize.fn('LOWER', sequelize.cast(sequelize.col('tags'), 'CHAR')),
+                    Op.like,
+                    searchPattern
+                )
             ] 
         },
         include: [

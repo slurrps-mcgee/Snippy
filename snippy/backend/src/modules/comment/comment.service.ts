@@ -17,6 +17,12 @@ import {
 } from "./comment.repo";
 import { decrementSnippetCommentCount, findByShortId, incrementSnippetCommentCount } from "../snippet/snippet.repo";
 
+/**
+ * Protected fields that cannot be updated through the updateComment endpoint
+ * These fields are system-managed and should not be modified by users
+ */
+const PROTECTED_COMMENT_FIELDS = ['auth0Id', 'snippetId', 'commentId'] as const;
+
 export async function addCommentHandler(payload: ServicePayload<CreateCommentRequest, { shortId: string }>): Promise<ServiceResponse<CommentDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
@@ -72,9 +78,10 @@ export async function updateCommentHandler(payload: ServicePayload<UpdateComment
 
         const patch = payload.body;
         if (patch) {
-            delete (patch as any).auth0Id; // Prevent changing ownership
-            delete (patch as any).snippetId; // Prevent changing snippet association
-            delete (patch as any).commentId; // Prevent changing comment ID
+            // Remove protected fields to prevent unauthorized modifications
+            PROTECTED_COMMENT_FIELDS.forEach(field => {
+                delete (patch as any)[field];
+            });
         }
 
         return await executeInTransaction(async (t) => {

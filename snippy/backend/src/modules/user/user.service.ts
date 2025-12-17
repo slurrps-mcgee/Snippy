@@ -10,6 +10,12 @@ import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { config } from "../../config";
 
+/**
+ * Protected fields that cannot be updated through the updateUser endpoint
+ * These fields are system-managed and should not be modified by users
+ */
+const PROTECTED_USER_FIELDS = ['auth0Id', 'isAdmin'] as const;
+
 export async function ensureUserHandler(payload: ServicePayload<EnsureUserRequest>): Promise<ServiceResponse<UserDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
     if (!auth0Id) {
@@ -91,8 +97,10 @@ export async function updateUserHandler(payload: ServicePayload<UpdateUserReques
     const patch = payload.body;
 
     if (patch) {
-        delete (patch as any).auth0Id;
-        delete (patch as any).isAdmin;
+        // Remove protected fields to prevent unauthorized modifications
+        PROTECTED_USER_FIELDS.forEach(field => {
+            delete (patch as any)[field];
+        });
     }
 
     if (!patch) {

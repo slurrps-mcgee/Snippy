@@ -26,6 +26,12 @@ import {
     searchSnippets,
 } from "./snippet.repo";
 
+/**
+ * Protected fields that cannot be updated through the updateSnippet endpoint
+ * These fields are system-managed and should not be modified by users
+ */
+const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId'] as const;
+
 // Create Snippet
 export async function createSnippetHandler(payload: ServicePayload<CreateSnippetRequest>): Promise<ServiceResponse<SnippetDTO>> {
     try {
@@ -134,10 +140,10 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
 
         // Prevent updating system fields
         if (patch) {
-            delete (patch as any).snippetId;
-            delete (patch as any).auth0Id;
-            delete (patch as any).shortId;
-            delete (patch as any).parentShortId;
+            // Remove protected fields to prevent unauthorized modifications
+            PROTECTED_SNIPPET_FIELDS.forEach(field => {
+                delete (patch as any)[field];
+            });
         }
 
         return await executeInTransaction(async (t) => {
