@@ -1,4 +1,3 @@
-import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
 import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
