@@ -1,5 +1,6 @@
 import { Transaction } from "sequelize";
 import { Comments } from "../../entities/comment.entity";
+import { Users } from "../../entities/user.entity";
 
 // #region Comment CREATE/UPDATE/DELETE
 // Create Comment
@@ -42,6 +43,7 @@ export async function findCommentsBySnippetId(
 ): Promise<{ rows: Comments[]; count: number }> {
     return await Comments.findAndCountAll({
         where: { snippetId },
+        include: [{ model: Users, attributes: ['userName', 'displayName'] }],
         order: [['created_at', 'ASC']],
         offset,
         limit,

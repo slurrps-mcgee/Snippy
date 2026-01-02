@@ -3,8 +3,15 @@
  */
 
 export interface SnippetFileDTO {
+    snippetFileID: string;
     fileType: string;
     content: string;
+}
+
+export interface ExternalResourceDTO {
+    externalId: string;
+    resourceType: string;
+    url: string;
 }
 
 export interface SnippetDTO {
@@ -19,8 +26,10 @@ export interface SnippetDTO {
     favoriteCount: number;
     parentShortId: string | null;
     isOwner: boolean;
+    userName?: string;
     displayName?: string;
     snippetFiles?: SnippetFileDTO[];
+    externalResources?: ExternalResourceDTO[];
 }
 
 export interface SnippetListDTO {
@@ -29,6 +38,7 @@ export interface SnippetListDTO {
     description: string | null;
     tags: string[] | null;
     userName?: string;
+    displayName?: string;
     commentCount: number;
     favoriteCount: number;
     viewCount: number;
@@ -41,8 +51,14 @@ export interface CreateSnippetRequest {
     tags?: string[];
     isPrivate?: boolean;
     snippetFiles?: Array<{
+        snippetFileID?: string;
         fileType: string;
         content: string;
+    }>;
+    externalResources?: Array<{
+        externalId?: string;
+        resourceType: 'html' | 'css' | 'js';
+        url: string;
     }>;
 }
 
@@ -52,7 +68,13 @@ export interface UpdateSnippetRequest {
     tags?: string[];
     isPrivate?: boolean;
     snippetFiles?: Array<{
+        snippetFileID?: string;
         fileType: string;
         content: string;
+    }>;
+    externalResources?: Array<{
+        externalId?: string;
+        resourceType: 'css' | 'js';
+        url: string;
     }>;
 }

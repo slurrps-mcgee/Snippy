@@ -7,6 +7,7 @@ import { Comments } from '../entities/comment.entity';
 import { dbConnectionPolicy } from '../common/utilities/resiliance';
 import logger from '../common/utilities/logger';
 import { config } from '../config';
+import { ExternalResource } from '../entities/external.entity';
 
 // Initialize Sequelize with MySQL configuration
 export const sequelize = new Sequelize({
@@ -20,7 +21,7 @@ export const sequelize = new Sequelize({
 });
 
 // Add models to sequelize after initialization
-sequelize.addModels([Users, Snippets, SnippetFiles, Favorites, Comments]);
+sequelize.addModels([Users, Snippets, SnippetFiles, ExternalResource, Favorites, Comments]);
 
 // Function to connect to the database with retry logic
 async function connectWithRetry() {

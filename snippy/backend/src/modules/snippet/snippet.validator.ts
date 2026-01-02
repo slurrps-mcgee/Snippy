@@ -48,8 +48,16 @@ const updateSnippetSchema = Joi.object({
     isPrivate: Joi.boolean().optional(),
     snippetFiles: Joi.array().items(
         Joi.object({
-            fileType: Joi.string().min(1).max(255).optional(),
+            snippetFileID: Joi.string().uuid().optional(),
+            fileType: Joi.string().valid('html','css', 'js').optional(),
             content: Joi.string().optional().allow(''),
+        })
+    ).optional(),
+    externalResources: Joi.array().items(
+        Joi.object({
+            externalId: Joi.string().uuid().optional(),
+            resourceType: Joi.string().valid('css', 'js').optional(),
+            url: Joi.string().uri().optional(),
         })
     ).optional(),
 });

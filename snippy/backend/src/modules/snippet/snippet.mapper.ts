@@ -22,8 +22,10 @@ export class SnippetMapper {
             favoriteCount: snippet.favoriteCount,
             parentShortId: snippet.parentShortId ?? null,
             isOwner: currentUserId ? AuthorizationService.isOwner(snippet.auth0Id, currentUserId) : false,
+            userName: (snippet as any).user?.userName,
             displayName: (snippet as any).user?.displayName,
             snippetFiles: snippet.snippetFiles?.map(file => this.fileToDTO(file)),
+            externalResources: snippet.externalResources?.map(resource => this.resourceToDTO(resource)),
         };
     }
 
@@ -37,6 +39,7 @@ export class SnippetMapper {
             description: snippet.description ?? null,
             tags: snippet.tags ?? null,
             userName: (snippet as any).user?.userName,
+            displayName: (snippet as any).user?.displayName,
             commentCount: snippet.commentCount,
             favoriteCount: snippet.favoriteCount,
             viewCount: snippet.viewCount,
@@ -49,8 +52,17 @@ export class SnippetMapper {
      */
     private static fileToDTO(file: any): SnippetFileDTO {
         return {
+            snippetFileID: file.snippetFileID,
             fileType: file.fileType,
             content: file.content,
+        };
+    }
+
+    private static resourceToDTO(resource: any) {
+        return {
+            externalId: resource.externalId,
+            resourceType: resource.resourceType,
+            url: resource.url,
         };
     }
 

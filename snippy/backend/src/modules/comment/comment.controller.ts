@@ -37,8 +37,8 @@ import { validateCreateComment, validateUpdateComment } from './comment.validato
  */
 export async function getComments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { comments } = await getCommentsBySnippetIdHandler(req);
-        res.status(200).json({ success: true, comments });
+        const { comments, totalCount } = await getCommentsBySnippetIdHandler(req);
+        res.status(200).json({ success: true, comments, count: totalCount });
     } catch (error) {
         next(error);
     }

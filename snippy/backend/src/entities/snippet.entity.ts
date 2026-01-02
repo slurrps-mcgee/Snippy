@@ -13,6 +13,7 @@ import { SnippetFiles } from "./snippetFile.entity";
 import { Users } from "./user.entity";
 import { Favorites } from "./favorite.entity";
 import { Comments } from "./comment.entity";
+import { ExternalResource } from "./external.entity";
 import { createUniqueShortName } from "../common/utilities/helper";
 
 @Table({
@@ -204,6 +205,13 @@ export class Snippets extends Model<Snippets> {
     constraints: false,
   })
   comments!: Comments[];
+
+  @HasMany(() => ExternalResource, {
+    foreignKey: 'snippetId',
+    sourceKey: 'snippetId',
+    constraints: false,
+  })
+  externalResources!: ExternalResource[];
 
   @BeforeCreate
   static async setShortId(snippet: Snippets) {

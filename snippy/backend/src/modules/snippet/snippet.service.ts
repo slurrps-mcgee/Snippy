@@ -24,6 +24,8 @@ import {
     getMySnippets,
     getUserPublicSnippets,
     searchSnippets,
+    createExternalResource,
+    updateExternalResource,
 } from "./snippet.repo";
 
 /**
@@ -41,7 +43,7 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
         }
 
         return await executeInTransaction(async (t) => {
-            const { snippetFiles, ...snippetData } = payload.body || {};
+            const { snippetFiles, externalResources, ...snippetData } = payload.body || {};
             
             let newSnippet = await createSnippet({
                 auth0Id,
@@ -55,6 +57,14 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
                     snippetId: newSnippet.snippetId
                 }));
                 await createSnippetFiles(filesWithSnippetId as any, t);
+            }
+
+            if (externalResources && externalResources.length > 0) {
+                const resourcesWithSnippetId = externalResources.map(resource => ({
+                    ...resource,
+                    snippetId: newSnippet.snippetId
+                }));    
+                await createExternalResource(resourcesWithSnippetId as any, t);
             }
 
             newSnippet = await findByShortId(newSnippet.shortId, t) as Snippets;
@@ -160,28 +170,38 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
             }
 
             await updateSnippet(shortId, patch as any, t);
+            
 
-            // Update snippet files - match by index or create mapping
-            const existingFiles = snippet.snippetFiles || [];
+            // Create or update snippet files (await all updates before fetching snippet)
             const patchFiles = payload.body?.snippetFiles || [];
-
-            for (let i = 0; i < patchFiles.length; i++) {
-                const filePatch = patchFiles[i];
-                
-                if (i < existingFiles.length) {
-                    // Update existing file using its ID
-                    const existingFile = existingFiles[i];
-                    await updateSnippetFiles(existingFile.snippetFileID, filePatch as any, t);
-                } else {
-                    // If more files in patch than exist, create new ones
+            await Promise.all(patchFiles.map(async snippetFile => {
+                if (!snippetFile.snippetFileID) {
                     const newFile = {
-                        ...filePatch,
-                        snippetId: snippet.snippetId
+                        ...snippetFile,
+                        snippetId: snippet?.snippetId
                     };
                     await createSnippetFiles([newFile as any], t);
+                } else {
+                    await updateSnippetFiles(snippetFile.snippetFileID, snippetFile as any, t);
                 }
-            }
+            }));
 
+            //Create or update external resources
+            const patchResources = payload.body?.externalResources || [];
+            await Promise.all(patchResources.map(async resource => {
+                console.log('Processing resource:', resource);
+                if (!resource.externalId) {
+                    const newResource = {
+                        ...resource,
+                        snippetId: snippet?.snippetId
+                    };
+                    console.log('Creating new resource:', newResource);
+                    await createExternalResource([newResource as any], t);
+                } else {
+                    await updateExternalResource(resource.externalId, resource as any, t);
+                }
+            }));
+            
             snippet = await findByShortId(shortId, t) as Snippets;
 
             return { snippet: SnippetMapper.toDTO(snippet, auth0Id) };
