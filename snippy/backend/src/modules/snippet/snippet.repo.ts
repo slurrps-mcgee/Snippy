@@ -32,11 +32,11 @@ export async function createExternalResource(
 }
 // Update Snippet
 export async function updateSnippet(
-    shortId: string,
+    snippetId: string,
     patch: Partial<Snippets>,
     transaction?: Transaction
 ): Promise<void> {
-    const [updated] = await Snippets.update(patch, { where: { shortId }, transaction });
+    const [updated] = await Snippets.update(patch, { where: { snippetId }, transaction });
     if (updated === 0) {
         throw new Error('Snippet not found or no changes made');
     }
@@ -80,7 +80,31 @@ export async function deleteExternalResource(
 // #endregion
 
 // #region Snippet READ
-// Find snippet by shortId
+// Find snippet by snippetId
+export async function findBySnippetId(
+    snippetId: string,
+    transaction?: Transaction
+): Promise<Snippets | null> {
+    try {
+        return await Snippets.findByPk(snippetId, {
+            include: [
+            SnippetFiles,
+            ExternalResource,
+            { model: Users, attributes: ['userName', 'displayName'] }
+        ],
+            transaction
+        });
+    } catch (error) {
+        // If include fails, try without includes for snippetId uniqueness check
+        return await Snippets.findOne({
+            where: { snippetId },
+            transaction
+        });
+    }
+}
+
+// #region Snippet READ
+// Find snippet by snippetId
 export async function findByShortId(
     shortId: string,
     transaction?: Transaction
@@ -103,6 +127,7 @@ export async function findByShortId(
         });
     }
 }
+
 // Search snippets by query (name, description, tags)
 export async function searchSnippets(
     query: string,
@@ -221,52 +246,52 @@ export async function getMySnippets(
 
 // #region Snippet Count Management
 export async function incrementSnippetForkCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.increment("forkCount", { where: { shortId }, transaction });
+    await Snippets.increment("forkCount", { where: { snippetId }, transaction });
 }
 
 export async function decrementSnippetForkCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.decrement("forkCount", { where: { shortId }, transaction });
+    await Snippets.decrement("forkCount", { where: { snippetId }, transaction });
 }
 
 export async function incrementSnippetViewCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.increment("viewCount", { where: { shortId }, transaction });
+    await Snippets.increment("viewCount", { where: { snippetId }, transaction });
 }
 
 export async function incrementSnippetCommentCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.increment("commentCount", { where: { shortId }, transaction });
+    await Snippets.increment("commentCount", { where: { snippetId }, transaction });
 }
 
 export async function decrementSnippetCommentCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.decrement("commentCount", { where: { shortId }, transaction });
+    await Snippets.decrement("commentCount", { where: { snippetId }, transaction });
 }
 
 export async function incrementSnippetFavoriteCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.increment("favoriteCount", { where: { shortId }, transaction });
+    await Snippets.increment("favoriteCount", { where: { snippetId }, transaction });
 }
 
 export async function decrementSnippetFavoriteCount(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.decrement("favoriteCount", { where: { shortId }, transaction });
+    await Snippets.decrement("favoriteCount", { where: { snippetId }, transaction });
 }
 
 // #endregion

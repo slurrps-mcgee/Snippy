@@ -11,6 +11,7 @@ export class SnippetMapper {
      */
     static toDTO(snippet: Snippets, currentUserId: string | undefined): SnippetDTO {
         return {
+            snippetId: snippet.snippetId,
             shortId: snippet.shortId,
             name: snippet.name,
             description: snippet.description ?? null,
@@ -34,6 +35,7 @@ export class SnippetMapper {
      */
     static toListDTO(snippet: Snippets, currentUserId?: string): SnippetListDTO {
         return {
+            snippetId: snippet.snippetId,
             shortId: snippet.shortId,
             name: snippet.name,
             description: snippet.description ?? null,

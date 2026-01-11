@@ -11,6 +11,11 @@ export interface ServiceResponse<T> {
     // Comment responses
     comment?: T;
     comments?: T[];
+    commentCount?: number;
+
+    //Favorite responses
+    favoriteCount?: number;
+    isFavorited?: boolean;
     
     // Common responses
     totalCount?: number;

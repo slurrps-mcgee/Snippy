@@ -47,3 +47,12 @@ export async function findFavoriteSnippetsByUser(
 
     return { rows: snippets, count };
 }
+
+export async function findFavoriteSnippetByUserAndSnippet(
+    auth0Id: string,
+    snippetId: string,
+    transaction?: Transaction
+): Promise<Favorites | null> {
+    return await Favorites.findOne({ where: { auth0Id, snippetId }, transaction });
+}
+// #endregion

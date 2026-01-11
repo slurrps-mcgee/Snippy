@@ -71,6 +71,17 @@ export class SnippetStateService {
     }));
   }
 
+  //update snippet counts
+  updateSnippetCounts(counts: { forkCount?: number; viewCount?: number; commentCount?: number; favoriteCount?: number }) {
+    this.snippet.update(s => ({
+      ...s!,
+      forkCount: counts.forkCount !== undefined ? counts.forkCount : s!.forkCount,
+      viewCount: counts.viewCount !== undefined ? counts.viewCount : s!.viewCount,
+      commentCount: counts.commentCount !== undefined ? counts.commentCount : s!.commentCount,
+      favoriteCount: counts.favoriteCount !== undefined ? counts.favoriteCount : s!.favoriteCount,
+    }));
+  }
+
   // Clear the current snippet
   clearSnippet() {
     this.snippet.set(null);

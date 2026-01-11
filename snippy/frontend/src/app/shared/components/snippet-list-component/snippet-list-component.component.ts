@@ -17,6 +17,7 @@ import { SnippetService } from '../../services/snippet.service';
 import { SnackbarService } from '../../services/snackbar.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
+import { FavoriteService } from '../../services/favorite.service';
 
 @Component({
   selector: 'app-snippet-list-component',
@@ -50,6 +51,7 @@ export class SnippetListComponentComponent {
   constructor(
     private router: Router,
     private snippetService: SnippetService,
+    private favoriteService: FavoriteService,
     private snackbarService: SnackbarService,
     private dialog: MatDialog
   ) { }
@@ -83,8 +85,30 @@ export class SnippetListComponentComponent {
     if (event) {
       event.stopPropagation();
     }
-    // Add favorite functionality
-    this.snackbarService.success(`Added to favorites ${snippet.shortId}`);
+
+    // Call favorite service to toggle favorite
+    this.favoriteService.favoriteSnippet(snippet.snippetId)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (response: any) => {
+          // Assume backend returns { favoriteCount: number, isFavorited: boolean }
+          if (response && typeof response.favoriteCount === 'number') {
+            snippet.favoriteCount = response.favoriteCount;
+            this.snackbarService.success(
+              response.isFavorited
+                ? `Added to favorites ${snippet.shortId}`
+                : `Removed from favorites ${snippet.shortId}`
+            );
+          } else {
+            // Fallback: just increment or decrement locally
+            snippet.favoriteCount = (snippet.favoriteCount || 0) + 1;
+            this.snackbarService.success(`Toggled favorite for ${snippet.shortId}`);
+          }
+        },
+        error: () => {
+          this.snackbarService.error(`Failed to toggle favorite for ${snippet.shortId}`);
+        }
+      });
   }
 
   commentOnSnippet(snippet: SnippetList, event?: Event) {

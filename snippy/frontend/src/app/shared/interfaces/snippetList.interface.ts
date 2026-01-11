@@ -1,4 +1,5 @@
 export interface SnippetList {
+    snippetId: string;
     shortId: string;
     name: string;
     description: string;

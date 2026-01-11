@@ -11,7 +11,7 @@ import {
     updateSnippetViewCountHandler,
     searchSnippetsHandler
 } from "./snippet.service";
-import { validateCreateSnippet, validateForkSnippet, validateUpdateSnippet } from './snippet.validator';
+import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validator';
 
 /**
  * @swagger
@@ -161,8 +161,6 @@ export async function deleteSnippet(req: Request, res: Response, next: NextFunct
  */
 export async function forkSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        validateForkSnippet(req.body);
-
         const { snippet } = await forkSnippetHandler(req);
         res.status(201).json({ success: true, snippet });
     } catch (error) {

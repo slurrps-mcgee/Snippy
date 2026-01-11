@@ -15,6 +15,7 @@ export interface ExternalResourceDTO {
 }
 
 export interface SnippetDTO {
+    snippetId: string;
     shortId: string;
     name: string;
     description: string | null;
@@ -33,6 +34,7 @@ export interface SnippetDTO {
 }
 
 export interface SnippetListDTO {
+    snippetId: string;
     shortId: string;
     name: string;
     description: string | null;

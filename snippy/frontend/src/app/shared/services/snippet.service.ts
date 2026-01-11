@@ -14,10 +14,10 @@ export class SnippetService {
 
   constructor(private apiService: ApiService) { }
 
-  // Fetch a snippet by its shortId
-  getSnippet(shortId: string): Observable<SnippetResponse> {
+  // Fetch a snippet by its snippetId
+  getSnippet(snippetId: string): Observable<SnippetResponse> {
     return this.apiService.request<SnippetResponse>({
-      path: `/snippets/${shortId}`,
+      path: `/snippets/${snippetId}`,
       method: 'GET'
     }).pipe(
       takeUntilDestroyed(this.destroyRef),
@@ -64,7 +64,7 @@ export class SnippetService {
     const s = this.snippetStateService.snippet();
     if (!s) throw new Error('No snippet to save');
 
-    if (!s.shortId) {
+    if (!s.snippetId) {
       // New snippet - create
       return this.apiService.request<SnippetResponse>({
         path: `/snippets`,
@@ -78,7 +78,7 @@ export class SnippetService {
         }
       }).pipe(
         tap((response) => {
-          // Update the snippet with the returned data (including shortId)
+          // Update the snippet with the returned data (including snippetId)
           this.snippetStateService.setSnippet(response.snippet, true);
         })
       );
@@ -86,7 +86,7 @@ export class SnippetService {
     else {
       // Existing snippet - update
       return this.apiService.request<SnippetResponse>({
-        path: `/snippets/${s.shortId}`,
+        path: `/snippets/${s.snippetId}`,
         method: 'PUT',
         body: {
           name: s.name,
@@ -103,10 +103,10 @@ export class SnippetService {
     }
   }
 
-  // Delete a snippet by its shortId
-  deleteSnippet(shortId: string): Observable<any> {
+  // Delete a snippet by its snippetId
+  deleteSnippet(snippetId: string): Observable<any> {
     return this.apiService.request<any>({ 
-      path: `/snippets/${shortId}`,
+      path: `/snippets/${snippetId}`,
       method: 'DELETE'
     });
   }

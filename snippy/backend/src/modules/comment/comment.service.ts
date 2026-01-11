@@ -14,7 +14,7 @@ import {
     findCommentsBySnippetId,
     updateComment,
 } from "./comment.repo";
-import { decrementSnippetCommentCount, findByShortId, incrementSnippetCommentCount } from "../snippet/snippet.repo";
+import { decrementSnippetCommentCount, findBySnippetId, incrementSnippetCommentCount } from "../snippet/snippet.repo";
 
 /**
  * Protected fields that cannot be updated through the updateComment endpoint
@@ -22,19 +22,19 @@ import { decrementSnippetCommentCount, findByShortId, incrementSnippetCommentCou
  */
 const PROTECTED_COMMENT_FIELDS = ['auth0Id', 'snippetId', 'commentId'] as const;
 
-export async function addCommentHandler(payload: ServicePayload<CreateCommentRequest, { shortId: string }>): Promise<ServiceResponse<CommentDTO>> {
+export async function addCommentHandler(payload: ServicePayload<CreateCommentRequest, { snippetId: string }>): Promise<ServiceResponse<CommentDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
             throw new CustomError("Authentication required", 401);
         }
 
-        const shortId = payload.params?.shortId;
-        if (!shortId) {
+        const snippetId = payload.params?.snippetId;
+        if (!snippetId) {
             throw new CustomError("Snippet ID required", 400);
         }
 
-        const snippet = await findByShortId(shortId);
+        const snippet = await findBySnippetId(snippetId);
 
         if (!snippet) {
             throw new CustomError('Snippet not found', 404);
@@ -48,7 +48,7 @@ export async function addCommentHandler(payload: ServicePayload<CreateCommentReq
                     snippetId: snippet.snippetId
                 }, t);
 
-            await incrementSnippetCommentCount(snippet.shortId, t);
+            await incrementSnippetCommentCount(snippet.snippetId, t);
             const newComment = await findCommentByCommentId(createdComment.commentId, t);
 
             if (!newComment) {
@@ -138,10 +138,10 @@ export async function deleteCommentHandler(payload: ServicePayload<unknown, { co
     }
 }
 
-export async function getCommentsBySnippetIdHandler(payload: ServicePayload<unknown, { shortId: string }, PaginationQuery>): Promise<ServiceResponse<CommentDTO>> {
+export async function getCommentsBySnippetIdHandler(payload: ServicePayload<unknown, { snippetId: string }, PaginationQuery>): Promise<ServiceResponse<CommentDTO>> {
     try {
-        const shortId = payload.params?.shortId;
-        if (!shortId) {
+        const snippetId = payload.params?.snippetId;
+        if (!snippetId) {
             throw new CustomError("Snippet ID required", 400);
         }
 
@@ -149,7 +149,7 @@ export async function getCommentsBySnippetIdHandler(payload: ServicePayload<unkn
         const auth0Id = payload.auth?.payload?.sub;
 
         return await executeInTransaction(async (t) => {
-            const snippet = await findByShortId(shortId);
+            const snippet = await findBySnippetId(snippetId);
 
             if (!snippet) {
                 throw new CustomError('Snippet not found', 404);

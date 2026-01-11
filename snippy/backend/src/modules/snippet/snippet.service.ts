@@ -16,7 +16,7 @@ import {
     decrementSnippetForkCount,
     deleteSnippet,
     getAllPublicSnippets,
-    findByShortId,
+    findBySnippetId,
     incrementSnippetForkCount,
     updateSnippet,
     updateSnippetFiles,
@@ -26,6 +26,8 @@ import {
     searchSnippets,
     createExternalResource,
     updateExternalResource,
+    deleteExternalResource,
+    findByShortId,
 } from "./snippet.repo";
 
 /**
@@ -34,6 +36,7 @@ import {
  */
 const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId'] as const;
 
+//#region CREATE/UPDATE/DELETE
 // Create Snippet
 export async function createSnippetHandler(payload: ServicePayload<CreateSnippetRequest>): Promise<ServiceResponse<SnippetDTO>> {
     try {
@@ -44,7 +47,7 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
 
         return await executeInTransaction(async (t) => {
             const { snippetFiles, externalResources, ...snippetData } = payload.body || {};
-            
+
             let newSnippet = await createSnippet({
                 auth0Id,
                 ...snippetData,
@@ -63,11 +66,11 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
                 const resourcesWithSnippetId = externalResources.map(resource => ({
                     ...resource,
                     snippetId: newSnippet.snippetId
-                }));    
+                }));
                 await createExternalResource(resourcesWithSnippetId as any, t);
             }
 
-            newSnippet = await findByShortId(newSnippet.shortId, t) as Snippets;
+            newSnippet = await findBySnippetId(newSnippet.snippetId, t) as Snippets;
 
             return { snippet: SnippetMapper.toDTO(newSnippet, auth0Id) };
         }, 'createSnippet');
@@ -77,21 +80,22 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
 }
 
 // Fork Snippet
-export async function forkSnippetHandler(payload: ServicePayload<{ shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
+export async function forkSnippetHandler(payload: ServicePayload<unknown, { snippetId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
             throw new CustomError("Authentication required", 401);
         }
 
-        const originalShortId = payload.body?.shortId;
+        const originalSnippetId = payload.params?.snippetId;
+        ;
 
-        if (!originalShortId) {
+        if (!originalSnippetId) {
             throw new CustomError("Original snippet ID required", 400);
         }
 
         return await executeInTransaction(async (t) => {
-            const originalSnippet = await findByShortId(originalShortId, t);
+            const originalSnippet = await findBySnippetId(originalSnippetId, t);
 
             if (!originalSnippet) {
                 throw new CustomError("Original snippet not found", 404);
@@ -122,9 +126,18 @@ export async function forkSnippetHandler(payload: ServicePayload<{ shortId: stri
                 await createSnippetFiles(forkFiles, t);
             }
 
-            await incrementSnippetForkCount(originalShortId, t);
+            if (originalSnippet.externalResources && originalSnippet.externalResources.length > 0) {
+                const forkResources = originalSnippet.externalResources.map((resource: any) => ({
+                    snippetId: forkedSnippet.snippetId,
+                    resourceType: resource.resourceType,
+                    url: resource.url,
+                }));
+                await createExternalResource(forkResources, t);
+            }
 
-            forkedSnippet = await findByShortId(forkedSnippet.shortId, t) as Snippets;
+            await incrementSnippetForkCount(originalSnippetId, t);
+
+            forkedSnippet = await findBySnippetId(forkedSnippet.snippetId, t) as Snippets;
 
             return { snippet: SnippetMapper.toDTO(forkedSnippet, auth0Id) };
         });
@@ -134,33 +147,38 @@ export async function forkSnippetHandler(payload: ServicePayload<{ shortId: stri
 }
 
 // Update Snippet
-export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippetRequest, { shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
+export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippetRequest, { snippetId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
             throw new CustomError("Authentication required", 401);
         }
 
-        const shortId = payload.params?.shortId;
+        const snippetId = payload.params?.snippetId;
         const patch = payload.body;
 
-        if (!shortId) {
+        if (!snippetId) {
             throw new CustomError("Snippet ID required", 400);
         }
 
-        // Prevent updating system fields
-        if (patch) {
-            // Remove protected fields to prevent unauthorized modifications
-            PROTECTED_SNIPPET_FIELDS.forEach(field => {
-                delete (patch as any)[field];
-            });
-        }
-
         return await executeInTransaction(async (t) => {
-            let snippet = await findByShortId(shortId, t);
-            
+            console.log('Fetching snippet for update:', snippetId);
+
+            let snippet = await findBySnippetId(snippetId, t);
+
+            console.log(snippet)
+
             if (!snippet) {
+                console.log('Snippet not found');
                 throw new CustomError("Snippet not found", 404);
+            }
+
+            // Prevent updating system fields
+            if (patch) {
+                // Remove protected fields to prevent unauthorized modifications
+                PROTECTED_SNIPPET_FIELDS.forEach(field => {
+                    delete (patch as any)[field];
+                });
             }
 
             AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
@@ -169,8 +187,8 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
                 throw new CustomError('No update data provided', 400);
             }
 
-            await updateSnippet(shortId, patch as any, t);
-            
+            await updateSnippet(snippetId, patch as any, t);
+
 
             // Create or update snippet files (await all updates before fetching snippet)
             const patchFiles = payload.body?.snippetFiles || [];
@@ -186,23 +204,44 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
                 }
             }));
 
-            //Create or update external resources
+
+            // Create, update, or delete external resources
             const patchResources = payload.body?.externalResources || [];
+            // Get all current external resources for this snippet
+            const currentResources = snippet.externalResources || [];
+            const patchResourceIds = patchResources.filter(r => r.externalId).map(r => r.externalId);
+
+            // Delete resources that are not in the patch
+            const resourcesToDelete = currentResources.filter((r: any) => !patchResourceIds.includes(r.externalId));
+            if (resourcesToDelete.length > 0) {
+                // You need a deleteExternalResource function in your repo
+                for (const resource of resourcesToDelete) {
+                    await deleteExternalResource(resource.externalId, t);
+                }
+            }
+
+            // Create or update resources
             await Promise.all(patchResources.map(async resource => {
-                console.log('Processing resource:', resource);
                 if (!resource.externalId) {
                     const newResource = {
                         ...resource,
                         snippetId: snippet?.snippetId
                     };
-                    console.log('Creating new resource:', newResource);
                     await createExternalResource([newResource as any], t);
                 } else {
-                    await updateExternalResource(resource.externalId, resource as any, t);
+                    // Find the current resource by externalId
+                    const current = currentResources.find((r: any) => r.externalId === resource.externalId);
+                    if (current && current.url === resource.url && current.resourceType === resource.resourceType) {
+                        // Skip update if url and resourceType match
+                        return;
+                    }
+                    // Only update allowed fields, never externalId
+                    const { externalId, ...updateFields } = resource;
+                    await updateExternalResource(resource.externalId, updateFields as any, t);
                 }
             }));
-            
-            snippet = await findByShortId(shortId, t) as Snippets;
+
+            snippet = await findBySnippetId(snippetId, t) as Snippets;
 
             return { snippet: SnippetMapper.toDTO(snippet, auth0Id) };
         });
@@ -212,19 +251,19 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
 }
 
 // Update Snippet View Count
-export async function updateSnippetViewCountHandler(payload: ServicePayload<unknown, { shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
+export async function updateSnippetViewCountHandler(payload: ServicePayload<unknown, { snippetId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const shortId = payload.params?.shortId;
+        const snippetId = payload.params?.snippetId;
 
-        if (!shortId) {
+        if (!snippetId) {
             throw new CustomError("Snippet ID required", 400);
         }
 
         return await executeInTransaction(async (t) => {
-            await incrementSnippetViewCount(shortId, t);
+            await incrementSnippetViewCount(snippetId, t);
 
-            const updatedSnippet = await findByShortId(shortId, t) as Snippets;
+            const updatedSnippet = await findBySnippetId(snippetId, t) as Snippets;
 
             return { snippet: SnippetMapper.toDTO(updatedSnippet, auth0Id) };
         });
@@ -234,21 +273,21 @@ export async function updateSnippetViewCountHandler(payload: ServicePayload<unkn
 }
 
 // Delete Snippet
-export async function deleteSnippetHandler(payload: ServicePayload<unknown, { shortId: string }>): Promise<ServiceResponse<null>> {
+export async function deleteSnippetHandler(payload: ServicePayload<unknown, { snippetId: string }>): Promise<ServiceResponse<null>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
             throw new CustomError("Authentication required", 401);
         }
 
-        const shortId = payload.params?.shortId;
+        const snippetId = payload.params?.snippetId;
 
-        if (!shortId) {
+        if (!snippetId) {
             throw new CustomError("Snippet ID required", 400);
         }
 
         return await executeInTransaction(async (t) => {
-            const snippet = await findByShortId(shortId, t);
+            const snippet = await findBySnippetId(snippetId, t);
             if (!snippet) {
                 throw new CustomError("Snippet not found", 404);
             }
@@ -259,7 +298,7 @@ export async function deleteSnippetHandler(payload: ServicePayload<unknown, { sh
                 await decrementSnippetForkCount(snippet.parentShortId, t);
             }
 
-            await deleteSnippet(shortId, t);
+            await deleteSnippet(snippetId, t);
 
             return { message: "Snippet deleted successfully" };
         });
@@ -267,14 +306,16 @@ export async function deleteSnippetHandler(payload: ServicePayload<unknown, { sh
         handleError(err, 'deleteSnippetHandler');
     }
 }
+//#endregion
 
+//#region READ
 // Get Snippet by ShortId
 export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown, { shortId: string }>): Promise<ServiceResponse<SnippetDTO>> {
     const auth0Id = payload.auth?.payload?.sub;
     const shortId = payload.params?.shortId;
 
     if (!shortId) {
-        throw new CustomError("Snippet ID required", 400);
+        throw new CustomError("Short ID required", 400);
     }
 
     try {
@@ -303,8 +344,8 @@ export async function getAllPublicSnippetsHandler(payload: ServicePayload<unknow
 
         return await executeInTransaction(async (t) => {
             const result = await getAllPublicSnippets(offset, limit, t);
-            return { 
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
+            return {
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
                 totalCount: result.count
             };
         });
@@ -331,9 +372,9 @@ export async function getUserPublicSnippetsHandler(payload: ServicePayload<unkno
             }
 
             const result = await getUserPublicSnippets(user.auth0Id, offset, limit, t);
-            return { 
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
-                totalCount: result.count 
+            return {
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                totalCount: result.count
             };
         });
     } catch (err: any) {
@@ -353,9 +394,9 @@ export async function getMySnippetsHandler(payload: ServicePayload<unknown, unkn
 
         return await executeInTransaction(async (t) => {
             const result = await getMySnippets(auth0Id, offset, limit, t);
-            return { 
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
-                totalCount: result.count 
+            return {
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                totalCount: result.count
             };
         });
     } catch (err: any) {
@@ -375,24 +416,25 @@ export async function searchSnippetsHandler(payload: ServicePayload<unknown, unk
         const generalQuery = payload.query?.q || '';
         const nameQuery = payload.query?.name || '';
         const descriptionQuery = payload.query?.description || '';
-        
+
         // Combine all search terms into a single query string
         const query = generalQuery || nameQuery || descriptionQuery || '';
-        
+
         if (!query.trim()) {
             return { snippets: [] };
         }
-        
+
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
         return await executeInTransaction(async (t) => {
             const result = await searchSnippets(query, offset, limit, t);
-            return { 
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id), 
-                totalCount: result.count 
+            return {
+                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                totalCount: result.count
             };
         });
     } catch (err: any) {
         handleError(err, 'searchSnippetsHandler');
     }
 }
+//#endregion

@@ -85,11 +85,11 @@ export const validateUpdateSnippet = (payload: any): void => {
     }
 };
 
-const forkSnippetSchema = Joi.object({
-    shortId: Joi.string().required(),
-});
+// const forkSnippetSchema = Joi.object({
+//     snippetId: Joi.string().required(),
+// });
 
-export const validateForkSnippet = (payload: any): void => {
-    const { error } = forkSnippetSchema.validate(payload);
-    if (error) throw new CustomError(error.message, 400);
-};
+// export const validateForkSnippet = (payload: any): void => {
+//     const { error } = forkSnippetSchema.validate(payload);
+//     if (error) throw new CustomError(error.message, 400);
+// };

@@ -2,20 +2,22 @@ import { CustomError } from "../../common/exceptions/custom-error";
 import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { PaginationService, PaginationQuery } from "../../common/services/pagination.service";
-import { createFavorite, deleteFavorite, findFavoriteSnippetsByUser } from "./favorite.repo";
+import { createFavorite, deleteFavorite, findFavoriteSnippetsByUser, findFavoriteSnippetByUserAndSnippet } from "./favorite.repo";
 import { Snippets } from "../../entities/snippet.entity";
 import { SnippetMapper } from "../snippet/snippet.mapper";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { SnippetListDTO } from "../snippet/dto/snippet.dto";
+import { decrementSnippetFavoriteCount, findBySnippetId, incrementSnippetFavoriteCount } from "../snippet/snippet.repo";
 
 //#region Favorite CREATE/DELETE
 // Create Favorite Handler
-export async function addFavoriteHandler(
+export async function favoriteHandler(
     payload: ServicePayload<unknown, { snippetId: string }>
 ): Promise<ServiceResponse<never>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
+        var isFavorited = false;
         if (!auth0Id) {
             throw new CustomError("Authentication required", 401);
         }
@@ -25,52 +27,40 @@ export async function addFavoriteHandler(
             throw new CustomError("Snippet ID required", 400);
         }
 
-        await executeInTransaction(async (t) => {
-            return await createFavorite(
-                {
-                    auth0Id,
-                    snippetId
-                },
-                t
-            );
-        }, 'addFavorite');
+        return await executeInTransaction(async (t) => {
+            //find or create favorite
+            const existingFavorite = await findFavoriteSnippetByUserAndSnippet(auth0Id, snippetId, t);
+            if (existingFavorite) {
+                //delete existing favorite to avoid duplicates
+                await deleteFavorite(auth0Id, snippetId, t);
+                isFavorited = false;
+                await decrementSnippetFavoriteCount(snippetId, t);
+            }
+            else {
+                //create new favorite
+                await createFavorite(
+                    {
+                        auth0Id,
+                        snippetId
+                    },
+                    t
+                );
+                isFavorited = true;
 
-        const favoriteSnippet = await Snippets.findByPk(snippetId);
-        if (!favoriteSnippet) {
-            throw new CustomError('Snippet not found', 404);
-        }
+                await incrementSnippetFavoriteCount(snippetId, t);
+            }
 
-        return {
-            message: 'Favorite added successfully',
-        };
+            const snippet = await findBySnippetId(snippetId, t);
+            if (!snippet) {
+                throw new CustomError('Snippet not found', 404);
+            }
+            return {
+                isFavorited, favoriteCount: snippet.favoriteCount
+            };
+        });
 
     } catch (error) {
-        return handleError(error, 'addFavorite');
-    }
-}
-
-// Delete Favorite Handler
-export async function removeFavoriteHandler(
-    payload: ServicePayload<unknown, { snippetId: string }>
-): Promise<ServiceResponse<null>> {
-    try {
-        const auth0Id = payload.auth?.payload?.sub;
-        if (!auth0Id) {
-            throw new CustomError("Authentication required", 401);
-        }
-
-        const snippetId = payload.params?.snippetId;
-        if (!snippetId) {
-            throw new CustomError("Snippet ID required", 400);
-        }
-
-        await executeInTransaction(async (t) => {
-            await deleteFavorite(auth0Id, snippetId, t);
-        }, 'removeFavorite');
-
-        return { message: 'Favorite removed successfully' };
-    } catch (error) {
-        return handleError(error, 'removeFavorite');
+        return handleError(error, 'favorite');
     }
 }
 //#endregion

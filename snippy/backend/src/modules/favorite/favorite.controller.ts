@@ -1,7 +1,7 @@
 
 import { NextFunction, Request, Response } from 'express';
 import { validateCreateOrDeleteFavorite } from './favorite.validator';
-import { addFavoriteHandler, getFavoriteSnippetsByUserHandler, removeFavoriteHandler } from './favorite.service';
+import { favoriteHandler, getFavoriteSnippetsByUserHandler } from './favorite.service';
 
 
 
@@ -9,7 +9,7 @@ import { addFavoriteHandler, getFavoriteSnippetsByUserHandler, removeFavoriteHan
  * @swagger
  * /favorites:
  *   post:
- *     summary: Add a snippet to user's favorites
+ *     summary: Add or DELETE a snippet to user's favorites
  *     tags:
  *       - Favorites
  *     requestBody:
@@ -41,61 +41,15 @@ import { addFavoriteHandler, getFavoriteSnippetsByUserHandler, removeFavoriteHan
  *       404:
  *         description: Snippet not found
  */
-export async function addFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
+export async function favorite(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         validateCreateOrDeleteFavorite(req.body);
-        const { message } = await addFavoriteHandler(req);
-        res.status(201).json({ success: true, message });
+        const { favoriteCount, isFavorited } = await favoriteHandler(req);
+        res.status(201).json({ success: true, isFavorited, favoriteCount });
     } catch (error) {
         next(error);
     }
 }
-
-
-/**
- * @swagger
- * /favorites:
- *   delete:
- *     summary: Remove a snippet from user's favorites
- *     tags:
- *       - Favorites
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               snippetId:
- *                 type: string
- *                 description: The ID of the snippet to remove from favorites
- *     responses:
- *       200:
- *         description: Favorite removed successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
- *       400:
- *         description: Bad request
- *       401:
- *         description: Authentication required
- */
-export async function deleteFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateCreateOrDeleteFavorite(req.body);
-        const { message } = await removeFavoriteHandler(req);
-        res.status(200).json({ success: true, message });
-    } catch (error) {
-        next(error);
-    }
-}
-
 
 /**
  * @swagger

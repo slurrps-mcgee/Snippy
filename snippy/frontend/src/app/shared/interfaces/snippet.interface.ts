@@ -1,6 +1,7 @@
 import { SnippetFile } from "./snippetfile.interface";
 
 export interface Snippet {
+    snippetId?: string | null,
     shortId: string
     name: string,
     description: string

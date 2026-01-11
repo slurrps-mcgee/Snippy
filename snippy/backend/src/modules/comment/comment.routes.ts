@@ -5,10 +5,10 @@ import { publicReadLimiter, writeLimiter } from '../../common/middleware/rate-li
 const commentRouter = express.Router();
 
 // Public read operations - higher limit
-commentRouter.get('/:shortId', publicReadLimiter, getComments);
+commentRouter.get('/:snippetId', publicReadLimiter, getComments);
 
 // Write operations - lower limit
-commentRouter.post('/:shortId', writeLimiter, createComment);
+commentRouter.post('/:snippetId', writeLimiter, createComment);
 commentRouter.put('/:commentId', writeLimiter, updateComment);
 commentRouter.delete('/:commentId', writeLimiter, deleteComment);
 

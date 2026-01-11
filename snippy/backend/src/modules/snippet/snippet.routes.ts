@@ -27,9 +27,9 @@ snippetRouter.get('/:shortId', publicReadLimiter, getSnippetByShortId);
 
 // Write operations - lower limit
 snippetRouter.post('/', writeLimiter, createSnippet);
-snippetRouter.post('/fork', writeLimiter, forkSnippet);
-snippetRouter.put('/:shortId', writeLimiter, updateSnippet);
-snippetRouter.post('/:shortId/view', writeLimiter, updateSnippetViewCount);
-snippetRouter.delete('/:shortId', writeLimiter, deleteSnippet);
+snippetRouter.post('/fork/:snippetId', writeLimiter, forkSnippet);
+snippetRouter.put('/:snippetId', writeLimiter, updateSnippet);
+snippetRouter.post('/:snippetId/view', writeLimiter, updateSnippetViewCount);
+snippetRouter.delete('/:snippetId', writeLimiter, deleteSnippet);
 
 export default snippetRouter;
