@@ -65,10 +65,10 @@ export async function updateExternalResource(
 }
 // Delete Snippet will cascade deleting snippetFiles, comments, favorites, etc.
 export async function deleteSnippet(
-    shortId: string,
+    snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
-    await Snippets.destroy({ where: { shortId }, transaction });
+    await Snippets.destroy({ where: { snippetId }, transaction });
 }
 // Delete resource by externalId
 export async function deleteExternalResource(

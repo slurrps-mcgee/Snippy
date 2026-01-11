@@ -39,16 +39,22 @@
             <div class="d-flex align-items-center justify-content-between pt-2">
               <div class="d-flex gap-2">
                 <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
+                  matTooltip="View count (coming soon)"
+                  matTooltipPosition="above"
                   (click)="viewSnippet(snippet); $event.stopPropagation()" disabled>
                   <mat-icon>visibility</mat-icon>
                   {{ snippet.viewCount }}
                 </button>
                 <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
+                  matTooltip="Favorite this snippet"
+                  matTooltipPosition="above"
                   (click)="favoriteSnippet(snippet, $event)">
                   <mat-icon>favorite</mat-icon>
                   {{ snippet.favoriteCount }}
                 </button>
                 <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
+                  matTooltip="Comment on this snippet (Coming soon)"
+                  matTooltipPosition="above"
                   (click)="commentOnSnippet(snippet, $event)" disabled>
                   <mat-icon>comment</mat-icon>
                   {{ snippet.commentCount }}

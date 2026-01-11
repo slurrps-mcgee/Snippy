@@ -12,6 +12,7 @@ import { SnippetList } from '../../interfaces/snippetList.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
+import {TooltipPosition, MatTooltipModule} from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { SnippetService } from '../../services/snippet.service';
 import { SnackbarService } from '../../services/snackbar.service';
@@ -32,7 +33,8 @@ import { FavoriteService } from '../../services/favorite.service';
     MatChipsModule,
     MatButtonModule,
     MatDividerModule,
-    MatMenuModule
+    MatMenuModule,
+    MatTooltipModule
   ],
   templateUrl: './snippet-list-component.component.html',
   styleUrl: './snippet-list-component.component.scss',
@@ -137,7 +139,7 @@ export class SnippetListComponentComponent {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.snippetService.deleteSnippet(snippet.shortId)
+        this.snippetService.deleteSnippet(snippet.snippetId)
           .pipe(takeUntilDestroyed(this.destroyRef))
           .subscribe({
             next: () => {
