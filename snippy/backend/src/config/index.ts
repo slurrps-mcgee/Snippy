@@ -24,6 +24,16 @@ export const config = {
         dialect: 'mysql' as const,
     },
 
+    // MinIO Configuration
+    minio: {
+        endPoint: process.env.MINIO_ENDPOINT || 'minio',
+        port: Number(process.env.MINIO_PORT) || 9000,
+        useSSL: process.env.MINIO_USE_SSL === 'true' || false,
+        accessKey: process.env.MINIO_APP_USER || 'snippyappuser',
+        secretKey: process.env.MINIO_APP_PASSWORD || 'SnippyAppUserPass123!',
+        bucket: process.env.MINIO_BUCKET || 'uploads'
+    },
+
     // Auth0 Configuration
     auth: {
         domain: process.env.AUTH0_DOMAIN!,

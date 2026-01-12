@@ -1,4 +1,5 @@
 version: '3.8'
+
 services:
   db:
     image: mysql:8.0
@@ -17,6 +18,33 @@ services:
       retries: 5
       start_period: 10s
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - ./.env
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio-init:
+    build: ./snippy/minio
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    restart: "no"
+
   api:
     container_name: snippy-api
     build: ./snippy/backend
@@ -30,6 +58,8 @@ services:
     restart: unless-stopped
     depends_on:
       db:
+        condition: service_healthy
+      minio:
         condition: service_healthy
     command: npm run dev
 
@@ -46,3 +76,4 @@ services:
 
 volumes:
   mysql-data:
+  minio_data:

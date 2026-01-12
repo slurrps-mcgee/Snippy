@@ -1,4 +1,3 @@
-import { sequelize } from "../../database/sequelize";
 import { CustomError } from "../../common/exceptions/custom-error";
 import { UserMapper } from "./user.mapper";
 import { UserDTO, EnsureUserRequest, UpdateUserRequest } from "./dto/user.dto";
@@ -196,6 +195,14 @@ export async function getCurrentUserHandler(payload: ServicePayload<unknown>): P
         handleError(err, 'getCurrentUserHandler');
     }
 }
+
+// export async function updateProfilePictureHandler(payload: ServicePayload<{ pictureUrl: string }>): Promise<ServiceResponse<UserDTO>> {
+//     try {
+//         return new 
+//     } catch (err: any) {
+//         handleError(err, 'updateProfilePictureHandler');
+//     }
+// }
 
 export async function checkUserNameAvailabilityHandler(payload: ServicePayload<unknown, { userName: string }>): Promise<ServiceResponse<{ available: boolean }>> {
     try {

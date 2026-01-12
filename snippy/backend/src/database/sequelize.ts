@@ -24,7 +24,7 @@ export const sequelize = new Sequelize({
 sequelize.addModels([Users, Snippets, SnippetFiles, ExternalResource, Favorites, Comments]);
 
 // Function to connect to the database with retry logic
-async function connectWithRetry() {
+export async function connectDBWithRetry() {
   try {
     await dbConnectionPolicy.execute(async () => {
       logger.info('⏳ Trying DB connection...');
@@ -68,5 +68,3 @@ async function connectWithRetry() {
     throw error;
   }
 }
-
-export default connectWithRetry;

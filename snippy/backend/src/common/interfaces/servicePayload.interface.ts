@@ -10,4 +10,9 @@ export interface ServicePayload<TBody = unknown, TParams = unknown, TQuery = unk
     body?: TBody;
     params?: Partial<TParams>;
     query?: Partial<TQuery>;
+    file?: {
+        originalname?: string;
+        buffer?: Buffer<ArrayBufferLike>;
+        mimetype?: string;
+    };
 }

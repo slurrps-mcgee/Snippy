@@ -1,9 +1,6 @@
 name: Build and Deploy
 
 on:
-  # push:
-  #   branches:
-  #     - main
   workflow_dispatch: # Allow manual trigger
 
 jobs:
@@ -44,6 +41,11 @@ jobs:
         echo "FE_VERSION=$FE_VERSION" >> $GITHUB_ENV
         echo "Using FE version: $FE_VERSION"
 
+        # MinIO version
+        MINIO_VERSION="latest"
+        echo "MINIO_VERSION=$MINIO_VERSION" >> $GITHUB_ENV
+        echo "Using MinIO version: $MINIO_VERSION"
+
     - name: Build and push API image
       uses: docker/build-push-action@v5
       with:
@@ -70,3 +72,12 @@ jobs:
         tags: |
           kennyl777/snippy-frontend:${{ env.FE_VERSION }}
           kennyl777/snippy-frontend:latest
+
+    - name: Build and push MinIO image
+      uses: docker/build-push-action@v5
+      with:
+        context: ./snippy/minio # adjust if you have a custom Dockerfile here, else use official
+        push: true
+        tags: |
+          kennyl777/snippy-minio:${{ env.MINIO_VERSION }}
+          kennyl777/snippy-minio:latest

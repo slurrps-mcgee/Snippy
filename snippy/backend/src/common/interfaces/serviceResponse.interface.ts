@@ -20,4 +20,8 @@ export interface ServiceResponse<T> {
     // Common responses
     totalCount?: number;
     message?: string;
+
+    //File upload responses
+    url?: string;
+    objectName?: string;
 }

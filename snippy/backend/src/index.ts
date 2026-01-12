@@ -4,13 +4,14 @@ import { setupSwaggerDocs } from './common/utilities/swaggerDocs';
 import router from './routes/routes';
 import helmet from 'helmet';
 import { globalLimiter } from './common/middleware/rate-limit.service';
-import connectWithRetry from './database/sequelize';
+import { connectDBWithRetry } from './database/sequelize';
 import { errorHandler } from './common/middleware/error-handler';
 import { version } from '../package.json';
 import logger from './common/utilities/logger';
 import { auth0Check } from './common/middleware/auth0.service';
 import cookie from 'cookie-parser';
 import { config, validateConfig } from './config';
+import { connectMinioWithRetry } from './database/minio';
 
 // Validate required environment variables
 validateConfig();
@@ -53,9 +54,13 @@ app.use(errorHandler);
 const startServer = async () => {
   try {
     // Connect to the database - must succeed before starting server
-    await connectWithRetry();
+    await connectDBWithRetry();
     logger.info('✅ Database connection established.');
 
+    await connectMinioWithRetry();
+    logger.info('✅ MinIO connection established.');
+    
+    // Start the Express server
     app.listen(config.server.port, () => {
       logger.info(`🚀 Snippy API v${version} started on port ${config.server.port}`);
     });
