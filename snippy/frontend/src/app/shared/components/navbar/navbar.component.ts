@@ -98,7 +98,10 @@ export class NavbarComponent implements OnInit {
     if (!snippet) return;
 
     const dialogRef = this.dialog.open(SnippetSettingsDialogComponent, {
-      width: '500px',
+      width: '50vw',
+      height: '80vh',
+      maxWidth: '50vw',
+      maxHeight: '80vh',
       data: snippet
     });
 

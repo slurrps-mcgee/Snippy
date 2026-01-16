@@ -55,16 +55,20 @@
       </div>
     </mat-tab>
     <mat-tab label="CSS">
-      <app-external-resources-list
-        [(resources)]="cssResources"
-        [resourceType]="'css'">
-      </app-external-resources-list>
+      <div class="pt-3 pt-3 overflow-hidden">
+        <app-external-resources-list
+          [(resources)]="cssResources"
+          [resourceType]="'css'">
+        </app-external-resources-list>
+      </div>
     </mat-tab>
     <mat-tab label="JS">
-      <app-external-resources-list
-        [(resources)]="jsResources"
-        [resourceType]="'js'">
-      </app-external-resources-list>
+      <div class="pt-3 pt-3 overflow-hidden">
+        <app-external-resources-list
+          [(resources)]="jsResources"
+          [resourceType]="'js'">
+        </app-external-resources-list>
+      </div>
     </mat-tab>
   </mat-tab-group>
 </mat-dialog-content>

@@ -1,19 +1,18 @@
-<div class="external-resources-list">
-  <div class="add-resource-row">
-    <input [(ngModel)]="newUrl" placeholder="Add {{ resourceType.toUpperCase() }} URL" />
-    <button type="button" (click)="addResource()" [disabled]="!newUrl.trim()">Add</button>
-  </div>
-  <mat-list cdkDropList (cdkDropListDropped)="drop($event)" class="resources-list">
+<mat-list cdkDropList (cdkDropListDropped)="drop($event)">
     <mat-list-item *ngFor="let resource of resources; let i = index" cdkDrag>
-      <span cdkDragHandle class="drag-handle" title="Drag to reorder">
-        <mat-icon>drag_indicator</mat-icon>
-      </span>
-      <mat-form-field appearance="outline" class="resource-url-field">
-        <input matInput [(ngModel)]="resource.url" (ngModelChange)="resourcesChange.emit(resources)" placeholder="Resource URL" />
-      </mat-form-field>
-      <button mat-icon-button type="button" (click)="removeResource(i)" title="Remove">
-        <mat-icon>delete</mat-icon>
-      </button>
+        <div class="d-flex align-items-center w-100 gap-2">
+            <span cdkDragHandle class="drag-handle me-2" title="Drag to reorder">
+                <mat-icon>drag_indicator</mat-icon>
+            </span>
+            <mat-form-field appearance="outline" class="flex-grow-1">
+              <input matInput [(ngModel)]="resource.url" (ngModelChange)="resourcesChange.emit(resources)"
+                placeholder="https://yourwebsite.com/style.css"/>
+            </mat-form-field>
+            <button mat-button class="ms-2" (click)="removeResource(i)" title="Remove">
+                <mat-icon>close</mat-icon>
+            </button>
+        </div>
     </mat-list-item>
-  </mat-list>
-</div>
+</mat-list>
+
+<button mat-raised-button color="primary" class="w-100" (click)="addResource()">+ add another resource</button>

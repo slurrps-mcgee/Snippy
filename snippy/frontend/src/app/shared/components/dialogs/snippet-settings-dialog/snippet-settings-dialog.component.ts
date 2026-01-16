@@ -68,10 +68,10 @@ export class SnippetSettingsDialogComponent {
   }
 
   onSave() {
-    // Combine CSS and JS resources into one array
+    // Combine CSS and JS resources into one array, filter out empty URLs
     const externalResources = [
-      ...this.cssResources.map(r => ({ ...r, resourceType: 'css' })),
-      ...this.jsResources.map(r => ({ ...r, resourceType: 'js' }))
+      ...this.cssResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'css' })),
+      ...this.jsResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'js' }))
     ];
     this.dialogRef.close({
       description: this.description,

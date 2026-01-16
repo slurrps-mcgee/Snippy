@@ -43,7 +43,7 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
         }
 
         return await executeInTransaction(async (t) => {
-            const { snippetFiles, externalResources, ...snippetData } = payload.body || {};
+            const { snippetFiles, ...snippetData } = payload.body || {};
 
             let newSnippet = await createSnippet({
                 auth0Id,

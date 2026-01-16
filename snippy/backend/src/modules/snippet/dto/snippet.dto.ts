@@ -51,11 +51,7 @@ export interface CreateSnippetRequest {
         fileType: string;
         content: string;
     }>;
-    externalResources?: Array<{
-        externalId?: string;
-        resourceType: 'html' | 'css' | 'js';
-        url: string;
-    }>;
+    externalResources?: string[];
 }
 
 export interface UpdateSnippetRequest {
@@ -68,9 +64,5 @@ export interface UpdateSnippetRequest {
         fileType: string;
         content: string;
     }>;
-    externalResources?: Array<{
-        externalId?: string;
-        resourceType: 'css' | 'js';
-        url: string;
-    }>;
+    externalResources?: string[];
 }
