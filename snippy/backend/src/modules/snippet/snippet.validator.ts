@@ -13,9 +13,14 @@ const createSnippetSchema = Joi.object({
             fileType: Joi.string().min(1).max(255).required(),
             content: Joi.string().optional().allow(''),
         })
-    )
+    ),
+    externalResources: Joi.array().items(
+        Joi.object({
+            resourceType: Joi.string().valid('css', 'js').optional(),
+            url: Joi.string().uri().optional(),
+        })
+    ).optional(),
 });
-
 
 export const validateCreateSnippet = (payload: any): void => {
     const { error } = createSnippetSchema.validate(payload);
@@ -55,7 +60,6 @@ const updateSnippetSchema = Joi.object({
     ).optional(),
     externalResources: Joi.array().items(
         Joi.object({
-            externalId: Joi.string().uuid().optional(),
             resourceType: Joi.string().valid('css', 'js').optional(),
             url: Joi.string().uri().optional(),
         })
@@ -84,12 +88,3 @@ export const validateUpdateSnippet = (payload: any): void => {
         }));
     }
 };
-
-// const forkSnippetSchema = Joi.object({
-//     snippetId: Joi.string().required(),
-// });
-
-// export const validateForkSnippet = (payload: any): void => {
-//     const { error } = forkSnippetSchema.validate(payload);
-//     if (error) throw new CustomError(error.message, 400);
-// };

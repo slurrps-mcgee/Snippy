@@ -26,7 +26,7 @@ export class SnippetMapper {
             userName: (snippet as any).user?.userName,
             displayName: (snippet as any).user?.displayName,
             snippetFiles: snippet.snippetFiles?.map(file => this.fileToDTO(file)),
-            externalResources: snippet.externalResources?.map(resource => this.resourceToDTO(resource)),
+            externalResources: snippet.externalResources ?? [],
         };
     }
 

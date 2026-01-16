@@ -1,0 +1,19 @@
+<div class="external-resources-list">
+  <div class="add-resource-row">
+    <input [(ngModel)]="newUrl" placeholder="Add {{ resourceType.toUpperCase() }} URL" />
+    <button type="button" (click)="addResource()" [disabled]="!newUrl.trim()">Add</button>
+  </div>
+  <mat-list cdkDropList (cdkDropListDropped)="drop($event)" class="resources-list">
+    <mat-list-item *ngFor="let resource of resources; let i = index" cdkDrag>
+      <span cdkDragHandle class="drag-handle" title="Drag to reorder">
+        <mat-icon>drag_indicator</mat-icon>
+      </span>
+      <mat-form-field appearance="outline" class="resource-url-field">
+        <input matInput [(ngModel)]="resource.url" (ngModelChange)="resourcesChange.emit(resources)" placeholder="Resource URL" />
+      </mat-form-field>
+      <button mat-icon-button type="button" (click)="removeResource(i)" title="Remove">
+        <mat-icon>delete</mat-icon>
+      </button>
+    </mat-list-item>
+  </mat-list>
+</div>

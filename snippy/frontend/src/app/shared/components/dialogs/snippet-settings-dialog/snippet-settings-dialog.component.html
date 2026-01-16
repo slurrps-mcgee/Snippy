@@ -1,64 +1,72 @@
 <h2 mat-dialog-title>Snippet Settings</h2>
 
 <mat-dialog-content>
-  <div class="d-flex flex-column gap-3 pt-3">
-    <!-- Description -->
-    <mat-form-field appearance="outline" class="w-100">
-      <mat-label>Description</mat-label>
-      <textarea 
-        matInput 
-        [(ngModel)]="description"
-        placeholder="Describe your snippet..."
-        rows="3">
+  <mat-tab-group>
+    <mat-tab label="General">
+      <div class="d-flex flex-column gap-3 pt-3">
+        <!-- Description -->
+        <mat-form-field appearance="outline" class="w-100">
+          <mat-label>Description</mat-label>
+          <textarea matInput [(ngModel)]="description" placeholder="Describe your snippet..." rows="3">
       </textarea>
-    </mat-form-field>
-
-    <!-- Privacy Toggle -->
-    <div class="d-flex align-items-center justify-content-between">
-      <div>
-        <div class="fw-bold">Private Snippet</div>
-        <small class="opacity-50">Only you can view this snippet</small>
-      </div>
-      <mat-slide-toggle [(ngModel)]="isPrivate"></mat-slide-toggle>
-    </div>
-
-    <!-- Tags -->
-    <div>
-      <label class="fw-bold mb-2 d-block">Tags</label>
-      
-      <!-- Tag Input -->
-      <div class="d-flex align-items-center gap-2 mb-2">
-        <mat-form-field appearance="outline" class="flex-grow-1">
-          <mat-label>Add tag</mat-label>
-          <input 
-            matInput 
-            [(ngModel)]="newTag"
-            (keyup.enter)="addTag()"
-            placeholder="javascript, tutorial, etc.">
         </mat-form-field>
-        <button mat-raised-button color="primary" (click)="addTag()">
-          <mat-icon>add</mat-icon>
-          Add
-        </button>
-      </div>
 
-      <!-- Tag List -->
-      @if (tags.length > 0) {
-        <mat-chip-set>
-          @for (tag of tags; track tag) {
+        <!-- Privacy Toggle -->
+        <div class="d-flex align-items-center justify-content-between">
+          <div>
+            <div class="fw-bold">Private Snippet</div>
+            <small class="opacity-50">Only you can view this snippet</small>
+          </div>
+          <mat-slide-toggle [(ngModel)]="isPrivate"></mat-slide-toggle>
+        </div>
+
+        <!-- Tags -->
+        <div>
+          <label class="fw-bold mb-2 d-block">Tags</label>
+
+          <!-- Tag Input -->
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <mat-form-field appearance="outline" class="flex-grow-1">
+              <mat-label>Add tag</mat-label>
+              <input matInput [(ngModel)]="newTag" (keyup.enter)="addTag()" placeholder="javascript, tutorial, etc.">
+            </mat-form-field>
+            <button mat-raised-button color="primary" (click)="addTag()">
+              <mat-icon>add</mat-icon>
+              Add
+            </button>
+          </div>
+
+          <!-- Tag List -->
+          @if (tags.length > 0) {
+          <mat-chip-set>
+            @for (tag of tags; track tag) {
             <mat-chip (removed)="removeTag(tag)">
               {{ tag }}
               <button matChipRemove>
                 <mat-icon>cancel</mat-icon>
               </button>
             </mat-chip>
+            }
+          </mat-chip-set>
+          } @else {
+          <p class="opacity-50 mb-0">No tags added</p>
           }
-        </mat-chip-set>
-      } @else {
-        <p class="opacity-50 mb-0">No tags added</p>
-      }
-    </div>
-  </div>
+        </div>
+      </div>
+    </mat-tab>
+    <mat-tab label="CSS">
+      <app-external-resources-list
+        [(resources)]="cssResources"
+        [resourceType]="'css'">
+      </app-external-resources-list>
+    </mat-tab>
+    <mat-tab label="JS">
+      <app-external-resources-list
+        [(resources)]="jsResources"
+        [resourceType]="'js'">
+      </app-external-resources-list>
+    </mat-tab>
+  </mat-tab-group>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

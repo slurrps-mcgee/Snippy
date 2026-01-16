@@ -74,7 +74,8 @@ export class SnippetService {
           description: s.description,
           tags: s.tags,
           isPrivate: s.isPrivate,
-          snippetFiles: s.snippetFiles
+          snippetFiles: s.snippetFiles,
+          externalResources: s.externalResources ?? []
         }
       }).pipe(
         tap((response) => {
@@ -93,7 +94,8 @@ export class SnippetService {
           description: s.description,
           tags: s.tags,
           isPrivate: s.isPrivate,
-          snippetFiles: s.snippetFiles
+          snippetFiles: s.snippetFiles,
+          externalResources: s.externalResources ?? []
         }
       }).pipe(
         tap((response) => {

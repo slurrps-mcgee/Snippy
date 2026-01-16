@@ -24,9 +24,6 @@ import {
     getMySnippets,
     getUserPublicSnippets,
     searchSnippets,
-    createExternalResource,
-    updateExternalResource,
-    deleteExternalResource,
     findByShortId,
 } from "./snippet.repo";
 
@@ -60,14 +57,6 @@ export async function createSnippetHandler(payload: ServicePayload<CreateSnippet
                     snippetId: newSnippet.snippetId
                 }));
                 await createSnippetFiles(filesWithSnippetId as any, t);
-            }
-
-            if (externalResources && externalResources.length > 0) {
-                const resourcesWithSnippetId = externalResources.map(resource => ({
-                    ...resource,
-                    snippetId: newSnippet.snippetId
-                }));
-                await createExternalResource(resourcesWithSnippetId as any, t);
             }
 
             newSnippet = await findBySnippetId(newSnippet.snippetId, t) as Snippets;
@@ -124,15 +113,6 @@ export async function forkSnippetHandler(payload: ServicePayload<unknown, { snip
                     content: file.content,
                 }));
                 await createSnippetFiles(forkFiles, t);
-            }
-
-            if (originalSnippet.externalResources && originalSnippet.externalResources.length > 0) {
-                const forkResources = originalSnippet.externalResources.map((resource: any) => ({
-                    snippetId: forkedSnippet.snippetId,
-                    resourceType: resource.resourceType,
-                    url: resource.url,
-                }));
-                await createExternalResource(forkResources, t);
             }
 
             await incrementSnippetForkCount(originalSnippetId, t);
@@ -201,43 +181,6 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
                     await createSnippetFiles([newFile as any], t);
                 } else {
                     await updateSnippetFiles(snippetFile.snippetFileID, snippetFile as any, t);
-                }
-            }));
-
-
-            // Create, update, or delete external resources
-            const patchResources = payload.body?.externalResources || [];
-            // Get all current external resources for this snippet
-            const currentResources = snippet.externalResources || [];
-            const patchResourceIds = patchResources.filter(r => r.externalId).map(r => r.externalId);
-
-            // Delete resources that are not in the patch
-            const resourcesToDelete = currentResources.filter((r: any) => !patchResourceIds.includes(r.externalId));
-            if (resourcesToDelete.length > 0) {
-                // You need a deleteExternalResource function in your repo
-                for (const resource of resourcesToDelete) {
-                    await deleteExternalResource(resource.externalId, t);
-                }
-            }
-
-            // Create or update resources
-            await Promise.all(patchResources.map(async resource => {
-                if (!resource.externalId) {
-                    const newResource = {
-                        ...resource,
-                        snippetId: snippet?.snippetId
-                    };
-                    await createExternalResource([newResource as any], t);
-                } else {
-                    // Find the current resource by externalId
-                    const current = currentResources.find((r: any) => r.externalId === resource.externalId);
-                    if (current && current.url === resource.url && current.resourceType === resource.resourceType) {
-                        // Skip update if url and resourceType match
-                        return;
-                    }
-                    // Only update allowed fields, never externalId
-                    const { externalId, ...updateFields } = resource;
-                    await updateExternalResource(resource.externalId, updateFields as any, t);
                 }
             }));
 

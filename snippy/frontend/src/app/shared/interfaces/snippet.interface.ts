@@ -1,3 +1,4 @@
+import { ExternalResource } from "./externalResource.interface";
 import { SnippetFile } from "./snippetfile.interface";
 
 export interface Snippet {
@@ -15,4 +16,5 @@ export interface Snippet {
     isOwner: boolean,
     displayName: string,
     snippetFiles: SnippetFile[];
+    externalResources?: ExternalResource[];
 }

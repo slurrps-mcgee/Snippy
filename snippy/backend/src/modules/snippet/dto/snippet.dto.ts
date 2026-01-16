@@ -8,12 +8,6 @@ export interface SnippetFileDTO {
     content: string;
 }
 
-export interface ExternalResourceDTO {
-    externalId: string;
-    resourceType: string;
-    url: string;
-}
-
 export interface SnippetDTO {
     snippetId: string;
     shortId: string;
@@ -30,7 +24,7 @@ export interface SnippetDTO {
     userName?: string;
     displayName?: string;
     snippetFiles?: SnippetFileDTO[];
-    externalResources?: ExternalResourceDTO[];
+    externalResources?: string[];
 }
 
 export interface SnippetListDTO {

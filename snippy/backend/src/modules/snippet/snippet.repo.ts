@@ -3,7 +3,6 @@ import { Snippets } from "../../entities/snippet.entity";
 import { SnippetFiles } from "../../entities/snippetFile.entity";
 import { Users } from "../../entities/user.entity";
 import { Op } from "sequelize";
-import { ExternalResource } from "../../entities/external.entity";
 
 // #region Snippet CREATE/UPDATE/DELETE
 // Create Snippet
@@ -20,14 +19,6 @@ export async function createSnippetFiles(
     transaction?: Transaction
 ): Promise<SnippetFiles[]> {
     const created = await SnippetFiles.bulkCreate(snippetFiles as any, { transaction });
-    return created;
-}
-//Create resource
-export async function createExternalResource(
-    resourceData: Partial<ExternalResource>[],
-    transaction?: Transaction
-): Promise<ExternalResource[]> {
-    const created = await ExternalResource.bulkCreate(resourceData as any, { transaction });
     return created;
 }
 // Update Snippet
@@ -52,30 +43,12 @@ export async function updateSnippetFiles(
         throw new Error('Snippet file not found or no changes made');
     }
 }
-//Update ExternalResource
-export async function updateExternalResource(
-    externalId: string,
-    patch: Partial<ExternalResource>,
-    transaction?: Transaction
-): Promise<void> {
-    const [updated] = await ExternalResource.update( patch, { where: { externalId }, transaction });
-    if (updated === 0) {
-        throw new Error('External resource not found or no changes made');
-    }
-}
 // Delete Snippet will cascade deleting snippetFiles, comments, favorites, etc.
 export async function deleteSnippet(
     snippetId: string,
     transaction?: Transaction
 ): Promise<void> {
     await Snippets.destroy({ where: { snippetId }, transaction });
-}
-// Delete resource by externalId
-export async function deleteExternalResource(
-    externalId: string,
-    transaction?: Transaction
-): Promise<void> {
-    await ExternalResource.destroy({ where: { externalId }, transaction });
 }
 // #endregion
 
@@ -89,7 +62,6 @@ export async function findBySnippetId(
         return await Snippets.findByPk(snippetId, {
             include: [
             SnippetFiles,
-            ExternalResource,
             { model: Users, attributes: ['userName', 'displayName'] }
         ],
             transaction
@@ -114,7 +86,6 @@ export async function findByShortId(
             where: { shortId },
             include: [
             SnippetFiles,
-            ExternalResource,
             { model: Users, attributes: ['userName', 'displayName'] }
         ],
             transaction

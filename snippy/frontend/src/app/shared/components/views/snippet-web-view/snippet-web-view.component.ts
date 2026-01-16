@@ -5,6 +5,7 @@ import { SnippetEditorComponent } from '../../snippet-editor/snippet-editor.comp
 import { SnippetPreviewComponent } from '../../snippet-preview/snippet-preview.component';
 import { Snippet } from '../../../interfaces/snippet.interface';
 import { SnippetStateService } from '../../../services/snippet-state.service';
+import { ExternalResource } from '../../../interfaces/externalResource.interface';
 
 @Component({
   selector: 'app-snippet-web-view',
@@ -33,7 +34,8 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
         htmlFile?.content || '',
         cssFile?.content || '',
         jsFile?.content || '',
-        previewUpdateType
+        previewUpdateType,
+        snippet.externalResources || []
       );
     });
   }
@@ -51,17 +53,17 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   // Update preview by passing code to preview component
-  private updatePreview(html: string, css: string, js: string, previewUpdateType: string| null) {
+  private updatePreview(html: string, css: string, js: string, previewUpdateType: string| null, externalResources: ExternalResource[] = []) {
     if (!this.previewComponent) {
       // If preview component not ready, retry after a short delay
       setTimeout(() => {
         if (this.previewComponent) {
-          this.previewComponent.updatePreview(html, css, js, previewUpdateType);
+          this.previewComponent.updatePreview(html, css, js, previewUpdateType, externalResources);
         }
       }, 100);
       return;
     }
     
-    this.previewComponent.updatePreview(html, css, js, previewUpdateType);
+    this.previewComponent.updatePreview(html, css, js, previewUpdateType, externalResources );
   }
 }

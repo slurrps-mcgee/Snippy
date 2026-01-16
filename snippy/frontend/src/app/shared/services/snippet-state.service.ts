@@ -1,5 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { Snippet } from '../interfaces/snippet.interface';
+import { ExternalResource } from '../interfaces/externalResource.interface';
 
 @Injectable({ providedIn: 'root' })
 export class SnippetStateService {
@@ -61,13 +62,14 @@ export class SnippetStateService {
   }
 
   // Update snippet settings: description, isPrivate, tags
-  updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[] }) {
+  updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[]; externalResources?: ExternalResource[] }) {
     this.previewUpdateType.set(null);
     this.snippet.update(s => ({
       ...s!,
       description: settings.description,
       isPrivate: settings.isPrivate,
-      tags: settings.tags
+      tags: settings.tags,
+      externalResources: settings.externalResources ?? s!.externalResources
     }));
   }
 

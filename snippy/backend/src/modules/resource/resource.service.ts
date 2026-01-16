@@ -29,8 +29,8 @@ export async function uploadFileHandler(
     const userPrefix = payload.auth?.payload?.sub;
     if (!userPrefix) throw new CustomError('Authentication required', 401);
 
-    // Construct object path: userID[/subFolder]/timestamp-filename
-    const objectName = `${userPrefix}/${subFolder || 'general'}/${Date.now()}-${originalname}`;
+    // Construct object path: userID[/subFolder]/filename
+    const objectName = `${userPrefix}/${subFolder || 'general'}/${originalname}`;
 
     try {
         await minioClient.putObject(

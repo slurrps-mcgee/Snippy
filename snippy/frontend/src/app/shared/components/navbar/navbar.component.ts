@@ -103,11 +103,13 @@ export class NavbarComponent implements OnInit {
     });
 
     dialogRef.afterClosed()
-    .pipe(takeUntilDestroyed(this.destroyRef))
-    .subscribe(result => {
-      if (result) {
-        this.snippetStateService.updateSnippetSettings(result);
-      }
-    });
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(result => {
+        if (result) {
+          this.snippetStateService.updateSnippetSettings(result);
+          // Automatically save after updating settings
+          this.saveSnippet();
+        }
+      });
   }
 }
