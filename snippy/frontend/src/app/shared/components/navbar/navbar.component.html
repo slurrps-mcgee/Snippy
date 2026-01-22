@@ -3,7 +3,7 @@
 
     @if (!(auth0Service.isLoading$ | async)) {
     @if (auth0Service.isAuthenticated$ | async) {
-    @if (snippetStateService.snippet() && snippetStateService.snippet()!.isOwner) {
+    @if (snippetStoreService.snippet() && snippetStoreService.snippet()!.isOwner) {
     <div class="d-flex align-items-center gap-3">
       <a class="navbar-brand" routerLink="/home">
         <h2>Snippy</h2>
@@ -11,18 +11,18 @@
 
       <!-- Snippet editor mode - input box -->
       <mat-form-field appearance="outline">
-        <input matInput [ngModel]="snippetStateService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
+        <input matInput [ngModel]="snippetStoreService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
           placeholder="Snippet name">
         <mat-icon matSuffix>mode_edit</mat-icon>
       </mat-form-field>
-      <span>{{ snippetStateService.snippet()!.displayName }}</span>
+      <span>{{ snippetStoreService.snippet()!.displayName }}</span>
 
     </div>
 
     <div class="d-flex align-items-center gap-3 ms-auto">
-      <button matButton="filled" (click)="saveSnippet()" [disabled]="!snippetStateService.isDirty()">
+      <button matButton="filled" (click)="saveSnippet()" [disabled]="!snippetStoreService.isDirty()">
         <mat-icon>save</mat-icon>
-        {{ snippetStateService.isDirty() ? 'Save Changes' : 'Saved' }}
+        {{ snippetStoreService.isDirty() ? 'Save Changes' : 'Saved' }}
       </button>
 
       <button mat-icon-button (click)="openSettings()">

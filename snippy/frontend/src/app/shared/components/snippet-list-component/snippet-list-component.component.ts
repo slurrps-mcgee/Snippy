@@ -14,11 +14,10 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import {TooltipPosition, MatTooltipModule} from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
-import { SnippetService } from '../../services/snippet.service';
-import { SnackbarService } from '../../services/snackbar.service';
+import { SnackbarService } from '../../services/component.services/snackbar.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
-import { FavoriteService } from '../../services/favorite.service';
+import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
 
 @Component({
   selector: 'app-snippet-list-component',
@@ -52,8 +51,8 @@ export class SnippetListComponentComponent {
 
   constructor(
     private router: Router,
-    private snippetService: SnippetService,
-    private favoriteService: FavoriteService,
+    private snippetStoreService: SnippetStoreService,
+    // Remove FavoriteService, use store for favoriting
     private snackbarService: SnackbarService,
     private dialog: MatDialog
   ) { }
@@ -83,34 +82,25 @@ export class SnippetListComponentComponent {
     this.snackbarService.success(`Viewed Snippet ${snippet.shortId}`);
   }
 
-  favoriteSnippet(snippet: SnippetList, event?: Event) {
+  async favoriteSnippet(snippet: SnippetList, event?: Event) {
     if (event) {
       event.stopPropagation();
     }
-
-    // Call favorite service to toggle favorite
-    this.favoriteService.favoriteSnippet(snippet.snippetId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response: any) => {
-          // Assume backend returns { favoriteCount: number, isFavorited: boolean }
-          if (response && typeof response.favoriteCount === 'number') {
-            snippet.favoriteCount = response.favoriteCount;
-            this.snackbarService.success(
-              response.isFavorited
-                ? `Added to favorites ${snippet.shortId}`
-                : `Removed from favorites ${snippet.shortId}`
-            );
-          } else {
-            // Fallback: just increment or decrement locally
-            snippet.favoriteCount = (snippet.favoriteCount || 0) + 1;
-            this.snackbarService.success(`Toggled favorite for ${snippet.shortId}`);
-          }
-        },
-        error: () => {
-          this.snackbarService.error(`Failed to toggle favorite for ${snippet.shortId}`);
-        }
-      });
+    try {
+      const response = await this.snippetStoreService.favoriteSnippet(snippet.snippetId);
+      if (response && typeof response.favoriteCount === 'number') {
+        snippet.favoriteCount = response.favoriteCount;
+        this.snackbarService.success(
+          response.isFavorited
+            ? `Added to favorites ${snippet.shortId}`
+            : `Removed from favorites ${snippet.shortId}`
+        );
+      } else {
+        this.snackbarService.success(`Toggled favorite for ${snippet.shortId}`);
+      }
+    } catch {
+      this.snackbarService.error(`Failed to favorite snippet ${snippet.shortId}`);
+    }
   }
 
   commentOnSnippet(snippet: SnippetList, event?: Event) {
@@ -139,18 +129,8 @@ export class SnippetListComponentComponent {
 
     dialogRef.afterClosed().subscribe(result => {
       if (result) {
-        this.snippetService.deleteSnippet(snippet.snippetId)
-          .pipe(takeUntilDestroyed(this.destroyRef))
-          .subscribe({
-            next: () => {
-              this.snackbarService.success(`Deleted Snippet ${snippet.shortId}`);
-              // Optionally, emit an event to refresh the list
-              this.pageChange.emit({ pageIndex: this.pageIndex, pageSize: this.pageSize, length: this.total });
-            },
-            error: () => {
-              this.snackbarService.error(`Failed to delete Snippet ${snippet.shortId}`);
-            }
-          });
+        this.snippetStoreService.deleteSnippet(snippet.snippetId);
+        this.snackbarService.success(`Deleted Snippet ${snippet.shortId}`);
       }
     });
 

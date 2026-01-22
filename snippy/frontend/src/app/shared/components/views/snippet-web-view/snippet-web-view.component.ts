@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { SnippetEditorComponent } from '../../snippet-editor/snippet-editor.component';
 import { SnippetPreviewComponent } from '../../snippet-preview/snippet-preview.component';
 import { Snippet } from '../../../interfaces/snippet.interface';
-import { SnippetStateService } from '../../../services/snippet-state.service';
+import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
 import { ExternalResource } from '../../../interfaces/externalResource.interface';
 
 @Component({
@@ -17,12 +17,12 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   // Reference to the preview component
   @ViewChild(SnippetPreviewComponent) previewComponent?: SnippetPreviewComponent;
 
-  constructor(public snippetStateService: SnippetStateService) {
+  constructor(public snippetStoreService: SnippetStoreService) {
     // Watch snippet state service for code changes and update preview
     effect(() => {
-      const snippet = this.snippetStateService.snippet();
-      const previewUpdateType = this.snippetStateService.previewUpdateType();
-      
+      const snippet = this.snippetStoreService.snippet();
+      const previewUpdateType = this.snippetStoreService.previewUpdateType();
+
       // Only update preview if a code file actually changed
       if (!previewUpdateType || !snippet?.snippetFiles) return;
       

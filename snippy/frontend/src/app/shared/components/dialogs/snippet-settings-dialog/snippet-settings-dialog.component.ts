@@ -12,6 +12,8 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { ExternalResourcesListComponent } from '../../external-resources-list/external-resources-list.component';
 import { ExternalResource } from '../../../interfaces/externalResource.interface';
 import { Snippet } from '../../../interfaces/snippet.interface';
+import { MatDialog } from '@angular/material/dialog';
+import { AlertDialogComponent } from '../alert-dialog/alert-dialog.component';
 
 @Component({
   selector: 'app-snippet-settings-dialog',
@@ -41,7 +43,8 @@ export class SnippetSettingsDialogComponent {
 
   constructor(
     public dialogRef: MatDialogRef<SnippetSettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: Snippet
+    @Inject(MAT_DIALOG_DATA) public data: Snippet,
+    private dialog: MatDialog
   ) {
     this.description = data.description || '';
     this.isPrivate = data.isPrivate;
@@ -73,11 +76,37 @@ export class SnippetSettingsDialogComponent {
       ...this.cssResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'css' })),
       ...this.jsResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'js' }))
     ];
+
+    // Validate all resource URLs
+    const invalidUrls = externalResources.filter(r => !this.isValidUrl(r.url));
+    if (invalidUrls.length > 0) {
+      this.dialog.open(AlertDialogComponent, {
+        data: {
+          title: 'Invalid URL',
+          message: `One or more external resource URLs are invalid. Please enter valid URLs.`,
+          type: 'error'
+        }
+      });
+      return;
+    }
+
     this.dialogRef.close({
       description: this.description,
       isPrivate: this.isPrivate,
       tags: this.tags,
       externalResources
     });
+  }
+
+  private isValidUrl(url: string): boolean {
+    try {
+      // Accepts http, https, protocol-relative, and localhost URLs
+      const pattern = /^(https?:\/\/|\/\/|localhost|127\.0\.0\.1)/i;
+      if (!pattern.test(url)) return false;
+      new URL(url, 'http://dummybase'); // base for protocol-relative
+      return true;
+    } catch {
+      return false;
+    }
   }
 }

@@ -10,13 +10,11 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatDialog } from '@angular/material/dialog';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterModule } from '@angular/router';
-import { SnippetService } from '../../services/snippet.service';
-import { SnippetStateService } from '../../services/snippet-state.service';
-import { AuthLocalService } from '../../services/auth.local.service';
+import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
+import { AuthStoreService } from '../../services/store.services/authStore.service';
 import { SnippetSettingsDialogComponent } from '../dialogs/snippet-settings-dialog/snippet-settings-dialog.component';
-import { toSignal, takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { User } from '../../interfaces/user.interface';
-import { SnackbarService } from '../../services/snackbar.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SnackbarService } from '../../services/component.services/snackbar.service';
 import {MatTabsModule} from '@angular/material/tabs';
 
 @Component({
@@ -38,19 +36,19 @@ import {MatTabsModule} from '@angular/material/tabs';
 })
 export class NavbarComponent implements OnInit {
   selectedPageIndex = 0;
-  user$!: ReturnType<typeof toSignal<User | null>>;
+  // Use signal directly from AuthStoreService
+  get user() { return this.authStoreService.user; }
   private destroyRef = inject(DestroyRef);
 
   constructor(
     public auth0Service: AuthService,
     private router: Router,
-    public snippetService: SnippetService,
-    public snippetStateService: SnippetStateService,
-    private authLocalService: AuthLocalService,
+    public snippetStoreService: SnippetStoreService,
+    private authStoreService: AuthStoreService,
     private dialog: MatDialog,
     private snackbarService: SnackbarService
   ) {
-    this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
+    // No longer needed: use signal directly
   }
 
   ngOnInit(): void {
@@ -66,35 +64,28 @@ export class NavbarComponent implements OnInit {
   }
 
   onSnippetNameChange(newName: string) {
-    this.snippetStateService.updateSnippetName(newName);
+    this.snippetStoreService.updateSnippetName(newName);
   }
 
-  saveSnippet() {
-    const isNew = !this.snippetStateService.snippet()?.shortId;
-    
-    this.snippetService.saveSnippet()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (response: any) => {
-
-          this.snackbarService.success('Snippet saved');
-          
-          // If it's a new snippet, navigate to the snippet editor page
-          if (isNew && response.snippet?.shortId) {
-            const currentUser = this.user$();
-            if (currentUser?.userName) {
-              this.router.navigate([currentUser.userName, 'snippet', response.snippet.shortId]);
-            }
-          }
-        },
-        error: (err) => {
-          this.snackbarService.error('Failed to save snippet');
+  async saveSnippet() {
+    const isNew = !this.snippetStoreService.snippet()?.shortId;
+    try {
+      const response = await this.snippetStoreService.saveSnippet();
+      this.snackbarService.success('Snippet saved');
+      // If it's a new snippet, navigate to the snippet editor page
+      if (isNew && response.snippet?.shortId) {
+        const currentUser = this.user();
+        if (currentUser?.userName) {
+          this.router.navigate([currentUser.userName, 'snippet', response.snippet.shortId]);
         }
-      });
+      }
+    } catch (err) {
+      this.snackbarService.error('Failed to save snippet');
+    }
   }
 
   openSettings() {
-    const snippet = this.snippetStateService.snippet();
+    const snippet = this.snippetStoreService.snippet();
     if (!snippet) return;
 
     const dialogRef = this.dialog.open(SnippetSettingsDialogComponent, {
@@ -109,7 +100,7 @@ export class NavbarComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
         if (result) {
-          this.snippetStateService.updateSnippetSettings(result);
+          this.snippetStoreService.updateSnippetSettings(result);
           // Automatically save after updating settings
           this.saveSnippet();
         }

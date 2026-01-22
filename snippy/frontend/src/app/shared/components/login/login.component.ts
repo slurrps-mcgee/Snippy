@@ -1,13 +1,13 @@
 import { Component, Inject, DOCUMENT, inject, DestroyRef } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { CommonModule } from '@angular/common';
-import { AuthLocalService } from '../../services/auth.local.service';
+import { AuthStoreService } from '../../services/store.services/authStore.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { User } from '../../interfaces/user.interface';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { SnippetStateService } from '../../services/snippet-state.service';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
 import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
 
 @Component({
@@ -17,19 +17,20 @@ import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog
   styleUrl: './login.component.scss'
 })
 export class LoginComponent {
-  user$!: ReturnType<typeof toSignal<User | null>>; // signal type
-  
+  // Use signal directly from AuthStoreService
+  get user() { return this.authStoreService.user; }
+
   private destroyRef = inject(DestroyRef);
 
   // Inject the AuthService to enable authentication features.
   constructor(
     @Inject(DOCUMENT) public document: Document,
     public auth0Service: AuthService,
-    private authLocalService: AuthLocalService,
-    private snippetStateService: SnippetStateService,
+    private authStoreService: AuthStoreService,
+    private snippetStoreService: SnippetStoreService,
     private dialog: MatDialog
   ) {
-    this.user$ = toSignal(this.authLocalService.user$, { initialValue: null });
+    // No longer needed: use signal directly
   }
 
   login() {
@@ -37,7 +38,7 @@ export class LoginComponent {
   }
 
   logout() {
-    if (this.snippetStateService.isDirty()) {
+    if (this.snippetStoreService.isDirty()) {
       const dialogRef = this.dialog.open(ConfirmDialogComponent, {
         width: '400px',
         data: {
@@ -52,11 +53,11 @@ export class LoginComponent {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
         if (result) {
-          this.authLocalService.logout();
+          this.authStoreService.logout();
         }
       });
     } else {
-      this.authLocalService.logout();
+      this.authStoreService.logout();
     }
   }
 }

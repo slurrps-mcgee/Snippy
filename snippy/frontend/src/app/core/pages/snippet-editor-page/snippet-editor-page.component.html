@@ -1,9 +1,9 @@
 <div class="d-flex flex-column h-100">
-  @if (loading) {
+  @if (snippetStoreService.loading()) {
     <div class="d-flex align-items-center justify-content-center h-100">Loading snippet...</div>
   } @else if (error) {
     <div class="d-flex align-items-center justify-content-center h-100">{{ error }}</div>
-  } @else if (snippetStateService.snippet()) {
+  } @else if (snippetStoreService.snippet()) {
     <app-snippet-web-view
       class="flex-grow-1 overflow-hidden" 
       #editor>

@@ -10,7 +10,7 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { SnippetStateService } from '../../services/snippet-state.service';
+import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
 import { AlertDialogComponent } from '../dialogs/alert-dialog/alert-dialog.component';
 
 @Component({
@@ -31,10 +31,10 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   // Code content signal
   private code = signal('');
 
-  constructor(private snippetStateService: SnippetStateService, private dialog: MatDialog) {
+  constructor(private snippetStoreService: SnippetStoreService, private dialog: MatDialog) {
     // Watch state service for changes to this editor's file type
     effect(() => {
-      const snippet = this.snippetStateService.snippet();
+      const snippet = this.snippetStoreService.snippet();
       if (snippet?.snippetFiles) {
         const file = snippet.snippetFiles.find(f => f.fileType === this.editorType);
         if (file && file.content !== this.code()) {
@@ -91,7 +91,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
             if (update.docChanged) {
               const value = update.state.doc.toString();
               this.code.set(value);
-              this.snippetStateService.updateSnippetFile(this.editorType, value);
+              this.snippetStoreService.updateSnippetFile(this.editorType, value);
             }
           })
         ]

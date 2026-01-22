@@ -1,19 +1,18 @@
-import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
+import { Injectable } from '@angular/core';
 import { ApiService } from './api.service';
-import { pipe } from 'rxjs/internal/util/pipe';
+import { FavoriteResponse } from '../../interfaces/favoriteResponse.interface';
+import { Observable } from 'rxjs';
 
 @Injectable({ providedIn: 'root' })
 
 export class FavoriteService {
-    private destroyRef = inject(DestroyRef);
-
     constructor(private apiService: ApiService) { }
 
     // Favorite a snippet by its snippetId will return the favorite count
-    favoriteSnippet(snippetId: string) {
-        return this.apiService.request<void>({
+    favoriteSnippet(snippetId: string): Observable<FavoriteResponse> {
+        return this.apiService.request<FavoriteResponse>({
             path: `/favorites/${snippetId}`,
             method: 'POST'
-        }).pipe();
+        });
     }
 }
