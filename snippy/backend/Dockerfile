@@ -29,4 +29,4 @@ COPY --from=build /app/dist ./dist
 EXPOSE 3000
 
 # Step 3: Run compiled app
-CMD "npx sequelize-cli db:migrate && node dist/index.js"
+CMD "CMD ["sh", "-c", "npx sequelize-cli db:migrate && node dist/index.js"]
