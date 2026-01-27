@@ -68,34 +68,32 @@ docker compose version
 Put a `.env` file in the repository root (next to `docker-compose.yml`). Compose will load environment variables from that file. Example `.env`:
 
 ```ini
-#DB
-  #OPTIONAL do not need unless you want the db name to be different
-DB_HOST= #DEFAULT db
-DB_PORT= #DEFAULT 3306
-DB_NAME= #DEFAULT snippy
-DB_USER= #DEFAULT snippy_api
-  # REQUIRED
+# DB
+# OPTIONAL
+DB_HOST=
+DB_PORT=
+DB_NAME=
+DB_USER=
+# REQUIRED
 DB_PASS= 
 MYSQL_ROOT_PASSWORD= 
 
-#AUTH0
-  #Required
+#Disabled for now so not needed
+#minIO
+MINIO_ENDPOINT=minio
+MINIO_PORT=9000
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_BUCKET=uploads
+MINIO_APP_USER=
+MINIO_APP_PASSWORD=
+MINIO_USE_SSL=false
+MINIO_BUCKET_POLICY=public
+
+# AUTH0
+AUTH0_AUDIENCE=
 AUTH0_DOMAIN=
 AUTH0_CLIENT_ID=
-
-  #OPTIONAL
-AUTH0_AUDIENCE=
-
-#API
-  #OPTIONAL
-API_PORT= #DEFAULT 3000
-  #REQUIRED
-
-#FRONTEND
-  #OPTIONAL
-FRONTEND_PORT= #DEFAULT 4200
-  #REQUIRED
-
 ```
 
 Notes: Not all of these variables are needed as most have defaults
@@ -112,6 +110,7 @@ Notes: this assumes you are using portainer to setup .env variables. If not you 
 
 ```yaml
 version: '3.8'
+
 services:
   db:
     image: kennyl777/snippy-db:latest
@@ -140,6 +139,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
+
     restart: unless-stopped
 
   frontend:
@@ -152,8 +152,13 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+
 volumes:
   mysql-data:
+
+networks:
+  NPM:
+    external: true
 ```
 
 ## Development Setup
@@ -166,6 +171,7 @@ Notes: You will need to create a .env file in the root of the folder next to the
 
 ```yaml
 version: '3.8'
+
 services:
   db:
     image: mysql:8.0
@@ -175,12 +181,15 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./snippy/db/init.sh:/docker-entrypoint-initdb.d/init.sh
+    ports:
+      - "3306:3306"
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 10s
+
 
   api:
     container_name: snippy-api
