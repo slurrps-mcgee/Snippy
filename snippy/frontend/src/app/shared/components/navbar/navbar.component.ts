@@ -14,8 +14,8 @@ import { SnippetStoreService } from '../../services/store.services/snippet.store
 import { AuthStoreService } from '../../services/store.services/authStore.service';
 import { SnippetSettingsDialogComponent } from '../dialogs/snippet-settings-dialog/snippet-settings-dialog.component';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SnackbarService } from '../../services/component.services/snackbar.service';
 import {MatTabsModule} from '@angular/material/tabs';
+import { SnippetSaveUIService } from '../../services/communication/snippet-save-ui.service';
 
 @Component({
   selector: 'app-navbar',
@@ -46,7 +46,7 @@ export class NavbarComponent implements OnInit {
     public snippetStoreService: SnippetStoreService,
     private authStoreService: AuthStoreService,
     private dialog: MatDialog,
-    private snackbarService: SnackbarService
+    public snippetSaveUIService: SnippetSaveUIService
   ) {
     // No longer needed: use signal directly
   }
@@ -67,23 +67,6 @@ export class NavbarComponent implements OnInit {
     this.snippetStoreService.updateSnippetName(newName);
   }
 
-  async saveSnippet() {
-    const isNew = !this.snippetStoreService.snippet()?.shortId;
-    try {
-      const response = await this.snippetStoreService.saveSnippet();
-      this.snackbarService.success('Snippet saved');
-      // If it's a new snippet, navigate to the snippet editor page
-      if (isNew && response.snippet?.shortId) {
-        const currentUser = this.user();
-        if (currentUser?.userName) {
-          this.router.navigate([currentUser.userName, 'snippet', response.snippet.shortId]);
-        }
-      }
-    } catch (err) {
-      this.snackbarService.error('Failed to save snippet');
-    }
-  }
-
   openSettings() {
     const snippet = this.snippetStoreService.snippet();
     if (!snippet) return;
@@ -102,7 +85,7 @@ export class NavbarComponent implements OnInit {
         if (result) {
           this.snippetStoreService.updateSnippetSettings(result);
           // Automatically save after updating settings
-          this.saveSnippet();
+          this.snippetSaveUIService.saveSnippetWithUI(this.snippetStoreService, this.user);
         }
       });
   }

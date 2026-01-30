@@ -21,6 +21,7 @@ export class SnippetPreviewComponent {
     previewUpdateType: string | null,
     externalResources: ExternalResource[] = []
   ) {
+    
     if (!this.previewIframe) return;
 
     if (previewUpdateType?.toLocaleLowerCase() === 'partial') {
@@ -56,6 +57,8 @@ export class SnippetPreviewComponent {
       <!DOCTYPE html>
       <html>
         <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
           ${stylesheets}
           <style id="snippet-style">${css}</style>
         </head>
@@ -72,6 +75,9 @@ export class SnippetPreviewComponent {
 
   // Update only CSS without reloading the iframe
   private updateCssOnly(css: string) {
+
+
+
     if (!this.previewIframe) return;
 
     const iframe = this.previewIframe.nativeElement;

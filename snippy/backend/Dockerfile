@@ -29,4 +29,5 @@ COPY --from=build /app/dist ./dist
 EXPOSE 3000
 
 # Step 3: Run compiled app
+#TODO: add sequelize migration command here after creating config file
 CMD ["node", "dist/index.js"]

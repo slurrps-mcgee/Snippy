@@ -96,11 +96,7 @@ export class SnippetStoreService {
     this.error.set(null);
     try {
       let res = await firstValueFrom(this.snippetService.saveSnippet(s));
-      if (!s.snippetId) {
-        this.setSnippet(res.snippet, true);
-      } else {
-        this.setSnippet(res.snippet, false);
-      }
+      this.setSnippet(res.snippet, true);
       this.loading.set(false);
       return res;
     } catch (err) {
@@ -162,6 +158,13 @@ export class SnippetStoreService {
     if (s.description !== o.description) return true;
     if (s.isPrivate !== o.isPrivate) return true;
     if (s.tags.length !== o.tags.length) return true;
+    if (s.externalResources?.length !== o.externalResources?.length) return true;
+    for(let i = 0; i < (s.externalResources?.length || 0); i++) {
+      if (s.externalResources![i].resourceType !== o.externalResources![i].resourceType ||
+          s.externalResources![i].url !== o.externalResources![i].url) {
+        return true;
+      }
+    }
     for (let i = 0; i < s.tags.length; i++) {
       if (s.tags[i] !== o.tags[i]) return true;
     }
@@ -200,13 +203,13 @@ export class SnippetStoreService {
 
   // Update snippet name
   updateSnippetName(name: string) {
-    this.previewUpdateType.set(null);
+    this.previewUpdateType.set('full');
     this.snippet.update(s => ({ ...s!, name }));
   }
 
   // Update snippet settings: description, isPrivate, tags
   updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[]; externalResources?: ExternalResource[] }) {
-    this.previewUpdateType.set(null);
+    this.previewUpdateType.set('full');
     this.snippet.update(s => ({
       ...s!,
       description: settings.description,

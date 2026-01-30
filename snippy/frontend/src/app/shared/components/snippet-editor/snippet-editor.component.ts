@@ -200,8 +200,9 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     
     return formatted.trim();
   }
+  //#endregion Code Formatting and Analysis
 
-  // Analyze code (check for issues)
+  //#region Analyze code (check for issues)
   analyzeCode() {
     let issues: string[] = [];
 
@@ -288,5 +289,5 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     
     return issues;
   }
-  // #endregion Code Formatting and Analysis
+  //#endregion Code Formatting and Analysis
 }
