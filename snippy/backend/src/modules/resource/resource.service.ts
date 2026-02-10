@@ -43,7 +43,7 @@ export async function uploadFileHandler(
 
         // URL-safe encoding
         const encodedName = encodeURIComponent(objectName);
-        const url = `/uploads/${encodedName}`;
+        const url = `/content/${encodedName}`;
 
         return { url };
     } catch (err) {

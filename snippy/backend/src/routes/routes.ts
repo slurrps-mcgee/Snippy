@@ -13,7 +13,7 @@ router.use('/snippets', snippetRouter);
 router.use('/comments', commentRouter);
 router.use('/favorites', favoriteRouter);
 
-//Minio resource routes disabled for now
-//router.use('/resources', resourceRouter);
+// Minio resource routes disabled for now
+router.use('/resources', resourceRouter);
 
 export default router;

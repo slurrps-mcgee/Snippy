@@ -58,8 +58,8 @@ const startServer = async () => {
     logger.info('✅ Database connection established.');
 
     //Turn off MinIO for now
-    // await connectMinioWithRetry();
-    // logger.info('✅ MinIO connection established.');
+    await connectMinioWithRetry();
+    logger.info('✅ MinIO connection established.');
     
     // Start the Express server
     app.listen(config.server.port, () => {
