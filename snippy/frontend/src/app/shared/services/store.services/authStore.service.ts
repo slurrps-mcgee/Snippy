@@ -1,4 +1,4 @@
-import { Injectable, signal, effect, computed } from '@angular/core';
+import { Injectable, signal, effect, computed, inject } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { of, tap, filter, take, catchError } from 'rxjs';
 import { AuthAPIService } from '../api.services/auth.api.service';
@@ -17,7 +17,10 @@ export class AuthStoreService {
    */
   readonly isAuthenticated = computed(() => !!this.user());
 
-  constructor(private auth0Service: AuthService, private authApiService: AuthAPIService) {
+  private auth0Service = inject(AuthService);
+  private authApiService = inject(AuthAPIService);
+
+  constructor() {
     // Effect: react to Auth0 authentication changes
     effect(() => {
       this.auth0Service.isAuthenticated$.subscribe(isAuth => {

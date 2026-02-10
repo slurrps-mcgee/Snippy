@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, OnDestroy} from '@angular/core';
+import { Component, OnInit, ViewChild, OnDestroy, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
 import { CommonModule } from '@angular/common';
@@ -16,6 +16,11 @@ import { SnippetSaveUIService } from '../../../shared/services/communication/sni
 export class SnippetEditorPageComponent implements OnInit, OnDestroy {
   @ViewChild('editor') editor?: SnippetWebViewComponent;
 
+  private route = inject(ActivatedRoute);
+  private authStoreService = inject(AuthStoreService);
+  snippetStoreService = inject(SnippetStoreService);
+  private snippetSaveUIService = inject(SnippetSaveUIService);
+
   // Use signal directly from AuthStore
   get user() { return this.authStoreService.user; }
   snippetId: string | null = null;
@@ -27,14 +32,6 @@ export class SnippetEditorPageComponent implements OnInit, OnDestroy {
     event.preventDefault();
     this.snippetSaveUIService.saveSnippetWithUI(this.snippetStoreService, this.user);
   }
-
-  constructor(
-    private route: ActivatedRoute,
-    public snippetStoreService: SnippetStoreService,
-    private authStoreService: AuthStoreService,
-    private snippetSaveUIService: SnippetSaveUIService
-    ) {
-    }
 
   ngOnInit(): void {
     this.snippetId = this.route.snapshot.paramMap.get('id');

@@ -3,24 +3,24 @@
   <as-split direction="vertical" unit="percent" [gutterSize]="16">
     
     <!-- Top: three resizable editors -->
-    <as-split-area size="50" [minSize]="20">
+    <as-split-area size="50" [minSize]="0">
       <as-split direction="horizontal" unit="percent" [gutterSize]="16">
         <!-- HTML Editor -->
-        <as-split-area size="33" [minSize]="8">
+        <as-split-area size="33" [minSize]="0">
           <app-snippet-editor
             [editorType]="'html'">
           </app-snippet-editor>
         </as-split-area>
 
         <!-- CSS Editor -->
-        <as-split-area size="33" [minSize]="8">
+        <as-split-area size="33" [minSize]="0">
           <app-snippet-editor
             [editorType]="'css'">
           </app-snippet-editor>
         </as-split-area>
 
         <!-- JS Editor -->
-        <as-split-area size="34" [minSize]="8">
+        <as-split-area size="34" [minSize]="0">
           <app-snippet-editor
             [editorType]="'js'">
           </app-snippet-editor>
@@ -29,7 +29,7 @@
     </as-split-area>
 
     <!-- Bottom: Live Preview -->
-    <as-split-area size="50" [minSize]="20">
+    <as-split-area size="50" [minSize]="0">
       <app-snippet-preview></app-snippet-preview>
     </as-split-area>
     

@@ -1,4 +1,4 @@
-<div class="d-flex flex-column h-100">
+<div class="d-flex flex-column h-100 overflow-hidden">
   <!-- Header with editor type and menu -->
   <div class="d-flex align-items-center justify-content-between">
     <span class="p-2 fw-bold">{{ editorType.toUpperCase() }}</span>
@@ -17,5 +17,5 @@
     </mat-menu>
   </div>
   <!-- CodeMirror Editor Container -->
-  <div #editor class="h-100"></div>
+  <div #editor class="flex-grow-1 overflow-hidden"></div>
 </div>

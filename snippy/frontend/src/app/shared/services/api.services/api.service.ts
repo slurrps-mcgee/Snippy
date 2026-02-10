@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { from, Observable, throwError } from 'rxjs';
@@ -17,7 +17,8 @@ export type ApiOptions = {
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
-    constructor(private http: HttpClient, private auth: AuthService) {}
+    private http = inject(HttpClient);
+    private auth = inject(AuthService);
     
     // Generic API request method
     request<T = any>(opts: ApiOptions): Observable<T> {

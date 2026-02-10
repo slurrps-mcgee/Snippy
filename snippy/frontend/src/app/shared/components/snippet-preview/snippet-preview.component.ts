@@ -75,9 +75,7 @@ export class SnippetPreviewComponent {
 
   // Update only CSS without reloading the iframe
   private updateCssOnly(css: string) {
-
-
-
+    
     if (!this.previewIframe) return;
 
     const iframe = this.previewIframe.nativeElement;

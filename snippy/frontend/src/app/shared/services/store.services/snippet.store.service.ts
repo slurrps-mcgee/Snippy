@@ -92,16 +92,15 @@ export class SnippetStoreService {
   async saveSnippet() {
     const s = this.snippet();
     if (!s) throw new Error('No snippet to save');
-    this.loading.set(true);
     this.error.set(null);
     try {
-      let res = await firstValueFrom(this.snippetService.saveSnippet(s));
-      this.setSnippet(res.snippet, true);
-      this.loading.set(false);
-      return res;
+       let res = await firstValueFrom(this.snippetService.saveSnippet(s));
+       // Update both snippet and originalSnippet to mark as saved and in sync
+       this.snippet.set(res.snippet);
+       this.originalSnippet.set(JSON.parse(JSON.stringify(res.snippet)));
+       return res;
     } catch (err) {
       this.error.set('Failed to save snippet');
-      this.loading.set(false);
       throw err;
     }
   }

@@ -1,4 +1,4 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
@@ -34,6 +34,10 @@ import { AlertDialogComponent } from '../alert-dialog/alert-dialog.component';
   styleUrl: './snippet-settings-dialog.component.scss'
 })
 export class SnippetSettingsDialogComponent {
+  dialogRef = inject(MatDialogRef<SnippetSettingsDialogComponent>);
+  data = inject<Snippet>(MAT_DIALOG_DATA);
+  dialog = inject(MatDialog);
+
   description: string;
   isPrivate: boolean;
   tags: string[];
@@ -41,15 +45,11 @@ export class SnippetSettingsDialogComponent {
   cssResources: ExternalResource[] = [];
   jsResources: ExternalResource[] = [];
 
-  constructor(
-    public dialogRef: MatDialogRef<SnippetSettingsDialogComponent>,
-    @Inject(MAT_DIALOG_DATA) public data: Snippet,
-    private dialog: MatDialog
-  ) {
-    this.description = data.description || '';
-    this.isPrivate = data.isPrivate;
-    this.tags = [...(data.tags || [])];
-    const allResources = [...(data.externalResources || [])];
+  constructor() {
+    this.description = this.data.description || '';
+    this.isPrivate = this.data.isPrivate;
+    this.tags = [...(this.data.tags || [])];
+    const allResources = [...(this.data.externalResources || [])];
     this.cssResources = allResources.filter(r => r.resourceType === 'css');
     this.jsResources = allResources.filter(r => r.resourceType === 'js');
   }

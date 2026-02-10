@@ -1,12 +1,12 @@
 
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import { Observable } from 'rxjs';
 import { UserResponse } from '../../interfaces/userResponse.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AuthAPIService {
-	constructor(private apiService: ApiService) {}
+	private apiService = inject(ApiService);
 
 	/** Create or load backend user */
 	syncBackendUser(profile: any): Observable<UserResponse> {

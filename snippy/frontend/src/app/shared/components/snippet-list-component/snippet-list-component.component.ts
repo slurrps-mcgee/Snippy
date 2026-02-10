@@ -47,15 +47,12 @@ export class SnippetListComponentComponent {
   @Output() pageChange = new EventEmitter<PageEvent>();
 
   searchQuery = '';
+  
+  private router = inject(Router);
+  private snippetStoreService = inject(SnippetStoreService);
+  private snackbarService = inject(SnackbarService);
+  private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private router: Router,
-    private snippetStoreService: SnippetStoreService,
-    // Remove FavoriteService, use store for favoriting
-    private snackbarService: SnackbarService,
-    private dialog: MatDialog
-  ) { }
 
   onSearchChange() {
     this.searchChange.emit(this.searchQuery);

@@ -2,14 +2,12 @@ import { Router } from "@angular/router";
 import { SnackbarService } from "../component.services/snackbar.service";
 import { SnippetStoreService } from "../store.services/snippet.store.service";
 import { User } from "../../interfaces/user.interface";
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 
 @Injectable({ providedIn: 'root' })
 export class SnippetSaveUIService {
-  constructor(
-    private router: Router,
-    private snackbarService: SnackbarService
-  ) {}
+  private router = inject(Router);
+  private snackbarService = inject(SnackbarService);
 
   async saveSnippetWithUI(snippetStoreService: SnippetStoreService, userGetter: () => User | null) {
     const isNew = !snippetStoreService.snippet()?.shortId;

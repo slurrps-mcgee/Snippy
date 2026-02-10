@@ -16,6 +16,10 @@ import { SnippetStoreService } from '../../../shared/services/store.services/sni
 
 export class UserHomePageComponent implements OnInit {
 
+  auth0Service = inject(AuthService);
+  private authStoreService = inject(AuthStoreService);
+  private snippetStoreService = inject(SnippetStoreService);
+
   get user() { return this.authStoreService.user; }
 
   get snippets() {
@@ -33,12 +37,6 @@ export class UserHomePageComponent implements OnInit {
   pageSize: number = 6;
   pageIndex: number = 0;
   searchQuery: string = '';
-
-  constructor(
-    public auth0Service: AuthService,
-    private authStoreService: AuthStoreService,
-    private snippetStoreService: SnippetStoreService,
-  ) {}
 
   ngOnInit() {
     this.loadUserSnippets(this.pageIndex + 1, this.pageSize);

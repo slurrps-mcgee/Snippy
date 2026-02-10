@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
@@ -25,13 +25,16 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   // Reference to the editor container
   @ViewChild('editor', { static: false }) editorRef?: ElementRef<HTMLDivElement>;
 
+  private snippetStoreService = inject(SnippetStoreService);
+  private dialog = inject(MatDialog);
+
   // CodeMirror editor instance
   private editorInstance?: EditorView;
 
   // Code content signal
   private code = signal('');
 
-  constructor(private snippetStoreService: SnippetStoreService, private dialog: MatDialog) {
+  constructor() {
     // Watch state service for changes to this editor's file type
     effect(() => {
       const snippet = this.snippetStoreService.snippet();
@@ -87,6 +90,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
           basicSetup,
           languageExtension,
           oneDark,
+          EditorView.lineWrapping,
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               const value = update.state.doc.toString();
@@ -114,7 +118,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     }
   }
 
-  //#region Code Formatting and Analysis
+  //#region Code Formatting
   // Format code
   formatCode() {
     if (!this.editorInstance) return;

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Router } from '@angular/router';
 
 @Component({
@@ -8,6 +8,5 @@ import { Router } from '@angular/router';
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {
-  constructor(private router: Router) { }
-
+  private router = inject(Router);
 }

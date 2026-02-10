@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { ApiService } from './api.service';
 import { Observable } from 'rxjs';
 import { Snippet } from '../../interfaces/snippet.interface';
@@ -7,7 +7,7 @@ import { SnippetListResponse } from '../../interfaces/snippetListResponse.interf
 
 @Injectable({ providedIn: 'root' })
 export class SnippetAPIService {
-  constructor(private apiService: ApiService) { }
+  private apiService = inject(ApiService);
 
   // API-only methods
   getSnippet(snippetId: string): Observable<SnippetResponse> {

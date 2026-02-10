@@ -11,11 +11,8 @@ import { User } from '../../../shared/interfaces/user.interface';
 })
 export class ProfilePageComponent implements OnInit {
   user?: User;
+  private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-
-  constructor(
-    private route: ActivatedRoute,
-  ) { }
 
   ngOnInit(): void {
     this.route.paramMap

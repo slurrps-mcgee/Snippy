@@ -1,4 +1,4 @@
-import { Component, ViewChild, ElementRef, effect, AfterViewInit, OnInit, OnDestroy } from '@angular/core';
+import { Component, ViewChild, ElementRef, effect, AfterViewInit, OnInit, OnDestroy, inject } from '@angular/core';
 import { AngularSplitModule } from 'angular-split';
 import { CommonModule } from '@angular/common';
 import { SnippetEditorComponent } from '../../snippet-editor/snippet-editor.component';
@@ -17,7 +17,9 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   // Reference to the preview component
   @ViewChild(SnippetPreviewComponent) previewComponent?: SnippetPreviewComponent;
 
-  constructor(public snippetStoreService: SnippetStoreService) {
+  snippetStoreService = inject(SnippetStoreService);
+
+  constructor() {
     // Watch snippet state service for code changes and update preview
     effect(() => {
       const snippet = this.snippetStoreService.snippet();

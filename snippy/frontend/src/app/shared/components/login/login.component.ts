@@ -20,18 +20,12 @@ export class LoginComponent {
   // Use signal directly from AuthStoreService
   get user() { return this.authStoreService.user; }
 
+  document = inject(DOCUMENT);
+  auth0Service = inject(AuthService);
+  private authStoreService = inject(AuthStoreService);
+  private snippetStoreService = inject(SnippetStoreService);
+  private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
-
-  // Inject the AuthService to enable authentication features.
-  constructor(
-    @Inject(DOCUMENT) public document: Document,
-    public auth0Service: AuthService,
-    private authStoreService: AuthStoreService,
-    private snippetStoreService: SnippetStoreService,
-    private dialog: MatDialog
-  ) {
-    // No longer needed: use signal directly
-  }
 
   login() {
     this.auth0Service.loginWithRedirect({ appState: { target: '/home' } });

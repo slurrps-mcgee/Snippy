@@ -36,20 +36,18 @@ import { SnippetSaveUIService } from '../../services/communication/snippet-save-
 })
 export class NavbarComponent implements OnInit {
   selectedPageIndex = 0;
-  // Use signal directly from AuthStoreService
-  get user() { return this.authStoreService.user; }
+  
+  auth0Service = inject(AuthService);
+  snippetStoreService = inject(SnippetStoreService);
+  snippetSaveUIService = inject(SnippetSaveUIService);
+  
+  private router = inject(Router);
+  private authStoreService = inject(AuthStoreService);
+  private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
 
-  constructor(
-    public auth0Service: AuthService,
-    private router: Router,
-    public snippetStoreService: SnippetStoreService,
-    private authStoreService: AuthStoreService,
-    private dialog: MatDialog,
-    public snippetSaveUIService: SnippetSaveUIService
-  ) {
-    // No longer needed: use signal directly
-  }
+  // Use signal directly from AuthStoreService
+  get user() { return this.authStoreService.user; }
 
   ngOnInit(): void {
   }
