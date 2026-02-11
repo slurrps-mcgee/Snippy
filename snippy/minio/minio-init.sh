@@ -11,10 +11,10 @@ done
 echo "✅ MinIO is up and reachable."
 
 # Defaults
-MINIO_BUCKET="${MINIO_BUCKET:-uploads}"
+MINIO_BUCKET="${MINIO_BUCKET:-content}"
 MINIO_APP_USER="${MINIO_APP_USER:-appuser}"
 MINIO_APP_PASSWORD="${MINIO_APP_PASSWORD:-apppassword123}"
-MINIO_BUCKET_POLICY="${MINIO_BUCKET_POLICY:-private}"
+MINIO_BUCKET_POLICY="${MINIO_BUCKET_POLICY:-public}"
 
 echo "Bucket: $MINIO_BUCKET"
 echo "App user: $MINIO_APP_USER"

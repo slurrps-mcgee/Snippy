@@ -31,7 +31,7 @@ export const config = {
         useSSL: process.env.MINIO_USE_SSL === 'true' || false,
         accessKey: process.env.MINIO_APP_USER || 'snippyappuser',
         secretKey: process.env.MINIO_APP_PASSWORD || 'SnippyAppUserPass123!',
-        bucket: process.env.MINIO_BUCKET || 'assets'
+        bucket: process.env.MINIO_BUCKET || 'content'
     },
 
     // Auth0 Configuration

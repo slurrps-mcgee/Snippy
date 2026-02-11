@@ -41,9 +41,9 @@ export const uploadFile = [
   upload.single('file'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const {url} =await uploadFileHandler(req);
+      const { message, url } = await uploadFileHandler(req);
 
-      res.status(201).json({ success: true, url });
+      res.status(201).json({ success: true, message, url });
     } catch (err) {
       next(err);
     }

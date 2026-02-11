@@ -1,5 +1,6 @@
+import { Assets } from '../../entities/asset.entity';
 import { Users } from '../../entities/user.entity';
-import { UserDTO } from './dto/user.dto';
+import { AssetDTO, UserDTO } from './dto/user.dto';
 
 /**
  * Maps User entities to DTOs
@@ -14,6 +15,7 @@ export class UserMapper {
             displayName: user.displayName ?? null,
             bio: user.bio ?? null,
             pictureUrl: user.pictureUrl ?? null,
+            assets: user.assets ? user.assets.map(asset => this.toAssetDTO(asset)) : []
         };
 
         if (includeAdmin) {
@@ -28,5 +30,14 @@ export class UserMapper {
      */
     static toDTOs(users: Users[], includeAdmin: boolean = false): UserDTO[] {
         return users.map(user => this.toDTO(user, includeAdmin));
+    }
+
+    static toAssetDTO(asset: Assets): AssetDTO {
+        return {
+            assetId: asset.assetId,
+            fileName: asset.fileName,
+            fileType: asset.fileType,
+            url: asset.url
+        };
     }
 }

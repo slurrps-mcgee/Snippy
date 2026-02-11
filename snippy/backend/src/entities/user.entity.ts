@@ -11,6 +11,7 @@ import { Snippets } from './snippet.entity';
 import { Favorites } from './favorite.entity';
 import { Comments } from './comment.entity';
 import { createUniqueUsername } from '../common/utilities/helper';
+import { Assets } from './asset.entity';
 
 @Table({
   tableName: 'users',
@@ -30,7 +31,7 @@ import { createUniqueUsername } from '../common/utilities/helper';
 })
 export class Users extends Model<Users> {
   @PrimaryKey
-  @Column({ 
+  @Column({
     field: 'auth0_id',
     type: DataType.STRING
   })
@@ -104,6 +105,13 @@ export class Users extends Model<Users> {
     constraints: false,
   })
   comments!: Comments[];
+
+  @HasMany(() => Assets, {
+    foreignKey: 'auth0Id',
+    sourceKey: 'auth0Id',
+    constraints: false,
+  })
+  assets!: Assets[];
 
   // Before creating a user, auto-generate a username if not provided
   @BeforeCreate

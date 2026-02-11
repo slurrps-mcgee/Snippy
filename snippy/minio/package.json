@@ -1,6 +1,6 @@
 {
   "name": "snippy_minio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "keywords": ["MinIO", "object storage", "Snippy"],
   "author": "Kenneth Lamb",
   "license": "MIT",

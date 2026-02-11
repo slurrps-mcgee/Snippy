@@ -1,5 +1,6 @@
 import { Transaction } from 'sequelize';
 import { Users } from '../../entities/user.entity';
+import { Assets } from '../../entities/asset.entity';
 
 // #region User CRUD
 export async function createUser(
@@ -35,7 +36,10 @@ export async function deleteUser(
 export async function findById(
 	id: string,
 	transaction?: Transaction): Promise<Users | null> {
-	return await Users.findByPk(id, { transaction });
+	return await Users.findByPk(id, { 
+		include: [Assets], 
+		transaction 
+	});
 }
 
 // Find user by username 
@@ -44,6 +48,9 @@ export async function findByUsername(
 	transaction?: Transaction): Promise<Users | null> {
  	return await Users.findOne({ 
 		where: { userName },
+		include: [
+			Assets
+		],
 		transaction
 	});
 }

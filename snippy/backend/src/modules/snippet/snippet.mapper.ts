@@ -1,6 +1,7 @@
 import { Snippets } from '../../entities/snippet.entity';
 import { SnippetDTO, SnippetListDTO, SnippetFileDTO } from './dto/snippet.dto';
 import { AuthorizationService } from '../../common/services/authorization.service';
+import { SnippetFiles } from '../../entities/snippetFile.entity';
 
 /**
  * Mapper for transforming Snippet entities to DTOs
@@ -52,19 +53,11 @@ export class SnippetMapper {
     /**
      * Map snippet file to DTO
      */
-    private static fileToDTO(file: any): SnippetFileDTO {
+    private static fileToDTO(file: SnippetFiles): SnippetFileDTO {
         return {
             snippetFileID: file.snippetFileID,
             fileType: file.fileType,
-            content: file.content,
-        };
-    }
-
-    private static resourceToDTO(resource: any) {
-        return {
-            externalId: resource.externalId,
-            resourceType: resource.resourceType,
-            url: resource.url,
+            content: file.content ?? '',
         };
     }
 

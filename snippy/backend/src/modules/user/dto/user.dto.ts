@@ -8,6 +8,7 @@ export interface UserDTO {
     bio: string | null;
     pictureUrl: string | null;
     isAdmin?: boolean;
+    assets?: AssetDTO[];
 }
 
 export interface CreateUserRequest {
@@ -30,4 +31,11 @@ export interface UpdateUserRequest {
 export interface EnsureUserRequest {
     name?: string;
     pictureUrl?: string;
+}
+
+export interface AssetDTO {
+    assetId: string;
+    fileName: string;
+    fileType: string;
+    url: string;
 }
