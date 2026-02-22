@@ -1,10 +1,115 @@
 <div class="d-flex flex-column h-100">
-    <header class="d-flex align-items-center justify-content-between p-3 flex-shrink-0">
+    <header class="d-flex align-items-center justify-content-between p-2 flex-shrink-0 border-bottom">
         <h2 class="m-0">Snippy</h2>
-        <button matButton="filled" (click)="login()">Log in</button>
+        <button mat-raised-button color="primary" (click)="login()">Log in</button>
     </header>
 
-    <div class="d-flex align-items-center justify-content-center h-100">
-        <p>home-page works!</p>
-    </div>
+    <main class="flex-grow-1 overflow-auto">
+        <!-- Hero Section -->
+        <section class="bg-dark text-light py-5" style="min-height: 90vh;">
+            <div class="container h-100 d-flex align-items-center">
+                <div class="row align-items-center w-100">
+                    <div class="col-lg-6 mb-4 mb-lg-0">
+                        <h1 class="display-4 fw-bold mb-3">Code. Create. Share.</h1>
+                        <p class="lead mb-4">Build and showcase your HTML, CSS, and JavaScript snippets in a beautiful WYSIWYG editor. Share your work with the world, get feedback, and discover amazing creations from other developers.</p>
+                        <button mat-raised-button color="accent" size="large" (click)="login()" class="btn-lg">
+                            Get Started for Free
+                        </button>
+                    </div>
+                    <div class="col-lg-6">
+                        <div class="card bg-secondary border-0 shadow-lg overflow-hidden">
+                            <div class="card-body p-2">
+                                <img src="/images/example-snippet.png" alt="Snippet Preview" class="card-img w-100" style="object-fit: cover;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Features Grid -->
+        <section class="py-5" style="min-height: 80vh;">
+            <div class="container d-flex flex-column justify-content-center h-100">
+                <h2 class="text-center mb-5 fw-bold display-5">Powerful Features</h2>
+                <div class="row g-4">
+                    <!-- Feature 1 -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                            <div class="card-body text-center">
+                                <mat-icon class="fs-1 text-primary mb-3">code</mat-icon>
+                                <h5 class="card-title fw-bold">WYSIWYG Editor</h5>
+                                <p class="card-text text-muted">Write HTML, CSS, and JavaScript with real-time preview. No compilation needed.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 2 -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                            <div class="card-body text-center">
+                                <mat-icon class="fs-1 text-success mb-3">share</mat-icon>
+                                <h5 class="card-title fw-bold">Easy Sharing</h5>
+                                <p class="card-text text-muted">Share your snippets with a link. Control privacy with public or private settings.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 3 -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                            <div class="card-body text-center">
+                                <mat-icon class="fs-1 text-danger mb-3">favorite</mat-icon>
+                                <h5 class="card-title fw-bold">Favorites & Comments</h5>
+                                <p class="card-text text-muted">Like snippets you love and leave constructive feedback for creators.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 4 -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                            <div class="card-body text-center">
+                                <mat-icon class="fs-1 text-info mb-3">people</mat-icon>
+                                <h5 class="card-title fw-bold">Follow Profiles</h5>
+                                <p class="card-text text-muted">Discover talented developers and stay updated with their latest creations.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 5 -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                            <div class="card-body text-center">
+                                <mat-icon class="fs-1 text-warning mb-3">upload_file</mat-icon>
+                                <h5 class="card-title fw-bold">Upload Assets</h5>
+                                <p class="card-text text-muted">Add custom images, fonts, and files to enhance your snippets.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Feature 6 -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
+                            <div class="card-body text-center">
+                                <mat-icon class="fs-1 text-secondary mb-3">lock</mat-icon>
+                                <h5 class="card-title fw-bold">Privacy Control</h5>
+                                <p class="card-text text-muted">Keep your work private or share it with the community. Your choice.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- CTA Section -->
+        <section class="bg-light py-5 border-top" style="min-height: 50vh;">
+            <div class="container h-100 d-flex flex-column align-items-center justify-content-center text-center">
+                <h2 class="mb-3 fw-bold display-5">Ready to start coding?</h2>
+                <p class="lead mb-4 text-muted">Join thousands of developers sharing and learning together on Snippy.</p>
+                <button mat-raised-button color="primary" size="large" (click)="login()" class="btn-lg">
+                    Create Your First Snippet
+                </button>
+            </div>
+        </section>
+    </main>
 </div>

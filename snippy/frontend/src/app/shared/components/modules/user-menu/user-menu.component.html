@@ -6,5 +6,8 @@
   }
 </button>
 <mat-menu #beforeMenu="matMenu" xPosition="before">
+  <button mat-menu-item (click)="home()">Home</button>
+  <button mat-menu-item (click)="createNewSnippet()">New Snippet</button>
+  <button mat-menu-item (click)="settings()">Settings</button>
   <button mat-menu-item (click)="logout()">Log out</button>
 </mat-menu>

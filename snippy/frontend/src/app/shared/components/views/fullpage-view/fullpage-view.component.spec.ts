@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { NavbarComponent } from './navbar.component';
+import { FullpageViewComponent } from './fullpage-view.component';
 
-describe('NavbarComponent', () => {
-  let component: NavbarComponent;
-  let fixture: ComponentFixture<NavbarComponent>;
+describe('FullpageViewComponent', () => {
+  let component: FullpageViewComponent;
+  let fixture: ComponentFixture<FullpageViewComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [NavbarComponent]
+      imports: [FullpageViewComponent]
     })
     .compileComponents();
 
-    fixture = TestBed.createComponent(NavbarComponent);
+    fixture = TestBed.createComponent(FullpageViewComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

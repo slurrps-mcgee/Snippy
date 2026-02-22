@@ -9,6 +9,7 @@ import { User } from '../../../interfaces/user.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
 import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-user-menu',
@@ -22,6 +23,7 @@ export class UserMenuComponent {
 
   document = inject(DOCUMENT);
   auth0Service = inject(AuthService);
+  private router = inject(Router);
   private authStoreService = inject(AuthStoreService);
   private snippetStoreService = inject(SnippetStoreService);
   private dialog = inject(MatDialog);
@@ -49,5 +51,18 @@ export class UserMenuComponent {
     } else {
       this.authStoreService.logout();
     }
+  }
+
+  // Navigate to pages
+  settings() {
+    this.router.navigate(['/settings']);
+  }
+
+  home() {
+    this.router.navigate(['/home']);
+  }
+
+  createNewSnippet() {
+    this.router.navigate(['snippet']);
   }
 }

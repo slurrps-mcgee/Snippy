@@ -5,8 +5,10 @@
                 <mat-icon>drag_indicator</mat-icon>
             </span>
             <mat-form-field appearance="outline" class="flex-grow-1">
-              <input matInput [(ngModel)]="resource.url" (ngModelChange)="resourcesChange.emit(resources)"
-                placeholder="https://yourwebsite.com/style.css"/>
+              <input matInput 
+                [(ngModel)]="resource.url" 
+                (ngModelChange)="resourcesChange.emit(resources)"
+                [placeholder]="`https://yourwebsite.com/script.${resourceType}`"/>
             </mat-form-field>
             <button mat-button class="ms-2" (click)="removeResource(i)" title="Remove">
                 <mat-icon>close</mat-icon>

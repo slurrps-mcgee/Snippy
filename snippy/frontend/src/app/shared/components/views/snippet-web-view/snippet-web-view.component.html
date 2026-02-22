@@ -1,37 +1,147 @@
-<div class="d-flex flex-column h-100 overflow-hidden">
-  <!-- Main vertical split: editors top, preview bottom -->
-  <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
-    
-    <!-- Top: three resizable editors -->
-    <as-split-area size="50" [minSize]="0">
-      <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
-        <!-- HTML Editor -->
-        <as-split-area size="33" [minSize]="0">
-          <app-snippet-editor
-            [editorType]="'html'">
-          </app-snippet-editor>
-        </as-split-area>
+<div class="d-flex flex-column h-100">
+  @if (snippetStoreService.loading()) {
+  <div class="d-flex align-items-center justify-content-center h-100">Loading snippet...</div>
+  } @else if (error) {
+  <div class="d-flex align-items-center justify-content-center h-100">{{ error }}</div>
+  } @else if (snippetStoreService.snippet()) {
+  <header class="d-flex align-items-center p-2 justify-content-between flex-shrink-0">
+    <div class="d-flex align-items-center gap-3">
+      <a [routerLink]="['/home']">
+        <h2>Snippy</h2>
+      </a>
+      <mat-form-field appearance="outline" class="w-auto">
+        <input matInput [ngModel]="snippetStoreService.snippet()!.name" (ngModelChange)="onSnippetNameChange($event)"
+          placeholder="Snippet name">
+        <mat-icon matSuffix>mode_edit</mat-icon>
+      </mat-form-field>
+    </div>
 
-        <!-- CSS Editor -->
-        <as-split-area size="33" [minSize]="0">
-          <app-snippet-editor
-            [editorType]="'css'">
-          </app-snippet-editor>
-        </as-split-area>
+    <div class="d-flex align-items-center gap-3">
+      <button mat-raised-button color="primary"
+        (click)="snippetSaveUIService.saveSnippetWithUI(snippetStoreService, user)"
+        [disabled]="!snippetStoreService.isDirty()">
+        <mat-icon>save</mat-icon>
+        {{ snippetStoreService.isDirty() ? 'Save Changes' : 'Saved' }}
+      </button>
 
-        <!-- JS Editor -->
-        <as-split-area size="34" [minSize]="0">
-          <app-snippet-editor
-            [editorType]="'js'">
-          </app-snippet-editor>
-        </as-split-area>
-      </as-split>
-    </as-split-area>
+      <button mat-icon-button [matMenuTriggerFor]="beforeMenu" class="border-0 bg-transparent">
+        <mat-icon>dashboard</mat-icon>
+      </button>
+      <mat-menu #beforeMenu="matMenu" xPosition="before">
+        <div mat-menu-item (click)="$event.stopPropagation()">
+          <mat-button-toggle-group name="editorLayout" aria-label="Editor Layout" hideSingleSelectionIndicator="true"
+            [value]="selectedLayout" (change)="onLayoutChange($event.value)">
+            <mat-button-toggle value="left">Left</mat-button-toggle>
+            <mat-button-toggle value="top">Top</mat-button-toggle>
+            <mat-button-toggle value="right">Right</mat-button-toggle>
+            <mat-button-toggle value="bottom">Bottom</mat-button-toggle>
+          </mat-button-toggle-group>
+        </div>
 
-    <!-- Bottom: Live Preview -->
-    <as-split-area size="50" [minSize]="0">
-      <app-snippet-preview></app-snippet-preview>
-    </as-split-area>
-    
-  </as-split>
+        <button mat-menu-item (click)="viewFullPage()">Full Page View</button>
+      </mat-menu>
+
+      <button mat-icon-button (click)="openSettings()">
+        <mat-icon>settings</mat-icon>
+      </button>
+
+      <app-user-menu></app-user-menu>
+    </div>
+  </header>
+
+  <div class="d-flex flex-column flex-grow-1 h-100 overflow-hidden">
+    @if(selectedLayout === 'top') {
+    <!-- Main vertical split: editors top, preview bottom -->
+    <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+      <!-- Top: three resizable editors -->
+      <as-split-area size="50" [minSize]="0">
+        <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'css'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="34" [minSize]="0">
+            <app-snippet-editor [editorType]="'js'"></app-snippet-editor>
+          </as-split-area>
+        </as-split>
+      </as-split-area>
+      <!-- Bottom: Live Preview -->
+      <as-split-area size="50" [minSize]="0">
+        <app-snippet-preview></app-snippet-preview>
+      </as-split-area>
+    </as-split>
+    }
+    @else if (selectedLayout === 'bottom') {
+    <!-- Main vertical split: preview top, editors bottom -->
+    <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+      <!-- Top: Live Preview -->
+      <as-split-area size="50" [minSize]="0">
+        <app-snippet-preview></app-snippet-preview>
+      </as-split-area>
+      <!-- Bottom: three resizable editors -->
+      <as-split-area size="50" [minSize]="0">
+        <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'css'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="34" [minSize]="0">
+            <app-snippet-editor [editorType]="'js'"></app-snippet-editor>
+          </as-split-area>
+        </as-split>
+      </as-split-area>
+    </as-split>
+    }
+    @else if(selectedLayout === 'left') {
+    <!-- Main horizontal split: editors left, preview right -->
+    <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+      <!-- Left: three resizable editors -->
+      <as-split-area size="50" [minSize]="0">
+        <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'css'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="34" [minSize]="0">
+            <app-snippet-editor [editorType]="'js'"></app-snippet-editor>
+          </as-split-area>
+        </as-split>
+      </as-split-area>
+      <!-- Right: Live Preview -->
+      <as-split-area size="50" [minSize]="0">
+        <app-snippet-preview></app-snippet-preview>
+      </as-split-area>
+    </as-split>
+    }
+    @else if (selectedLayout === 'right') {
+    <!-- Main horizontal split: preview left, editors right -->
+    <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+      <!-- Left: Live Preview -->
+      <as-split-area size="50" [minSize]="0">
+        <app-snippet-preview></app-snippet-preview>
+      </as-split-area>
+      <!-- Right: three resizable editors -->
+      <as-split-area size="50" [minSize]="0">
+        <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="33" [minSize]="0">
+            <app-snippet-editor [editorType]="'css'"></app-snippet-editor>
+          </as-split-area>
+          <as-split-area size="34" [minSize]="0">
+            <app-snippet-editor [editorType]="'js'"></app-snippet-editor>
+          </as-split-area>
+        </as-split>
+      </as-split-area>
+    </as-split>
+    }
+  </div>
+  }
 </div>
