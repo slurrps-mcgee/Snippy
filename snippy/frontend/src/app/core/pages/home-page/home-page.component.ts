@@ -1,12 +1,26 @@
-import { Component, inject } from '@angular/core';
+import { Component, DOCUMENT, inject } from '@angular/core';
+import { AuthService } from '@auth0/auth0-angular';
+import { AuthStoreService } from '../../../shared/services/store.services/authStore.service';
 import { Router } from '@angular/router';
+import { MatButton } from '@angular/material/button';
 
 @Component({
   selector: 'app-home-page',
-  imports: [],
+  imports: [MatButton],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {
   private router = inject(Router);
+
+  // Use signal directly from AuthStoreService
+  get user() { return this.authStoreService.user; }
+
+  document = inject(DOCUMENT);
+  auth0Service = inject(AuthService);
+  private authStoreService = inject(AuthStoreService);
+
+  login() {
+    this.auth0Service.loginWithRedirect({ appState: { target: '/home' } });
+  }
 }

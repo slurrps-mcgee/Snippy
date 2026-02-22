@@ -1,0 +1,14 @@
+<header class="d-flex align-items-center p-3 justify-content-between flex-shrink-0">
+    <h2 class="m-0">Snippy</h2>
+
+    <mat-tab-group [(selectedIndex)]="selectedPageIndex" (selectedIndexChange)="onPageTabChange($event)">
+        <mat-tab label="Your Snippets">
+            <!-- Content for Your Snippets tab -->
+        </mat-tab>
+        <mat-tab label="Public Snippets">
+            <!-- Content for Public Snippets tab -->
+        </mat-tab>
+    </mat-tab-group>
+
+    <app-user-menu></app-user-menu>
+</header>

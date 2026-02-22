@@ -2,14 +2,15 @@ import { Component, OnInit, DestroyRef, inject } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { PageEvent } from '@angular/material/paginator';
 import { AuthStoreService } from '../../../shared/services/store.services/authStore.service';
-import { SnippetListComponentComponent } from '../../../shared/components/snippet-list-component/snippet-list-component.component';
+import { SnippetListComponentComponent } from '../../components/snippet-list-component/snippet-list-component.component';
 import {MatTabsModule} from '@angular/material/tabs';
 import {MatDividerModule} from '@angular/material/divider';
 import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
+import { PageHeaderComponent } from "../../../shared/components/headers/page-header/page-header.component";
 
 @Component({
   selector: 'app-user-home-page',
-  imports: [SnippetListComponentComponent, MatTabsModule, MatDividerModule],
+  imports: [SnippetListComponentComponent, MatTabsModule, MatDividerModule, PageHeaderComponent],
   templateUrl: './user-home-page.component.html',
   styleUrl: './user-home-page.component.scss'
 })

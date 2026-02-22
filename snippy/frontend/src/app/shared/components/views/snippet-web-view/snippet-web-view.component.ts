@@ -1,8 +1,8 @@
 import { Component, ViewChild, ElementRef, effect, AfterViewInit, OnInit, OnDestroy, inject } from '@angular/core';
 import { AngularSplitModule } from 'angular-split';
 import { CommonModule } from '@angular/common';
-import { SnippetEditorComponent } from '../../snippet-editor/snippet-editor.component';
-import { SnippetPreviewComponent } from '../../snippet-preview/snippet-preview.component';
+import { SnippetEditorComponent } from '../../../../core/components/snippet-editor/snippet-editor.component';
+import { SnippetPreviewComponent } from '../../../../core/components/snippet-preview/snippet-preview.component';
 import { Snippet } from '../../../interfaces/snippet.interface';
 import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
 import { ExternalResource } from '../../../interfaces/externalResource.interface';

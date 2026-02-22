@@ -1,10 +1,10 @@
-<div class="d-flex flex-column vh-100">
+<div class="d-flex flex-column h-100 overflow-hidden">
   <!-- Main vertical split: editors top, preview bottom -->
-  <as-split direction="vertical" unit="percent" [gutterSize]="16">
+  <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
     
     <!-- Top: three resizable editors -->
     <as-split-area size="50" [minSize]="0">
-      <as-split direction="horizontal" unit="percent" [gutterSize]="16">
+      <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
         <!-- HTML Editor -->
         <as-split-area size="33" [minSize]="0">
           <app-snippet-editor

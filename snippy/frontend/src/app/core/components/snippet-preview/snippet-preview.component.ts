@@ -1,7 +1,7 @@
 
 import { Component, ViewChild, ElementRef, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ExternalResource } from '../../interfaces/externalResource.interface';
+import { ExternalResource } from '../../../shared/interfaces/externalResource.interface';
 
 @Component({
   selector: 'app-snippet-preview',

@@ -6,7 +6,7 @@ import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ExternalResource } from '../../interfaces/externalResource.interface';
+import { ExternalResource } from '../../../shared/interfaces/externalResource.interface';
 import { MatButtonModule } from '@angular/material/button';
 
 @Component({

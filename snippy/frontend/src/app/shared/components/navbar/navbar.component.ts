@@ -1,5 +1,4 @@
 import { Component, OnInit, DestroyRef, inject } from '@angular/core';
-import { LoginComponent } from "../login/login.component";
 import { AuthService } from '@auth0/auth0-angular';
 import { CommonModule } from '@angular/common';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -20,7 +19,6 @@ import { SnippetSaveUIService } from '../../services/communication/snippet-save-
 @Component({
   selector: 'app-navbar',
   imports: [
-    LoginComponent, 
     CommonModule, 
     RouterModule,
     MatButtonToggleModule, 

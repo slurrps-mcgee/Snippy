@@ -8,16 +8,16 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
 import { Router } from '@angular/router';
-import { SnippetList } from '../../interfaces/snippetList.interface';
+import { SnippetList } from '../../../shared/interfaces/snippetList.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import {TooltipPosition, MatTooltipModule} from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
-import { SnackbarService } from '../../services/component.services/snackbar.service';
+import { SnackbarService } from '../../../shared/services/component.services/snackbar.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
-import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
+import { ConfirmDialogComponent } from '../../../shared/components/dialogs/confirm-dialog/confirm-dialog.component';
+import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
 
 @Component({
   selector: 'app-snippet-list-component',

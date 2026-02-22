@@ -9,7 +9,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatChipsModule } from '@angular/material/chips';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
-import { ExternalResourcesListComponent } from '../../external-resources-list/external-resources-list.component';
+import { ExternalResourcesListComponent } from '../../../../core/components/external-resources-list/external-resources-list.component';
 import { ExternalResource } from '../../../interfaces/externalResource.interface';
 import { Snippet } from '../../../interfaces/snippet.interface';
 import { MatDialog } from '@angular/material/dialog';

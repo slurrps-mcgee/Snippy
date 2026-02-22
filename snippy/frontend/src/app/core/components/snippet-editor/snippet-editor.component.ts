@@ -10,8 +10,8 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
-import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
-import { AlertDialogComponent } from '../dialogs/alert-dialog/alert-dialog.component';
+import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
+import { AlertDialogComponent } from '../../../shared/components/dialogs/alert-dialog/alert-dialog.component';
 
 @Component({
   selector: 'app-snippet-editor',

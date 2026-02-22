@@ -1,4 +1,3 @@
-@if (auth0Service.isAuthenticated$ | async) {
 <button [matMenuTriggerFor]="beforeMenu" class="border-0 bg-transparent">
   @if(user()) {
   <img [src]="user()?.pictureUrl" alt="Menu" width="50" height="50" style="border-radius: 50%;" />
@@ -9,7 +8,3 @@
 <mat-menu #beforeMenu="matMenu" xPosition="before">
   <button mat-menu-item (click)="logout()">Log out</button>
 </mat-menu>
-
-} @else {
-<button matButton="filled" (click)="login()">Log in</button>
-}

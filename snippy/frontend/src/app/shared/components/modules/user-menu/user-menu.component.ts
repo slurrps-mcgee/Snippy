@@ -1,22 +1,22 @@
 import { Component, Inject, DOCUMENT, inject, DestroyRef } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { CommonModule } from '@angular/common';
-import { AuthStoreService } from '../../services/store.services/authStore.service';
+import { AuthStoreService } from '../../../services/store.services/authStore.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { User } from '../../interfaces/user.interface';
+import { User } from '../../../interfaces/user.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SnippetStoreService } from '../../services/store.services/snippet.store.service';
-import { ConfirmDialogComponent } from '../dialogs/confirm-dialog/confirm-dialog.component';
+import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
+import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
 
 @Component({
-  selector: 'app-login',
+  selector: 'app-user-menu',
   imports: [CommonModule, MatMenuModule, MatButtonModule],
-  templateUrl: './login.component.html',
-  styleUrl: './login.component.scss'
+  templateUrl: './user-menu.component.html',
+  styleUrl: './user-menu.component.scss',
 })
-export class LoginComponent {
+export class UserMenuComponent {
   // Use signal directly from AuthStoreService
   get user() { return this.authStoreService.user; }
 
@@ -26,10 +26,6 @@ export class LoginComponent {
   private snippetStoreService = inject(SnippetStoreService);
   private dialog = inject(MatDialog);
   private destroyRef = inject(DestroyRef);
-
-  login() {
-    this.auth0Service.loginWithRedirect({ appState: { target: '/home' } });
-  }
 
   logout() {
     if (this.snippetStoreService.isDirty()) {
@@ -44,12 +40,12 @@ export class LoginComponent {
       });
 
       dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
-        if (result) {
-          this.authStoreService.logout();
-        }
-      });
+        .pipe(takeUntilDestroyed(this.destroyRef))
+        .subscribe(result => {
+          if (result) {
+            this.authStoreService.logout();
+          }
+        });
     } else {
       this.authStoreService.logout();
     }
