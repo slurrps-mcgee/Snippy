@@ -132,6 +132,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
           { fileType: 'js', content: '' }
         ]
       }, false);
+      this.snippetStoreService.previewUpdateType.set('full');
       this.snippetStoreService.loading.set(false);
     }
   }
