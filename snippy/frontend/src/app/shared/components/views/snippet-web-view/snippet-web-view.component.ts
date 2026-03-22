@@ -21,18 +21,18 @@ import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatMenuModule } from '@angular/material/menu';
-import {MatButtonToggleModule} from '@angular/material/button-toggle';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 
 // ...existing imports...
 
 @Component({
   selector: 'app-snippet-web-view',
   imports: [
-    CommonModule, 
+    CommonModule,
     RouterModule,
     FormsModule,
-    AngularSplitModule, 
-    SnippetEditorComponent, 
+    AngularSplitModule,
+    SnippetEditorComponent,
     SnippetPreviewComponent,
     UserMenuComponent,
     MatIconModule,
@@ -148,6 +148,24 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   onLayoutChange(newLayout: 'top' | 'bottom' | 'left' | 'right') {
     this.selectedLayout = newLayout;
     localStorage.setItem('editorLayout', newLayout);
+
+    // Refresh preview after layout change
+    setTimeout(() => {
+      const snippet = this.snippetStoreService.snippet();
+      if (!snippet?.snippetFiles) return;
+
+      const htmlFile = snippet.snippetFiles.find(f => f.fileType === 'html');
+      const cssFile = snippet.snippetFiles.find(f => f.fileType === 'css');
+      const jsFile = snippet.snippetFiles.find(f => f.fileType === 'js');
+
+      this.updatePreview(
+        htmlFile?.content || '',
+        cssFile?.content || '',
+        jsFile?.content || '',
+        'full',
+        snippet.externalResources || []
+      );
+    }, 0);
   }
 
   openSettings() {

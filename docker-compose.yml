@@ -1,32 +1,32 @@
 version: '3.8'
 
 services:
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    env_file:
-      - ./.env
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+  # minio:
+  #   image: minio/minio:latest
+  #   container_name: minio
+  #   command: server /data --console-address ":9001"
+  #   ports:
+  #     - "9000:9000"
+  #     - "9001:9001"
+  #   env_file:
+  #     - ./.env
+  #   volumes:
+  #     - minio_data:/data
+  #   healthcheck:
+  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+  #     interval: 5s
+  #     timeout: 3s
+  #     retries: 5
 
-  minio-init:
-    build: ./snippy/minio
-    container_name: minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    env_file:
-      - ./.env
-    restart: "no"
+  # minio-init:
+  #   build: ./snippy/minio
+  #   container_name: minio-init
+  #   depends_on:
+  #     minio:
+  #       condition: service_healthy
+  #   env_file:
+  #     - ./.env
+  #   restart: "no"
 
   db:
     image: mysql:8.0
@@ -74,4 +74,4 @@ services:
 
 volumes:
   mysql-data:
-  minio_data:
+  # minio_data:
