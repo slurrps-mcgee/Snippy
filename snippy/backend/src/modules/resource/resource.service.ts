@@ -6,7 +6,7 @@ import { minioClient } from '../../database/minio';
 import { CreateResourceRequest } from './dto/resource.dto';
 import { executeInTransaction } from '../../common/utilities/transaction';
 import { createAsset, deleteAsset, findByFileName } from './resource.repo';
-import { config } from '../../config';
+import { config, featureFlags } from '../../config';
 
 /**
  * Upload a file to MinIO under a user folder and optional subfolder.
@@ -15,6 +15,10 @@ import { config } from '../../config';
 export async function uploadFileHandler(
     payload: ServicePayload<CreateResourceRequest>
 ): Promise<ServiceResponse<{ url: string }>> {
+    if(!featureFlags.isMinioAvailable) {
+        throw new CustomError('File upload is currently unavailable', 503);
+    }
+
     const { subFolder } = payload.body || {};
     const file = payload.file;
 
@@ -76,6 +80,10 @@ export async function uploadFileHandler(
 export async function deleteFileHandler(
     payload: ServicePayload<unknown, { objectName: string }>
 ): Promise<ServiceResponse<null>> {
+    if(!featureFlags.isMinioAvailable) {
+        throw new CustomError('File delete is currently unavailable', 503);
+    }
+
     let objectName = payload.params?.objectName;
     if (!objectName) throw new CustomError('Object name required', 400);
 

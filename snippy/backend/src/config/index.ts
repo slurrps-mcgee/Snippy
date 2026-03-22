@@ -26,6 +26,7 @@ export const config = {
 
     // MinIO Configuration
     minio: {
+        enableMinIO: process.env.ENABLE_MINIO === 'true' || false,
         endPoint: process.env.MINIO_ENDPOINT || 'minio',
         port: Number(process.env.MINIO_PORT) || 9000,
         useSSL: process.env.MINIO_USE_SSL === 'true' || false,
@@ -85,6 +86,11 @@ export const config = {
         level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
     },
 } as const;
+
+// Global state to track MinIO availability across the application
+export const featureFlags = {
+  isMinioAvailable: false, // default value
+};
 
 /**
  * Validate required environment variables

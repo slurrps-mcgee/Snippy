@@ -75,13 +75,27 @@ DB_PORT=
 DB_NAME=
 DB_USER=
 # REQUIRED
-DB_PASS= 
-MYSQL_ROOT_PASSWORD= 
+DB_PASS= Mcgee7089!?@
+MYSQL_ROOT_PASSWORD= Mcgee7089!?@
+
+# minIO
+# OPTIONAL
+# MINIO_ENDPOINT=minio
+# MINIO_PORT=9000
+# MINIO_USE_SSL=false
+# MINIO_BUCKET_POLICY=public
+# MINIO_BUCKET=content
+# REQUIRED
+ENABLE_MINIO=true
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_APP_USER=snippyappuser
+MINIO_APP_PASSWORD=SnippyAppUserPass123!
 
 # AUTH0
 AUTH0_AUDIENCE=
-AUTH0_DOMAIN=
-AUTH0_CLIENT_ID=
+AUTH0_DOMAIN=dev-4ev7py4uqxc7prli.us.auth0.com
+AUTH0_CLIENT_ID=n5bdvh7IGhMZ1AE69sPkQ3wzCUOhoWIj
 ```
 
 Notes: Not all of these variables are needed as most have defaults
