@@ -86,7 +86,7 @@ MYSQL_ROOT_PASSWORD= Mcgee7089!?@
 # MINIO_BUCKET_POLICY=public
 # MINIO_BUCKET=content
 # REQUIRED
-ENABLE_MINIO=true
+ENABLE_MINIO=true #Default is false
 MINIO_ROOT_USER=minioadmin
 MINIO_ROOT_PASSWORD=minioadmin
 MINIO_APP_USER=snippyappuser
@@ -112,8 +112,38 @@ Notes: this assumes you are using portainer to setup .env variables. If not you 
 
 ```yaml
 version: '3.8'
-
 services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "32570:9000"
+      - "32571:9001"
+    env_file:
+      - stack.env
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - NPM
+        
+  minio-init:
+    image: kennyl777/snippy-minio:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - stack.env
+    restart: "no"
+    networks:
+      - NPM
+
   db:
     image: kennyl777/snippy-db:latest
     container_name: snippy-db
@@ -130,6 +160,8 @@ services:
       retries: 5
       start_period: 10s
     restart: unless-stopped
+    networks:
+      - NPM
 
   api:
     image: kennyl777/snippy-api:latest
@@ -141,8 +173,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
-
     restart: unless-stopped
+    networks:
+      - NPM
 
   frontend:
     image: kennyl777/snippy-frontend:latest
@@ -154,9 +187,12 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+    networks:
+      - NPM
 
 volumes:
   mysql-data:
+  minio_data:
 
 networks:
   NPM:
@@ -169,12 +205,39 @@ networks:
 
 Notes: You will need to create a .env file in the root of the folder next to the docker-compost.yml file
 
-### Docker Compose File Example
+### Minimal Docker Compose File Example
 
 ```yaml
 version: '3.8'
 
 services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - ./.env
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  minio-init:
+    build: ./snippy/minio
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    restart: "no"
+
   db:
     image: mysql:8.0
     container_name: snippy-db
@@ -191,7 +254,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
-
 
   api:
     container_name: snippy-api
@@ -213,7 +275,7 @@ services:
     container_name: snippy-frontend
     build: ./snippy/frontend
     ports:
-      - "${FRONTEND_PORT:-8080}:80"
+      - "${FRONTEND_PORT:-4200}:80"
     env_file:
       - ./.env
     restart: unless-stopped
@@ -222,6 +284,7 @@ services:
 
 volumes:
   mysql-data:
+  minio_data:
 ```
 
 ## NGINX Setup
@@ -248,61 +311,5 @@ networks:
   NPM:
     external: true
 ```
-- Create a new stack for snippy
-```yaml
-version: '3.8'
-services:
-  db:
-    image: kennyl777/snippy-db:latest
-    container_name: snippy-db
-    env_file:
-      - stack.env
-    ports:
-      - "${DB_PORT:-3306}:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-    networks:
-      - NPM
 
-  api:
-    image: kennyl777/snippy-api:latest
-    container_name: snippy-api
-    env_file:
-      - stack.env
-    ports:
-      - "${API_PORT:-3000}:3000"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - NPM
-
-  frontend:
-    image: kennyl777/snippy-frontend:latest
-    container_name: snippy-frontend
-    env_file:
-      - stack.env
-    ports:
-      - "${FRONTEND_PORT:-4200}:80"
-    depends_on:
-      - api
-    restart: unless-stopped
-    networks:
-      - NPM
-
-volumes:
-  mysql-data:
-
-networks:
-  NPM:
-    external: true
-```
 - Setup the env variables using the [ENV](#env-file)
