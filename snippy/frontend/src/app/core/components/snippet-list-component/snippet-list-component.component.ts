@@ -12,7 +12,7 @@ import { SnippetList } from '../../../shared/interfaces/snippetList.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
-import {TooltipPosition, MatTooltipModule} from '@angular/material/tooltip';
+import { TooltipPosition, MatTooltipModule } from '@angular/material/tooltip';
 import { MatDialog } from '@angular/material/dialog';
 import { SnackbarService } from '../../../shared/services/component.services/snackbar.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -47,7 +47,7 @@ export class SnippetListComponentComponent {
   @Output() pageChange = new EventEmitter<PageEvent>();
 
   searchQuery = '';
-  
+
   private router = inject(Router);
   private snippetStoreService = inject(SnippetStoreService);
   private snackbarService = inject(SnackbarService);
@@ -83,20 +83,39 @@ export class SnippetListComponentComponent {
     if (event) {
       event.stopPropagation();
     }
+
+    // preserve previous state for rollback
+    const previousFavorited = snippet.isFavorited;
+    const previousCount = snippet.favoriteCount;
+
+    // optimistic update
+    snippet.isFavorited = !previousFavorited;
+    snippet.favoriteCount += previousFavorited ? -1 : 1;
+
     try {
-      const response = await this.snippetStoreService.favoriteSnippet(snippet.snippetId);
-      if (response && typeof response.favoriteCount === 'number') {
+      const response = await this.snippetStoreService.favoriteSnippet(
+        snippet.snippetId
+      );
+
+      // reconcile with backend truth
+      if (response) {
+        snippet.isFavorited = response.isFavorited;
         snippet.favoriteCount = response.favoriteCount;
+
         this.snackbarService.success(
           response.isFavorited
             ? `Added to favorites ${snippet.shortId}`
             : `Removed from favorites ${snippet.shortId}`
         );
-      } else {
-        this.snackbarService.success(`Toggled favorite for ${snippet.shortId}`);
       }
     } catch {
-      this.snackbarService.error(`Failed to favorite snippet ${snippet.shortId}`);
+      // rollback
+      snippet.isFavorited = previousFavorited;
+      snippet.favoriteCount = previousCount;
+
+      this.snackbarService.error(
+        `Failed to favorite snippet ${snippet.shortId}`
+      );
     }
   }
 
@@ -124,9 +143,9 @@ export class SnippetListComponentComponent {
       }
     });
 
-    dialogRef.afterClosed().subscribe(result => {
+    dialogRef.afterClosed().subscribe(async result => {
       if (result) {
-        this.snippetStoreService.deleteSnippet(snippet.snippetId);
+        await this.snippetStoreService.deleteSnippet(snippet.snippetId);
         this.snackbarService.success(`Deleted Snippet ${snippet.shortId}`);
       }
     });

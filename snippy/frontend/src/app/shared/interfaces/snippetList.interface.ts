@@ -9,4 +9,5 @@ export interface SnippetList {
     favoriteCount: number;
     viewCount: number;
     isOwner: boolean;
+    isFavorited: boolean;
 }
