@@ -5,9 +5,13 @@
   "scripts": {
     "start": "node dist/index.js",
     "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
-    "build": "tsc",
+    "build": "tsc && mkdir -p dist/database/migrations && cp src/database/migrations/*.js dist/database/migrations/",
     "build:watch": "tsc --watch",
-    "docker-start": "npm run build && npm run start"
+    "docker-start": "npm run build && npm run start",
+    "db:migrate": "sequelize-cli db:migrate",
+    "db:migrate:undo": "sequelize-cli db:migrate:undo",
+    "db:migrate:status": "sequelize-cli db:migrate:status",
+    "db:migrate:baseline": "node src/database/baseline-meta.cjs"
   },
   "keywords": [
     "Express",

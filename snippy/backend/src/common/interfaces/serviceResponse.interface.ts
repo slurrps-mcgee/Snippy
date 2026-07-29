@@ -5,8 +5,12 @@ export interface ServiceResponse<T> {
     
     // User responses
     user?: T;
+    users?: T[];
     created?: boolean;
     available?: boolean;
+    isFollowing?: boolean;
+    followerCount?: number;
+    followingCount?: number;
     
     // Comment responses
     comment?: T;
@@ -20,6 +24,7 @@ export interface ServiceResponse<T> {
     // Common responses
     totalCount?: number;
     viewCount?: number;
+    counted?: boolean;
     message?: string;
 
     //File upload / asset responses
@@ -27,4 +32,8 @@ export interface ServiceResponse<T> {
     objectName?: string;
     asset?: T;
     assets?: T[];
+
+    // Collection responses
+    collection?: T;
+    collections?: T[];
 }

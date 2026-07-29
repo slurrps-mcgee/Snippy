@@ -64,6 +64,11 @@ export const config = {
         maxLimit: 100,
     },
 
+    // Unique view cooldown (same user + snippet)
+    views: {
+        cooldownMs: 24 * 60 * 60 * 1000, // 24 hours
+    },
+
     // ShortId Generation
     shortId: {
         alphabet: '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ',

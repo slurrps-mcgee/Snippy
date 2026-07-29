@@ -3,12 +3,13 @@ import { UserMapper } from "./user.mapper";
 import { UserDTO, EnsureUserRequest, UpdateUserRequest } from "./dto/user.dto";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
-import { createUser, deleteUser, findById, findByUsername, haveUsers, updateUser } from "./user.repo";
+import { findById, findByUsername, haveUsers, updateUser, createUser, deleteUser } from "./user.repo";
 import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { config } from "../../config";
-
+import { deleteUserMinioObjects } from "../resource/resource.service";
+import { countFollowers, countFollowing, findFollow } from "../follow/follow.repo";
 /**
  * Protected fields that cannot be updated through the updateUser endpoint
  * These fields are system-managed and should not be modified by users
@@ -132,15 +133,16 @@ export async function deleteUserHandler(payload: ServicePayload<unknown>): Promi
             throw new CustomError('Unauthorized', 401);
         }
 
+        const user = await findById(auth0Id);
+        if (!user) {
+            throw new CustomError('User not found', 404);
+        }
+
+        // Remove MinIO objects before DB CASCADE deletes asset rows
+        await deleteUserMinioObjects(auth0Id);
+
         return await executeInTransaction(async (t) => {
-            const user = await findById(auth0Id, t);
-
-            if (!user) {
-                throw new CustomError('User not found', 404);
-            }
-
             await deleteUser(auth0Id, t);
-
             return { message: 'User deleted successfully' };
         });
     } catch (err: any) {
@@ -151,6 +153,7 @@ export async function deleteUserHandler(payload: ServicePayload<unknown>): Promi
 export async function getUserProfileHandler(payload: ServicePayload<unknown, { userName: string }>): Promise<ServiceResponse<UserDTO>> {
     try {
         const userName = payload.params?.userName;
+        const auth0Id = payload.auth?.payload?.sub;
 
         if (!userName) {
             throw new CustomError("Username required", 400);
@@ -163,11 +166,25 @@ export async function getUserProfileHandler(payload: ServicePayload<unknown, { u
                 throw new CustomError('User not found', 404);
             }
 
-            if (user.isPrivate) {
+            if (user.isPrivate && user.auth0Id !== auth0Id) {
                 throw new CustomError('User profile is private', 403);
             }
 
-            return { user: UserMapper.toDTO(user) };
+            const [followerCount, followingCount, followRow] = await Promise.all([
+                countFollowers(user.auth0Id, t),
+                countFollowing(user.auth0Id, t),
+                auth0Id && auth0Id !== user.auth0Id
+                    ? findFollow(auth0Id, user.auth0Id, t)
+                    : Promise.resolve(null),
+            ]);
+
+            return {
+                user: UserMapper.toDTO(user, user.auth0Id === auth0Id, {
+                    followerCount,
+                    followingCount,
+                    isFollowing: auth0Id && auth0Id !== user.auth0Id ? !!followRow : undefined,
+                }),
+            };
         });
     } catch (err: any) {
         handleError(err, 'getUserProfileHandler');
@@ -189,7 +206,14 @@ export async function getCurrentUserHandler(payload: ServicePayload<unknown>): P
                 throw new CustomError('User not found', 404);
             }
 
-            return { user: UserMapper.toDTO(user, true) };
+            const [followerCount, followingCount] = await Promise.all([
+                countFollowers(user.auth0Id, t),
+                countFollowing(user.auth0Id, t),
+            ]);
+
+            return {
+                user: UserMapper.toDTO(user, true, { followerCount, followingCount }),
+            };
         });
     } catch (err: any) {
         handleError(err, 'getCurrentUserHandler');

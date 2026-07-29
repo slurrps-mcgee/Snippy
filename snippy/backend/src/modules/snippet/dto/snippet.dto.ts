@@ -32,6 +32,8 @@ export interface SnippetDTO {
     externalResources?: ExternalResource[];
 }
 
+export type SnippetSort = 'newest' | 'views' | 'favorites' | 'forks';
+
 export interface SnippetListDTO {
     snippetId: string;
     shortId: string;
@@ -44,6 +46,17 @@ export interface SnippetListDTO {
     favoriteCount: number;
     viewCount: number;
     isOwner: boolean;
+    isFavorited?: boolean;
+}
+
+export interface SnippetListQuery {
+    page?: number | string;
+    limit?: number | string;
+    sort?: SnippetSort | string;
+    tag?: string;
+    q?: string;
+    name?: string;
+    description?: string;
 }
 
 export interface CreateSnippetRequest {

@@ -1,6 +1,7 @@
 import { randomInt } from 'crypto';
 import { Users } from '../../entities/user.entity';
 import { Snippets } from '../../entities/snippet.entity';
+import { Collections } from '../../entities/collection.entity';
 import { customAlphabet } from 'nanoid';
 import { shortIdRetryPolicy, usernameRetryPolicy } from './resiliance';
 import { findByShortId } from '../../modules/snippet/snippet.repo';
@@ -79,6 +80,19 @@ export const createUniqueShortName = async (snippet: Snippets): Promise<void> =>
 	}
 }
 
+export const createUniqueCollectionShortId = async (collection: Collections): Promise<void> => {
+	if (!collection.shortId) {
+		try {
+			collection.shortId = await shortIdRetryPolicy.execute(async () => {
+				return await generateCollectionShortIdCandidate();
+			});
+		} catch (error) {
+			logger.error('All collection shortId generation attempts failed, using emergency fallback');
+			collection.shortId = generateEmergencyShortId();
+		}
+	}
+};
+
 // Internal function to generate and validate a shortId candidate
 async function generateShortIdCandidate(): Promise<string> {
 	// Try primary 7-character ID
@@ -110,11 +124,23 @@ async function generateShortIdCandidate(): Promise<string> {
 	}
 }
 
+async function generateCollectionShortIdCandidate(): Promise<string> {
+	const candidate = nano();
+	const exists = await Collections.findOne({ where: { shortId: candidate } });
+	if (exists) {
+		const error = new Error(`ShortId collision for candidate: ${candidate}`) as any;
+		error.name = 'SequelizeUniqueConstraintError';
+		error.fields = { shortId: candidate };
+		throw error;
+	}
+	return candidate;
+}
+
 // Emergency fallback when all retries are exhausted
 function generateEmergencyShortId(): string {
 	// Use timestamp last 6 digits in base36 + random 4 chars = max 11 chars total with dash
 	const timestampSuffix = (Date.now() % 1000000).toString(36);
-	const randomPart = nano(8);
+	const randomPart = nano().slice(0, 4);
 	const emergencyId = `e-${randomPart}${timestampSuffix}`;
 	logger.error(`Using emergency shortId: ${emergencyId}`);
 	return emergencyId;

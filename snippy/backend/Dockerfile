@@ -24,10 +24,12 @@ RUN npm ci --omit=dev
 
 # Copy built files from build stage
 COPY --from=build /app/dist ./dist
+COPY --from=build /app/src/database/migrations ./dist/database/migrations
+COPY --from=build /app/src/database/config.cjs ./src/database/config.cjs
+COPY --from=build /app/.sequelizerc ./.sequelizerc
 
 # Expose port from env or default
 EXPOSE 3000
 
-# Step 3: Run compiled app
-#TODO: add sequelize migration command here after creating config file
+# Step 3: Run compiled app (migrations run on boot)
 CMD ["node", "dist/index.js"]

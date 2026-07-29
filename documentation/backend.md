@@ -30,10 +30,11 @@ The Snippy backend is a Node.js / Express REST API that powers a CodePen-like pr
 
 | Module | Mount | Responsibility |
 |--------|-------|----------------|
-| User | `/users` | Ensure/create profile, update, delete, username check |
-| Snippet | `/snippets` | CRUD, fork, search, views, public/private |
+| User | `/users` | Ensure/create profile, update, delete, username check, follow graph |
+| Snippet | `/snippets` | CRUD, fork, search, feed, views, embed, public/private |
 | Comment | `/comments` | CRUD on snippet comments |
 | Favorite | `/favorites` | List, status check, toggle |
+| Collection | `/collections` | CRUD collections + ordered pens |
 | Resource | `/resources` | MinIO asset list / upload / delete |
 
 **Deployment:**
@@ -102,7 +103,7 @@ Source: [`snippy/backend/src/index.ts`](../snippy/backend/src/index.ts)
 3. Mount middleware stack (see [Middleware](#middleware))
 4. Mount `/api/v1` routes
 5. Mount global error handler
-6. Connect MySQL + `sequelize.sync({ force: false })` — **required**; failure exits process
+6. Connect MySQL + run pending Sequelize migrations — **required**; failure exits process
 7. If `ENABLE_MINIO=true`, attempt MinIO connect/bucket check and set `featureFlags.isMinioAvailable`
 8. Listen on `PORT` (default `3000`)
 
@@ -112,7 +113,7 @@ MinIO failure does **not** stop the API. Resource endpoints return **503** when 
 
 ## Database Schema
 
-Schema is defined by Sequelize entities and applied with `sequelize.sync({ force: false })`. There is no migration framework yet. [`snippy/db/init.sh`](../snippy/db/init.sh) only creates the database/user grants.
+Schema is defined by Sequelize entities and applied via **migrations** on API boot (`runMigrations` in [`src/database/migrate.ts`](../snippy/backend/src/database/migrate.ts)). Migration files live in [`src/database/migrations/`](../snippy/backend/src/database/migrations/). [`snippy/db/init.sh`](../snippy/db/init.sh) only creates the database/user grants.
 
 ### Entity relationships
 
@@ -121,18 +122,25 @@ Users (PK: auth0_id)
   ├── HasMany Snippets
   ├── HasMany Comments
   ├── HasMany Favorites
-  └── HasMany Assets
+  ├── HasMany Assets
+  ├── HasMany Collections
+  └── Follows (follower / following)
 
 Snippets (PK: snippet_id UUID; unique short_id 7 chars)
   ├── BelongsTo Users (auth0_id, CASCADE)
   ├── BelongsTo parent Snippet via parent_snippet_short_id → short_id (no DB FK)
   ├── HasMany SnippetFiles (unique snippet_id + file_type)
   ├── HasMany Comments
-  └── HasMany Favorites
+  ├── HasMany Favorites
+  ├── HasMany SnippetViews (unique snippet_id + auth0_id)
+  └── BelongsToMany Collections via collection_snippets
 
 SnippetFiles — html | css | js content per snippet
 Comments    — BelongsTo Users + Snippets
 Favorites   — unique (auth0_id, snippet_id)
+SnippetViews — dedupe ledger; unique (snippet_id, auth0_id); last_viewed_at
+Follows     — unique (follower_auth0_id, following_auth0_id)
+Collections — short_id; is_private; collection_snippets (position)
 Assets      — BelongsTo Users; unique (auth0_id, object_key)
 ```
 
@@ -160,6 +168,30 @@ Assets      — BelongsTo Users; unique (auth0_id, object_key)
 | `tags` | JSON string array |
 | `externalResources` | JSON array of `{ resourceType: 'css'\|'js'\|'other', url }` |
 
+#### SnippetViews
+
+| Field | Notes |
+|-------|--------|
+| `snippetViewId` | UUID PK |
+| `snippetId` + `auth0Id` | Unique pair — one row per viewer per snippet |
+| `lastViewedAt` | Last time a view was counted for this pair |
+
+#### Follows
+
+| Field | Notes |
+|-------|--------|
+| `followId` | UUID PK |
+| `followerAuth0Id` / `followingAuth0Id` | Unique pair; CASCADE on user delete |
+
+#### Collections
+
+| Field | Notes |
+|-------|--------|
+| `collectionId` | UUID — mutations |
+| `shortId` | Public id for GET |
+| `isPrivate` | Owner-only when private |
+| `collection_snippets` | Ordered membership (`position`); public pens or owner’s own pens |
+
 #### SnippetFiles
 
 | Field | Notes |
@@ -182,9 +214,17 @@ Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed ass
 
 ## Authentication & Authorization
 
-### Auth0 JWT (global)
+### Public routes (no JWT)
 
-Every request under `/api/v1` requires a valid Bearer token:
+| Path | Purpose |
+|------|---------|
+| `GET /health` | Liveness probe — `{ status: "ok", minio: boolean }` |
+| `GET /api/v1/snippets/:shortId/embed` | Runnable HTML for **public** pens (iframe-friendly) |
+| `/api-docs` | Swagger UI (non-production only) |
+
+### Auth0 JWT (`/api/v1/*`)
+
+Every request under `/api/v1` requires a valid Bearer token **except** the embed route above:
 
 ```
 Authorization: Bearer <access_token>
@@ -198,20 +238,22 @@ Configured in `common/middleware/auth0.service.ts`:
 
 User identity: `req.auth.payload.sub` → `auth0Id`.
 
-There is **no anonymous public browse** path. Clients must send a JWT for all API calls (including “public” list/read endpoints).
+Aside from embed HTML, clients must send a JWT for all API module calls (including “public” list/read endpoints).
 
 ### Ownership
 
-`AuthorizationService.verifyOwnership` throws **403** when the caller is not the resource owner (snippets, comments, profile mutations).
+`AuthorizationService.verifyOwnership` throws **403** when the caller is not the resource owner (snippets, comments, collections, profile mutations). Snippet owners may also **delete** comments on their pens.
 
 ### Privacy rules
 
 | Resource | Non-owner behavior |
 |----------|--------------------|
-| Private user profile | 403 on `GET /users/:userName` |
-| Private snippet | 403 on GET by shortId, view, comment, favorite (unless owner) |
+| Private user profile | 403 on `GET /users/:userName`, pens list, collections list, followers/following |
+| Private snippet | 403 on GET by shortId, view, comment, favorite (unless owner); embed → 404 |
 | Public snippet / profile | Allowed for any authenticated user |
-| `GET /snippets/user/:userName` | Returns that user’s **public** snippets only |
+| `GET /snippets/user/:userName` | Public pens only; **403** if profile is private (non-owner) |
+| Follow | Cannot follow private profiles; self-follow rejected |
+| Private collection | Owner only |
 
 ---
 
@@ -295,8 +337,12 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 | Method | Path | Description |
 |--------|------|-------------|
 | GET | `/users/check-username/:userName` | Username available? |
-| GET | `/users/me` | Current user (owner fields) |
-| GET | `/users/:userName` | Public profile by username |
+| GET | `/users/me` | Current user (owner fields + follow counts) |
+| GET | `/users/:userName` | Public profile (+ `isFollowing`, follow counts) |
+| GET | `/users/:userName/followers` | Paginated followers |
+| GET | `/users/:userName/following` | Paginated following |
+| POST | `/users/:userName/follow` | Follow user |
+| DELETE | `/users/:userName/follow` | Unfollow user |
 | POST | `/users` | Ensure / create user from Auth0 |
 | PUT | `/users` | Update own profile |
 | DELETE | `/users` | Delete own account |
@@ -305,16 +351,20 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/snippets/search` | Search public snippets |
-| GET | `/snippets/public` | Paginated public list |
+| GET | `/snippets/search` | Search public snippets (`q`, `sort`, `tag`) |
+| GET | `/snippets/public` | Paginated public list (`sort`, `tag`) |
+| GET | `/snippets/feed` | Public pens from followed users |
 | GET | `/snippets/me` | Current user’s snippets (incl. private) |
-| GET | `/snippets/user/:userName` | User’s public snippets |
+| GET | `/snippets/user/:userName` | User’s public snippets (profile privacy enforced) |
+| GET | `/snippets/:shortId/embed` | **Public** runnable HTML (no JWT) |
 | GET | `/snippets/:shortId` | Full snippet by short id |
 | POST | `/snippets` | Create |
 | POST | `/snippets/fork/:snippetId` | Fork by UUID |
 | PUT | `/snippets/:snippetId` | Update (owner) |
-| POST | `/snippets/:snippetId/view` | Increment view count |
+| POST | `/snippets/:snippetId/view` | Record unique view (owner skipped; 24h cooldown) |
 | DELETE | `/snippets/:snippetId` | Delete (owner) |
+
+`sort`: `newest` (default) \| `views` \| `favorites` \| `forks`. List DTOs include `isFavorited` when authenticated.
 
 ### Comments
 
@@ -323,7 +373,7 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 | GET | `/comments/:snippetId` | List comments |
 | POST | `/comments/:snippetId` | Create comment |
 | PUT | `/comments/:commentId` | Update own comment |
-| DELETE | `/comments/:commentId` | Delete own comment |
+| DELETE | `/comments/:commentId` | Delete (author **or** snippet owner) |
 
 ### Favorites
 
@@ -332,6 +382,20 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 | GET | `/favorites` | List favorited snippets |
 | GET | `/favorites/:snippetId` | Is favorited? |
 | POST | `/favorites/:snippetId` | Toggle favorite |
+
+### Collections
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/collections/me` | My collections |
+| GET | `/collections/user/:userName` | User’s public collections |
+| GET | `/collections/:shortId` | Collection + ordered pens |
+| POST | `/collections` | Create |
+| PUT | `/collections/:collectionId` | Update meta (owner) |
+| DELETE | `/collections/:collectionId` | Delete (owner) |
+| POST | `/collections/:collectionId/snippets` | Add pen `{ snippetId }` |
+| DELETE | `/collections/:collectionId/snippets/:snippetId` | Remove pen |
+| PUT | `/collections/:collectionId/snippets/order` | Reorder `{ snippetIds }` |
 
 ### Resources (MinIO)
 
@@ -357,6 +421,9 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
   pictureUrl: string | null;
   isAdmin?: boolean;      // owner responses only
   isPrivate?: boolean;    // owner responses only
+  isFollowing?: boolean;  // when viewing another user
+  followerCount?: number;
+  followingCount?: number;
   assets?: AssetDTO[];
 }
 ```
@@ -374,9 +441,10 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 ```
 
 **SnippetDTO** — full pen (includes files + external resources)  
-**SnippetListDTO** — list card fields (no files)  
+**SnippetListDTO** — list card fields (no files); includes `isFavorited?`  
 **CommentDTO** — `commentId`, `content`, `userName?`, `displayName?`, `isOwner`, timestamps  
-**ExternalResource** — `{ resourceType: 'css' | 'js' | 'other', url: string }`
+**ExternalResource** — `{ resourceType: 'css' | 'js' | 'other', url: string }`  
+**CollectionDTO** — `collectionId`, `shortId`, `name`, `description`, `isPrivate`, `isOwner`, optional `snippets` / `snippetCount`
 
 ---
 
@@ -388,15 +456,31 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 
 #### `GET /users/me`
 
-Returns the authenticated user’s profile including `isAdmin`, `isPrivate`, and `assets`.
+Returns the authenticated user’s profile including `isAdmin`, `isPrivate`, `followerCount`, `followingCount`, and `assets`.
 
 **Response `200`:** `{ success: true, user: UserDTO }`
 
 #### `GET /users/:userName`
 
-Public profile. Returns **403** if the profile is private and the caller is not the owner.
+Public profile. Returns **403** if the profile is private and the caller is not the owner. Includes `followerCount`, `followingCount`, and `isFollowing` when viewing another user.
 
-**Response `200`:** `{ success: true, user: UserDTO }` (without owner-only flags)
+**Response `200`:** `{ success: true, user: UserDTO }` (without owner-only flags unless self)
+
+#### `POST /users/:userName/follow`
+
+Follow a public profile. Self-follow → 400. Private target → 403. Idempotent if already following.
+
+**Response `200`:** `{ success: true, message, isFollowing: true }`
+
+#### `DELETE /users/:userName/follow`
+
+**Response `200`:** `{ success: true, message, isFollowing: false }`
+
+#### `GET /users/:userName/followers` / `GET /users/:userName/following`
+
+Paginated. Private profile → 403 for non-owners.
+
+**Response `200`:** `{ success: true, users: UserDTO[], totalCount: number }`
 
 #### `POST /users` — Ensure user
 
@@ -436,7 +520,11 @@ Cannot change `auth0Id` or `isAdmin`.
 
 #### `DELETE /users`
 
-Deletes the current user (DB cascades to snippets/comments/favorites/assets rows). MinIO objects are **not** automatically removed yet.
+Deletes the current user. Before the DB delete:
+
+1. Loads the user’s assets
+2. Best-effort removes each MinIO object (skipped/logged if MinIO is unavailable; individual object failures do not block account deletion)
+3. Deletes the user row (CASCADE removes snippets, comments, favorites, asset rows)
 
 **Response `204`:** empty body
 
@@ -492,7 +580,7 @@ Owner only. If the snippet is a fork, parent `forkCount` is decremented via pare
 
 #### `POST /snippets/fork/:snippetId`
 
-Forks by **UUID** (`snippetId`), not shortId. Copies files; sets `parentShortId` to the source short id. Cannot fork another user’s private snippet.
+Forks by **UUID** (`snippetId`), not shortId. Copies files and `externalResources`; sets `parentShortId` to the source short id. Cannot fork another user’s private snippet (**403**).
 
 **Response `201`:** `{ success: true, snippet: SnippetDTO }`
 
@@ -508,19 +596,40 @@ All public pens. Paginated.
 
 #### `GET /snippets/user/:userName`
 
-That user’s **public** pens only. Paginated.
+That user’s **public** pens only. Paginated. If the target profile is **private** and the caller is not the owner → **403**.
+
+List items include `isFavorited` for the current user.
+
+#### `GET /snippets/public`
+
+Paginated public pens. Query: `page`, `limit`, optional `sort=newest|views|favorites|forks`, optional `tag` (exact tag string match against JSON tags).
+
+#### `GET /snippets/feed`
+
+Public pens from users the caller follows. Query: `page`, `limit`, optional `sort`. Empty following list → empty page.
 
 #### `GET /snippets/search`
 
-Query: `q` and/or `name` / `description`, plus `page` / `limit`. Searches public snippets.
+Query: `q` and/or `name` / `description`, plus `page` / `limit`, optional `sort` / `tag`. Searches public snippets.
 
 Empty query returns `{ success: true, snippets: [], totalCount: 0 }`.
 
+#### `GET /snippets/:shortId/embed`
+
+**No JWT.** Returns `text/html` for a **public** pen (private → 404). Sets `Content-Security-Policy: frame-ancestors *` so the document can load in iframes. Inlines HTML/CSS/JS files and `externalResources` link/script tags.
+
 #### `POST /snippets/:snippetId/view`
 
-Increments `viewCount` if the snippet is public or owned by the caller. Does **not** return full snippet content.
+Records a view when the snippet is public or owned by the caller. Does **not** return full snippet content.
 
-**Response `200`:** `{ success: true, viewCount: number }`
+A view is counted only when:
+
+1. The viewer is **not** the snippet owner
+2. This JWT user has **not** already recorded a counted view for that snippet within the last **24 hours** (`config.views.cooldownMs`)
+
+Otherwise `viewCount` is unchanged and `counted` is `false`. `snippets.view_count` stays the denormalized counter; `snippet_views` is the dedupe ledger.
+
+**Response `200`:** `{ success: true, viewCount: number, counted: boolean }`
 
 ---
 
@@ -548,9 +657,41 @@ Owner only. **Body:** `{ "content": "..." }`
 
 #### `DELETE /comments/:commentId`
 
-Owner only. Decrements snippet `commentCount`.
+Allowed for the **comment author** or the **snippet owner**. Decrements snippet `commentCount`.
 
-**Response `204`:** empty body
+**Response `200`:** `{ success: true, message }`
+
+---
+
+### Collection endpoints
+
+#### `GET /collections/me` / `GET /collections/user/:userName`
+
+Paginated. User list respects profile privacy; non-owners only see public collections.
+
+#### `GET /collections/:shortId`
+
+Returns collection meta + ordered `snippets` (`SnippetListDTO[]`). Private collection → owner only. Other users’ private pens in a collection are hidden from non-owners.
+
+#### `POST /collections`
+
+**Body:** `{ "name": "...", "description"?: "...", "isPrivate"?: false }`
+
+**Response `201`:** `{ success: true, collection }`
+
+#### `PUT /collections/:collectionId` / `DELETE /collections/:collectionId`
+
+Owner only.
+
+#### `POST /collections/:collectionId/snippets`
+
+**Body:** `{ "snippetId": "<uuid>" }` — may add any **public** pen or the owner’s own pens (including private).
+
+#### `DELETE /collections/:collectionId/snippets/:snippetId`
+
+#### `PUT /collections/:collectionId/snippets/order`
+
+**Body:** `{ "snippetIds": ["uuid", ...] }` — must be a permutation of current membership.
 
 ---
 
@@ -652,7 +793,7 @@ sequenceDiagram
 3. Owner edits with `PUT /snippets/:snippetId`
 4. Another user (or same) forks with `POST /snippets/fork/:snippetId` → new pen with `parentShortId`
 5. Owner deletes with `DELETE /snippets/:snippetId` → parent `forkCount` decrements if applicable
-6. Optional: `POST /snippets/:snippetId/view` when opening a pen (returns new `viewCount` only)
+6. Optional: `POST /snippets/:snippetId/view` when opening a public pen (returns `viewCount` + `counted`; call once per open, not on every preview refresh)
 
 ### 3. Favorite toggle
 
@@ -665,9 +806,22 @@ sequenceDiagram
 1. `GET /comments/:snippetId?page=1&limit=20`
 2. `POST /comments/:snippetId` with `{ content }`
 3. Author updates via `PUT /comments/:commentId`
-4. Author deletes via `DELETE /comments/:commentId` (204)
+4. Author or snippet owner deletes via `DELETE /comments/:commentId`
 
-### 5. Asset upload → use in HTML → delete
+### 5. Follow → feed
+
+1. `POST /users/:userName/follow`
+2. `GET /snippets/feed` → that user’s public pens
+3. `GET /users/:userName/followers` / `following`
+
+### 6. Collections
+
+1. `POST /collections` → `collectionId` + `shortId`
+2. `POST /collections/:collectionId/snippets` with `{ snippetId }`
+3. `GET /collections/:shortId` for ordered pens
+4. Optional reorder / remove / delete collection
+
+### 7. Asset upload → use in HTML → delete
 
 1. Enable MinIO (`ENABLE_MINIO=true`) and ensure bucket/init succeeded
 2. `POST /resources` multipart with image → receive `url` like `/content/...`
@@ -721,31 +875,57 @@ Runtime flag: `featureFlags.isMinioAvailable` — set only after a successful co
 
 ## Operational Notes
 
-### Schema sync
+### Schema migrations
 
-- Production/dev currently use `sequelize.sync({ force: false })`
-- New columns/indexes (e.g. Assets `object_key`) are **not** reliably altered on existing volumes
-- After Asset model changes locally: recreate the MySQL volume (`docker compose down -v`) or run manual `ALTER TABLE`
+- On boot the API runs pending files in `src/database/migrations/` and records them in `SequelizeMeta`
+- `sequelize.sync` is **not** used
+- npm scripts (from `snippy/backend`):
+
+| Script | Purpose |
+|--------|---------|
+| `npm run db:migrate` | Apply pending migrations (CLI) |
+| `npm run db:migrate:undo` | Undo last migration |
+| `npm run db:migrate:status` | Show migration status |
+| `npm run db:migrate:baseline` | Mark baseline applied **without** creating tables (existing DBs created via old `sync`) |
+
+**Fresh local DB:** `docker compose down -v && docker compose up --build` — migration creates tables.
+
+**Existing DB from sequelize.sync:** run `npm run db:migrate:baseline` once (with `DB_*` env pointing at that database), then restart the API so future migrations apply cleanly.
 
 ### Local vs production Docker
 
 | | Local | Production |
 |---|--------|------------|
 | Compose | [`docker-compose.yml`](../docker-compose.yml) | [`docker-compose.prod.example.yml`](../docker-compose.prod.example.yml) |
-| Backend image | `Dockerfile.dev` + bind mount | `Dockerfile` (compiled `dist/`) |
+| Backend image | `Dockerfile.dev` + bind mount | `Dockerfile` (compiled `dist/` + migration JS) |
 | Frontend | `ng serve` + proxy `/api` | nginx + runtime `env.js` |
+
+### Health checks
+
+```bash
+curl -s http://localhost:3000/health
+# {"status":"ok","minio":false}
+```
 
 ### Known follow-ups (not architectural blockers)
 
-- Introduce Sequelize migrations for safer schema changes
-- Delete MinIO objects when a user account is deleted
-- Copy `externalResources` on fork
-- Optional `/health` endpoint outside JWT for probes
-- Improve MinIO put/delete vs DB ordering for orphan cleanup
-
+- Tighten MinIO put/delete vs DB ordering for orphan cleanup on single-asset delete failures
+- Optional richer readiness probe (DB ping) separate from `/health`
 ---
 
 ## Debugging
+
+### Postman
+
+Import the collection [`snippy-api.postman_collection.json`](./snippy-api.postman_collection.json) into Postman (**Import → File**).
+
+1. Open collection variables and set `accessToken` to a valid Auth0 access token (audience must match `AUTH0_AUDIENCE`).
+2. Optionally set `baseUrl` (default `http://localhost:3000`).
+3. Run folders in order: **Health → Users → Snippets → Comments → Favorites**.
+4. **Resources** only if MinIO is enabled (otherwise expect `503`). Attach a local image on **POST Upload Asset** before sending.
+5. **Destructive** deletes the created snippet(s) and optionally the user — run last.
+
+Test scripts capture `userName`, `snippetId`, `shortId`, `commentId`, `forkSnippetId`, and `assetId` into collection variables for chaining.
 
 ### Swagger
 
@@ -764,6 +944,9 @@ Decode the access token and confirm:
 Replace `$TOKEN` with a valid Auth0 access token.
 
 ```bash
+# Health (no token)
+curl -s http://localhost:3000/health
+
 # Ensure user
 curl -s -X POST http://localhost:3000/api/v1/users \
   -H "Authorization: Bearer $TOKEN" \
@@ -825,7 +1008,8 @@ Logger writes under `src/common/logs/` inside the container/workdir depending on
 | 403 on snippet/profile | Private resource or not owner |
 | 503 on `/resources` | MinIO disabled or connection failed at boot |
 | Empty favorites list | Fixed association mapping; rebuild/restart API if on old image |
-| Schema / missing column errors | Stale MySQL volume after entity changes — recreate volume |
+| Schema / missing column errors | Run migrations / baseline; recreate volume on fresh local DBs |
+| 401 on `/health` | Should not happen — health is registered before JWT |
 
 ---
 

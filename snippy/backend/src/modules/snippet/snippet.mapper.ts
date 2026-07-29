@@ -34,7 +34,11 @@ export class SnippetMapper {
     /**
      * Map snippet entity to list DTO (minimal data for lists)
      */
-    static toListDTO(snippet: Snippets, currentUserId?: string): SnippetListDTO {
+    static toListDTO(
+        snippet: Snippets,
+        currentUserId?: string,
+        favoritedIds?: Set<string>
+    ): SnippetListDTO {
         return {
             snippetId: snippet.snippetId,
             shortId: snippet.shortId,
@@ -47,13 +51,14 @@ export class SnippetMapper {
             favoriteCount: snippet.favoriteCount,
             viewCount: snippet.viewCount,
             isOwner: currentUserId ? AuthorizationService.isOwner(snippet.auth0Id, currentUserId) : false,
+            isFavorited: favoritedIds ? favoritedIds.has(snippet.snippetId) : undefined,
         };
     }
 
     /**
      * Map snippet file to DTO
      */
-    private static fileToDTO(file: SnippetFiles): SnippetFileDTO {
+    static fileToDTO(file: SnippetFiles): SnippetFileDTO {
         return {
             snippetFileID: file.snippetFileID,
             fileType: file.fileType,
@@ -64,7 +69,11 @@ export class SnippetMapper {
     /**
      * Map array of snippets to list DTOs
      */
-    static toListDTOs(snippets: Snippets[], currentUserId?: string): SnippetListDTO[] {
-        return snippets.map(snippet => this.toListDTO(snippet, currentUserId));
+    static toListDTOs(
+        snippets: Snippets[],
+        currentUserId?: string,
+        favoritedIds?: Set<string>
+    ): SnippetListDTO[] {
+        return snippets.map(snippet => this.toListDTO(snippet, currentUserId, favoritedIds));
     }
 }

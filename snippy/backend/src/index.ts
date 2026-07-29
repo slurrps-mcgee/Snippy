@@ -39,8 +39,24 @@ app.use(globalLimiter);
 
 app.use(express.json());
 
-// JWT Middleware to protect all routes
+// Liveness probe — public (no JWT)
+app.get('/health', (_req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    minio: featureFlags.isMinioAvailable,
+  });
+});
+
+// JWT Middleware to protect /api/v1 routes — except public embed HTML
 app.use((req, res, next) => {
+  const isPublicEmbed =
+    req.method === 'GET' &&
+    /^\/api\/v1\/snippets\/[^/]+\/embed\/?$/.test(req.originalUrl.split('?')[0]);
+
+  if (isPublicEmbed) {
+    return next();
+  }
+
   return auth0Check(req as any, res as any, next as any);
 });
 

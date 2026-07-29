@@ -9,7 +9,11 @@ export class UserMapper {
     /**
      * Map user entity to DTO
      */
-    static toDTO(user: Users, includeOwnerFields: boolean = false): UserDTO {
+    static toDTO(
+        user: Users,
+        includeOwnerFields: boolean = false,
+        extras?: { isFollowing?: boolean; followerCount?: number; followingCount?: number }
+    ): UserDTO {
         const dto: UserDTO = {
             userName: user.userName,
             displayName: user.displayName ?? null,
@@ -21,6 +25,16 @@ export class UserMapper {
         if (includeOwnerFields) {
             dto.isAdmin = user.isAdmin;
             dto.isPrivate = user.isPrivate;
+        }
+
+        if (extras?.isFollowing !== undefined) {
+            dto.isFollowing = extras.isFollowing;
+        }
+        if (extras?.followerCount !== undefined) {
+            dto.followerCount = extras.followerCount;
+        }
+        if (extras?.followingCount !== undefined) {
+            dto.followingCount = extras.followingCount;
         }
 
         return dto;

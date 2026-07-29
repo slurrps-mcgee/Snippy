@@ -8,6 +8,11 @@ import { dbConnectionPolicy } from '../common/utilities/resiliance';
 import logger from '../common/utilities/logger';
 import { config } from '../config';
 import { Assets } from '../entities/asset.entity';
+import { SnippetViews } from '../entities/snippetView.entity';
+import { Follows } from '../entities/follow.entity';
+import { Collections } from '../entities/collection.entity';
+import { CollectionSnippets } from '../entities/collectionSnippet.entity';
+import { runMigrations } from './migrate';
 
 // Initialize Sequelize with MySQL configuration
 export const sequelize = new Sequelize({
@@ -21,46 +26,48 @@ export const sequelize = new Sequelize({
 });
 
 // Add models to sequelize after initialization
-sequelize.addModels([Users, Snippets, SnippetFiles, Favorites, Comments, Assets]);
+sequelize.addModels([
+  Users,
+  Snippets,
+  SnippetFiles,
+  Favorites,
+  Comments,
+  Assets,
+  SnippetViews,
+  Follows,
+  Collections,
+  CollectionSnippets,
+]);
 
 // Function to connect to the database with retry logic
 export async function connectDBWithRetry() {
   try {
     await dbConnectionPolicy.execute(async () => {
       logger.info('⏳ Trying DB connection...');
-      await sequelize.authenticate(); // Test the connection
+      await sequelize.authenticate();
       logger.info('✅ Database connected.');
 
       try {
-        await sequelize.sync({
-          force: false,
-          logging: (sql) => logger.debug(`[Sequelize SQL] ${sql}`),
-        }); // Sync models with the database only if tables do not exist
-        logger.info('✅ Models synced.');
-      } catch (syncErr) {
-        const errAny = syncErr as any;
-
-        // Extract common driver-level fields (mysql/mysql2 expose errno, code, sqlMessage, and sql)
+        await runMigrations(sequelize);
+        logger.info('✅ Database migrations complete.');
+      } catch (migrateErr) {
+        const errAny = migrateErr as any;
         const parent = errAny?.parent ?? errAny?.original ?? {};
-        const parentInfo = {
-          message: parent?.message,
-          code: parent?.code,
-          errno: parent?.errno,
-          sqlMessage: parent?.sqlMessage,
-          sqlState: parent?.sqlState,
-          sql: parent?.sql,
-        };
-
         const details = {
           message: errAny?.message,
           stack: errAny?.stack,
-          sql: errAny?.sql ?? parentInfo.sql,
-          parent: parentInfo,
+          sql: errAny?.sql ?? parent?.sql,
+          parent: {
+            message: parent?.message,
+            code: parent?.code,
+            errno: parent?.errno,
+            sqlMessage: parent?.sqlMessage,
+            sqlState: parent?.sqlState,
+            sql: parent?.sql,
+          },
         };
-
-        // Log as a single message so the logger's printf formatter includes it (avoids meta being dropped)
-        logger.error(`❌ sequelize.sync failed: ${JSON.stringify(details, null, 2)}`);
-        throw syncErr;
+        logger.error(`❌ Database migration failed: ${JSON.stringify(details, null, 2)}`);
+        throw migrateErr;
       }
     });
   } catch (error) {

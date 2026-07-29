@@ -1,4 +1,4 @@
-import { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { Favorites } from "../../entities/favorite.entity";
 import { Snippets } from "../../entities/snippet.entity";
 import { Users } from "../../entities/user.entity";
@@ -58,5 +58,25 @@ export async function findFavoriteSnippetByUserAndSnippet(
     transaction?: Transaction
 ): Promise<Favorites | null> {
     return await Favorites.findOne({ where: { auth0Id, snippetId }, transaction });
+}
+
+/** Batch-load which of the given snippet IDs the user has favorited */
+export async function findFavoritedSnippetIds(
+    auth0Id: string,
+    snippetIds: string[],
+    transaction?: Transaction
+): Promise<Set<string>> {
+    if (!snippetIds.length) {
+        return new Set();
+    }
+    const rows = await Favorites.findAll({
+        where: {
+            auth0Id,
+            snippetId: { [Op.in]: snippetIds },
+        },
+        attributes: ['snippetId'],
+        transaction,
+    });
+    return new Set(rows.map((row) => row.snippetId));
 }
 // #endregion

@@ -1,0 +1,1037 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-snippy-api-collection",
+    "name": "Snippy API",
+    "description": "Full Snippy backend collection (`/api/v1` + `/health`).\n\n**Setup:**\n1. Set collection variable `accessToken` to a valid Auth0 access token.\n2. Run folders in order: Health → Users → Snippets → Comments → Favorites → Follows → Collections → Resources.\n3. Embed is public (no JWT). Destructive requests are last.\n\n**Resources** require MinIO (`ENABLE_MINIO=true`); otherwise expect 503.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000" },
+    { "key": "accessToken", "value": "" },
+    { "key": "userName", "value": "testuser" },
+    { "key": "shortId", "value": "" },
+    { "key": "snippetId", "value": "" },
+    { "key": "commentId", "value": "" },
+    { "key": "assetId", "value": "" },
+    { "key": "forkSnippetId", "value": "" },
+    { "key": "forkShortId", "value": "" },
+    { "key": "followUserName", "value": "" },
+    { "key": "collectionId", "value": "" },
+    { "key": "collectionShortId", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has status ok', () => pm.expect(json.status).to.eql('ok'));",
+                  "pm.test('Has minio flag', () => pm.expect(json).to.have.property('minio'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/health",
+            "description": "Public liveness probe — no JWT required."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "POST Ensure User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 201', () => pm.expect([200, 201]).to.include(pm.response.code));",
+                  "const json = pm.response.json();",
+                  "pm.test('success true', () => pm.expect(json.success).to.be.true);",
+                  "if (json.user && json.user.userName) {",
+                  "  pm.collectionVariables.set('userName', json.user.userName);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Tester\",\n  \"pictureUrl\": \"https://example.com/avatar.png\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users",
+            "description": "Creates the DB user from Auth0 JWT `sub`, or returns existing profile. Captures `userName`."
+          }
+        },
+        {
+          "name": "GET Current User (me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has user', () => pm.expect(json.user).to.be.an('object'));",
+                  "if (json.user && json.user.userName) {",
+                  "  pm.collectionVariables.set('userName', json.user.userName);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/users/me"
+          }
+        },
+        {
+          "name": "GET Check Username Available",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has available boolean', () => pm.expect(json).to.have.property('available'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/users/check-username/{{userName}}"
+          }
+        },
+        {
+          "name": "GET User Profile by Username",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 403', () => pm.expect([200, 403]).to.include(pm.response.code));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/users/{{userName}}"
+          }
+        },
+        {
+          "name": "PUT Update User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('success true', () => pm.expect(json.success).to.be.true);",
+                  "if (json.user && json.user.userName) {",
+                  "  pm.collectionVariables.set('userName', json.user.userName);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Postman Tester\",\n  \"bio\": \"API test account\",\n  \"isPrivate\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/users"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Snippets",
+      "item": [
+        {
+          "name": "POST Create Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has snippet', () => pm.expect(json.snippet).to.be.an('object'));",
+                  "if (json.snippet) {",
+                  "  pm.collectionVariables.set('snippetId', json.snippet.snippetId);",
+                  "  pm.collectionVariables.set('shortId', json.snippet.shortId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Hello Pen\",\n  \"description\": \"Created via Postman collection\",\n  \"tags\": [\"postman\", \"demo\"],\n  \"isPrivate\": false,\n  \"snippetFiles\": [\n    {\n      \"fileType\": \"html\",\n      \"content\": \"<h1>Hello from Postman</h1>\\n<p class=\\\"tagline\\\">Snippy API test</p>\"\n    },\n    {\n      \"fileType\": \"css\",\n      \"content\": \"h1 { color: #2563eb; font-family: sans-serif; }\\n.tagline { opacity: 0.8; }\"\n    },\n    {\n      \"fileType\": \"js\",\n      \"content\": \"console.log('Postman pen loaded');\"\n    }\n  ],\n  \"externalResources\": [\n    {\n      \"resourceType\": \"css\",\n      \"url\": \"https://cdn.jsdelivr.net/npm/normalize.css@8.0.1/normalize.css\"\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/snippets",
+            "description": "Creates a public pen with html/css/js + external CSS. Saves `snippetId` and `shortId`."
+          }
+        },
+        {
+          "name": "GET Snippet by ShortId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has snippetFiles', () => pm.expect(json.snippet.snippetFiles).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/snippets/{{shortId}}"
+          }
+        },
+        {
+          "name": "GET My Snippets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has snippets array', () => pm.expect(json.snippets).to.be.an('array'));",
+                  "pm.test('Has totalCount', () => pm.expect(json.totalCount).to.be.a('number'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/snippets/me?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "snippets", "me"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Public Snippets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has snippets', () => pm.expect(pm.response.json().snippets).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/snippets/public?page=1&limit=10&sort=newest",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "snippets", "public"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "sort", "value": "newest" },
+                { "key": "tag", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Feed",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has snippets', () => pm.expect(pm.response.json().snippets).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/snippets/feed?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "snippets", "feed"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            },
+            "description": "Public pens from users you follow."
+          }
+        },
+        {
+          "name": "GET Embed HTML",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('HTML content-type', () => pm.expect(pm.response.headers.get('Content-Type')).to.match(/html/i));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/snippets/{{shortId}}/embed",
+            "description": "Public embed — no JWT. Private pens return 404."
+          }
+        },
+        {
+          "name": "GET User Public Snippets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/snippets/user/{{userName}}?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "snippets", "user", "{{userName}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Search Snippets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has totalCount', () => pm.expect(json).to.have.property('totalCount'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/snippets/search?q=Postman&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "snippets", "search"],
+              "query": [
+                { "key": "q", "value": "Postman" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Updated name', () => pm.expect(pm.response.json().snippet.name).to.include('Updated'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Hello Pen (Updated)\",\n  \"description\": \"Updated via Postman\",\n  \"tags\": [\"postman\", \"demo\", \"updated\"]\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/snippets/{{snippetId}}"
+          }
+        },
+        {
+          "name": "POST Increment View Count",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has viewCount', () => pm.expect(json.viewCount).to.be.a('number'));",
+                  "pm.test('Has counted', () => pm.expect(json.counted).to.be.a('boolean'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/snippets/{{snippetId}}/view",
+            "description": "Returns `{ success, viewCount, counted }`. Owner self-views and repeat views within 24h set counted=false without incrementing."
+          }
+        },
+        {
+          "name": "POST Fork Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has fork', () => pm.expect(json.snippet).to.be.an('object'));",
+                  "if (json.snippet) {",
+                  "  pm.collectionVariables.set('forkSnippetId', json.snippet.snippetId);",
+                  "  pm.collectionVariables.set('forkShortId', json.snippet.shortId);",
+                  "  pm.test('Has parentShortId', () => pm.expect(json.snippet.parentShortId).to.eql(pm.collectionVariables.get('shortId')));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/snippets/fork/{{snippetId}}",
+            "description": "Forks by UUID. Copies files and externalResources. Saves `forkSnippetId`."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Comments",
+      "item": [
+        {
+          "name": "POST Create Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has comment', () => pm.expect(json.comment).to.be.an('object'));",
+                  "if (json.comment && json.comment.commentId) {",
+                  "  pm.collectionVariables.set('commentId', json.comment.commentId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great pen — Postman test comment\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/comments/{{snippetId}}"
+          }
+        },
+        {
+          "name": "GET Comments for Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has comments + totalCount', () => {",
+                  "  pm.expect(json.comments).to.be.an('array');",
+                  "  pm.expect(json.totalCount).to.be.a('number');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/comments/{{snippetId}}?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "comments", "{{snippetId}}"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT Update Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Content updated', () => pm.expect(pm.response.json().comment.content).to.include('updated'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Great pen — Postman test comment (updated)\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/comments/{{commentId}}"
+          }
+        },
+        {
+          "name": "DELETE Comment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204', () => pm.response.to.have.status(204));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/comments/{{commentId}}",
+            "description": "Empty body on 204."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Favorites",
+      "item": [
+        {
+          "name": "GET Is Favorite",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has isFavorited', () => pm.expect(pm.response.json()).to.have.property('isFavorited'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/favorites/{{snippetId}}"
+          }
+        },
+        {
+          "name": "POST Toggle Favorite (add)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "pm.test('Favorited', () => pm.expect(json.isFavorited).to.be.true);",
+                  "pm.test('Has favoriteCount', () => pm.expect(json.favoriteCount).to.be.a('number'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/favorites/{{snippetId}}",
+            "description": "Toggle — first call adds favorite."
+          }
+        },
+        {
+          "name": "GET Favorite Snippets List",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('Has snippets', () => pm.expect(json.snippets).to.be.an('array'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/favorites?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "favorites"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Toggle Favorite (remove)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Unfavorited', () => pm.expect(pm.response.json().isFavorited).to.be.false);"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/favorites/{{snippetId}}",
+            "description": "Second toggle removes the favorite."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Resources (MinIO)",
+      "description": "Requires `ENABLE_MINIO=true` and a successful MinIO connection. Otherwise expect 503.\n\nFor **Upload**, attach a local image file to the `file` form field in Postman before sending.",
+      "item": [
+        {
+          "name": "GET List My Assets",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200 or 503', () => pm.expect([200, 503]).to.include(pm.response.code));",
+                  "if (pm.response.code === 200) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Has assets', () => pm.expect(json.assets).to.be.an('array'));",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/resources?page=1&limit=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "resources"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Upload Asset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201 or 503', () => pm.expect([201, 400, 503]).to.include(pm.response.code));",
+                  "if (pm.response.code === 201) {",
+                  "  const json = pm.response.json();",
+                  "  pm.test('Has url + asset', () => {",
+                  "    pm.expect(json.url).to.be.a('string');",
+                  "    pm.expect(json.asset).to.be.an('object');",
+                  "  });",
+                  "  if (json.asset && json.asset.assetId) {",
+                  "    pm.collectionVariables.set('assetId', json.asset.assetId);",
+                  "  }",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": [],
+                  "description": "Attach a PNG/JPEG/GIF/WebP/SVG ≤ 5MB in Postman before sending."
+                },
+                {
+                  "key": "subFolder",
+                  "type": "text",
+                  "value": "general"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/resources",
+            "description": "multipart/form-data. You must select a file for `file` in the Postman UI."
+          }
+        },
+        {
+          "name": "DELETE Asset",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204, 404, or 503', () => pm.expect([204, 404, 503]).to.include(pm.response.code));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/resources/{{assetId}}",
+            "description": "Requires `assetId` from a successful upload."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Follows",
+      "item": [
+        {
+          "name": "POST Follow User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test('isFollowing true', () => pm.expect(json.isFollowing).to.eql(true));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/users/{{followUserName}}/follow",
+            "description": "Set `followUserName` to another public user."
+          }
+        },
+        {
+          "name": "GET Followers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userName}}/followers?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userName}}", "followers"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET Following",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/users/{{userName}}/following?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "users", "{{userName}}", "following"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "DELETE Unfollow User",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/users/{{followUserName}}/follow"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Collections",
+      "item": [
+        {
+          "name": "POST Create Collection",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "const json = pm.response.json();",
+                  "if (json.collection) {",
+                  "  pm.collectionVariables.set('collectionId', json.collection.collectionId);",
+                  "  pm.collectionVariables.set('collectionShortId', json.collection.shortId);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"My Collection\",\n  \"description\": \"Demo\",\n  \"isPrivate\": false\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/collections"
+          }
+        },
+        {
+          "name": "GET My Collections",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/collections/me?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "v1", "collections", "me"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "POST Add Snippet To Collection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"snippetId\": \"{{snippetId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/api/v1/collections/{{collectionId}}/snippets"
+          }
+        },
+        {
+          "name": "GET Collection By ShortId",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Has collection', () => pm.expect(pm.response.json().collection).to.be.an('object'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/collections/{{collectionShortId}}"
+          }
+        },
+        {
+          "name": "DELETE Snippet From Collection",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/collections/{{collectionId}}/snippets/{{snippetId}}"
+          }
+        },
+        {
+          "name": "DELETE Collection",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/collections/{{collectionId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Destructive",
+      "description": "Run last. Deletes created snippets / optionally the user account.",
+      "item": [
+        {
+          "name": "DELETE Fork Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 or 404', () => pm.expect([204, 404]).to.include(pm.response.code));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/snippets/{{forkSnippetId}}"
+          }
+        },
+        {
+          "name": "DELETE Original Snippet",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 or 404', () => pm.expect([204, 404]).to.include(pm.response.code));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/snippets/{{snippetId}}"
+          }
+        },
+        {
+          "name": "DELETE Current User (account)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 204 or 404', () => pm.expect([204, 404]).to.include(pm.response.code));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": "{{baseUrl}}/api/v1/users",
+            "description": "WARNING: Deletes the Auth0-linked user row and cascaded data. Also best-effort removes MinIO objects. Do not run against a real account you care about."
+          }
+        }
+      ]
+    }
+  ]
+}

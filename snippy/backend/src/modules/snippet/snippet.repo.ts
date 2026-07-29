@@ -1,11 +1,41 @@
-import { Transaction, Sequelize } from "sequelize";
+import { Transaction, Sequelize, Op, WhereOptions, Order } from "sequelize";
 import { Snippets } from "../../entities/snippet.entity";
 import { SnippetFiles } from "../../entities/snippetFile.entity";
 import { Users } from "../../entities/user.entity";
-import { Op } from "sequelize";
+import { SnippetSort } from "./dto/snippet.dto";
+
+export function resolveSnippetOrder(sort?: string): Order {
+    switch (sort) {
+        case 'views':
+            return [['view_count', 'DESC'], ['created_at', 'DESC']];
+        case 'favorites':
+            return [['favorite_count', 'DESC'], ['created_at', 'DESC']];
+        case 'forks':
+            return [['fork_count', 'DESC'], ['created_at', 'DESC']];
+        case 'newest':
+        default:
+            return [['created_at', 'DESC']];
+    }
+}
+
+function buildTagCondition(tag?: string): WhereOptions | undefined {
+    if (!tag?.trim()) {
+        return undefined;
+    }
+    const sanitized = tag.trim().replace(/[%_\\]/g, '\\$&');
+    // Exact tag string somewhere in JSON array serialization, e.g. "demo"
+    return Sequelize.where(
+        Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR'),
+        Op.like,
+        `%"${sanitized}"%`
+    );
+}
+
+function userInclude() {
+    return [{ model: Users, attributes: ['userName', 'displayName'] }];
+}
 
 // #region Snippet CREATE/UPDATE/DELETE
-// Create Snippet
 export async function createSnippet(
     snippetData: Partial<Snippets>,
     transaction?: Transaction
@@ -13,7 +43,7 @@ export async function createSnippet(
     const created = await Snippets.create(snippetData as any, { transaction });
     return created;
 }
-// Create Snippet Files
+
 export async function createSnippetFiles(
     snippetFiles: Partial<SnippetFiles>[],
     transaction?: Transaction
@@ -21,7 +51,7 @@ export async function createSnippetFiles(
     const created = await SnippetFiles.bulkCreate(snippetFiles as any, { transaction });
     return created;
 }
-// Update Snippet
+
 export async function updateSnippet(
     snippetId: string,
     patch: Partial<Snippets>,
@@ -32,18 +62,18 @@ export async function updateSnippet(
         throw new Error('Snippet not found or no changes made');
     }
 }
-// Update SnippetFiles
+
 export async function updateSnippetFiles(
     snippetFileID: string,
     patch: Partial<SnippetFiles>,
     transaction?: Transaction
 ): Promise<void> {
-    const [updated] = await SnippetFiles.update( patch, { where: { snippetFileID }, transaction });
+    const [updated] = await SnippetFiles.update(patch, { where: { snippetFileID }, transaction });
     if (updated === 0) {
         throw new Error('Snippet file not found or no changes made');
     }
 }
-// Delete Snippet will cascade deleting snippetFiles, comments, favorites, etc.
+
 export async function deleteSnippet(
     snippetId: string,
     transaction?: Transaction
@@ -53,7 +83,6 @@ export async function deleteSnippet(
 // #endregion
 
 // #region Snippet READ
-// Find snippet by snippetId
 export async function findBySnippetId(
     snippetId: string,
     transaction?: Transaction
@@ -61,13 +90,12 @@ export async function findBySnippetId(
     try {
         return await Snippets.findByPk(snippetId, {
             include: [
-            SnippetFiles,
-            { model: Users, attributes: ['userName', 'displayName'] }
-        ],
+                SnippetFiles,
+                { model: Users, attributes: ['userName', 'displayName'] }
+            ],
             transaction
         });
     } catch (error) {
-        // If include fails, try without includes for snippetId uniqueness check
         return await Snippets.findOne({
             where: { snippetId },
             transaction
@@ -75,8 +103,6 @@ export async function findBySnippetId(
     }
 }
 
-// #region Snippet READ
-// Find snippet by snippetId
 export async function findByShortId(
     shortId: string,
     transaction?: Transaction
@@ -85,13 +111,12 @@ export async function findByShortId(
         return await Snippets.findOne({
             where: { shortId },
             include: [
-            SnippetFiles,
-            { model: Users, attributes: ['userName', 'displayName'] }
-        ],
+                SnippetFiles,
+                { model: Users, attributes: ['userName', 'displayName'] }
+            ],
             transaction
         });
     } catch (error) {
-        // If include fails, try without includes for shortId uniqueness check
         return await Snippets.findOne({
             where: { shortId },
             transaction
@@ -99,55 +124,53 @@ export async function findByShortId(
     }
 }
 
-// Search snippets by query (name, description, tags)
 export async function searchSnippets(
     query: string,
     offset: number,
     limit: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    sort?: SnippetSort | string,
+    tag?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
-    // Sanitize query to prevent SQL injection
-    // Remove SQL special characters that could be used maliciously
     const sanitizedQuery = query.replace(/[%_\\]/g, '\\$&').trim();
-    
+
     if (!sanitizedQuery) {
-        // Return empty results for empty queries
         return { rows: [], count: 0 };
     }
 
-    // Use LOWER() for case-insensitive search on MySQL
-    // Sequelize doesn't support Op.iLike for MySQL, so we use Op.like with LOWER
     const searchPattern = `%${sanitizedQuery.toLowerCase()}%`;
+    const tagCondition = buildTagCondition(tag);
+
+    const where: WhereOptions = {
+        isPrivate: false,
+        [Op.and]: [
+            {
+                [Op.or]: [
+                    Sequelize.where(
+                        Sequelize.fn('LOWER', Sequelize.col('Snippets.name')),
+                        Op.like,
+                        searchPattern
+                    ),
+                    Sequelize.where(
+                        Sequelize.fn('LOWER', Sequelize.col('Snippets.description')),
+                        Op.like,
+                        searchPattern
+                    ),
+                    Sequelize.where(
+                        Sequelize.fn('LOWER', Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR')),
+                        Op.like,
+                        searchPattern
+                    )
+                ]
+            },
+            ...(tagCondition ? [tagCondition] : []),
+        ]
+    };
 
     return await Snippets.findAndCountAll({
-        where: { 
-            isPrivate: false, // Only search public snippets
-            [Op.or]: [
-                // Case-insensitive search in name
-                Sequelize.where(
-                    Sequelize.fn('LOWER', Sequelize.col('Snippets.name')),
-                    Op.like,
-                    searchPattern
-                ),
-                // Case-insensitive search in description
-                Sequelize.where(
-                    Sequelize.fn('LOWER', Sequelize.col('Snippets.description')),
-                    Op.like,
-                    searchPattern
-                ),
-                // Search in tags array (JSON column)
-                // This checks if any tag contains the search query
-                Sequelize.where(
-                    Sequelize.fn('LOWER', Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR')),
-                    Op.like,
-                    searchPattern
-                )
-            ] 
-        },
-        include: [
-            { model: Users, attributes: ['userName', 'displayName'] }
-        ],
-        order: [['created_at', 'DESC']], // Show newest first
+        where,
+        include: userInclude(),
+        order: resolveSnippetOrder(sort),
         offset,
         limit,
         transaction,
@@ -155,18 +178,23 @@ export async function searchSnippets(
     });
 }
 
-// Get all public snippets
 export async function getAllPublicSnippets(
     offset: number,
     limit: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    sort?: SnippetSort | string,
+    tag?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
+    const tagCondition = buildTagCondition(tag);
+    const where: WhereOptions = {
+        isPrivate: false,
+        ...(tagCondition ? { [Op.and]: [tagCondition] } : {}),
+    };
+
     return await Snippets.findAndCountAll({
-        where: { isPrivate: false },
-        include: [
-            { model: Users, attributes: ['userName', 'displayName'] }
-        ],
-        order: [['created_at', 'DESC']], // Show newest first
+        where,
+        include: userInclude(),
+        order: resolveSnippetOrder(sort),
         offset,
         limit,
         transaction,
@@ -174,7 +202,6 @@ export async function getAllPublicSnippets(
     });
 }
 
-// Get public snippets for a specific user
 export async function getUserPublicSnippets(
     auth0Id: string,
     offset: number,
@@ -183,10 +210,8 @@ export async function getUserPublicSnippets(
 ): Promise<{ rows: Snippets[]; count: number }> {
     return await Snippets.findAndCountAll({
         where: { auth0Id, isPrivate: false },
-        include: [
-            { model: Users, attributes: ['userName', 'displayName'] }
-        ],
-        order: [['created_at', 'DESC']], // Show newest first
+        include: userInclude(),
+        order: [['created_at', 'DESC']],
         offset,
         limit,
         transaction,
@@ -194,7 +219,6 @@ export async function getUserPublicSnippets(
     });
 }
 
-// Get snippets for the current user
 export async function getMySnippets(
     auth0Id: string,
     offset: number,
@@ -203,10 +227,33 @@ export async function getMySnippets(
 ): Promise<{ rows: Snippets[]; count: number }> {
     return await Snippets.findAndCountAll({
         where: { auth0Id },
-        include: [
-            { model: Users, attributes: ['userName', 'displayName'] }
-        ],
-        order: [['created_at', 'DESC']], // Show newest first
+        include: userInclude(),
+        order: [['created_at', 'DESC']],
+        offset,
+        limit,
+        transaction,
+        distinct: true
+    });
+}
+
+export async function getFeedSnippets(
+    followedAuth0Ids: string[],
+    offset: number,
+    limit: number,
+    transaction?: Transaction,
+    sort?: SnippetSort | string
+): Promise<{ rows: Snippets[]; count: number }> {
+    if (!followedAuth0Ids.length) {
+        return { rows: [], count: 0 };
+    }
+
+    return await Snippets.findAndCountAll({
+        where: {
+            isPrivate: false,
+            auth0Id: { [Op.in]: followedAuth0Ids },
+        },
+        include: userInclude(),
+        order: resolveSnippetOrder(sort),
         offset,
         limit,
         transaction,
@@ -264,5 +311,4 @@ export async function decrementSnippetFavoriteCount(
 ): Promise<void> {
     await Snippets.decrement("favoriteCount", { where: { snippetId }, transaction });
 }
-
 // #endregion

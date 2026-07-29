@@ -129,7 +129,16 @@ export async function deleteCommentHandler(payload: ServicePayload<unknown, { co
                 throw new CustomError('Comment not found', 404);
             }
 
-            AuthorizationService.verifyOwnership(comment.auth0Id, auth0Id, 'comment');
+            const snippet = await findBySnippetId(comment.snippetId, t);
+            if (!snippet) {
+                throw new CustomError('Snippet not found', 404);
+            }
+
+            const isCommentAuthor = comment.auth0Id === auth0Id;
+            const isSnippetOwner = snippet.auth0Id === auth0Id;
+            if (!isCommentAuthor && !isSnippetOwner) {
+                throw new CustomError('Forbidden: not comment or snippet owner', 403);
+            }
 
             await deleteComment(commentId, t);
             await decrementSnippetCommentCount(comment.snippetId, t);

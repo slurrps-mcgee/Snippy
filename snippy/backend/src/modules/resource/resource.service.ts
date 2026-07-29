@@ -9,6 +9,7 @@ import { executeInTransaction } from '../../common/utilities/transaction';
 import {
     createAsset,
     deleteAsset,
+    findAllAssetsByUserId,
     findAssetsByUserId,
     findByAssetId,
     findByObjectKey,
@@ -173,4 +174,29 @@ export async function listAssetsHandler(
         assets: rows.map((asset: Assets) => UserMapper.toAssetDTO(asset)),
         totalCount: count,
     };
+}
+
+/**
+ * Best-effort MinIO cleanup for all objects owned by a user.
+ * Does not throw if MinIO is unavailable or individual deletes fail.
+ */
+export async function deleteUserMinioObjects(auth0Id: string): Promise<void> {
+    const assets = await findAllAssetsByUserId(auth0Id);
+
+    if (assets.length === 0) {
+        return;
+    }
+
+    if (!featureFlags.isMinioAvailable) {
+        logger.warn(`MinIO unavailable — skipping object cleanup for ${assets.length} asset(s) of user ${auth0Id}`);
+        return;
+    }
+
+    for (const asset of assets) {
+        try {
+            await minioClient.removeObject(config!.minio.bucket!, asset.objectKey);
+        } catch (err) {
+            logger.error(`Failed to remove MinIO object ${asset.objectKey} for user ${auth0Id}`, err);
+        }
+    }
 }

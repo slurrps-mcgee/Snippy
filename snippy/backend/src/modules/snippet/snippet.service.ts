@@ -1,4 +1,3 @@
-import { sequelize } from "../../database/sequelize";
 import { Snippets } from "../../entities/snippet.entity";
 import { CustomError } from "../../common/exceptions/custom-error";
 import { handleError } from "../../common/utilities/error";
@@ -10,6 +9,8 @@ import { SnippetDTO, SnippetListDTO, CreateSnippetRequest, UpdateSnippetRequest 
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { findByUsername } from "../user/user.repo";
+import { config } from "../../config";
+import { findFavoritedSnippetIds } from "../favorite/favorite.repo";
 import {
     createSnippet,
     createSnippetFiles,
@@ -25,9 +26,27 @@ import {
     getUserPublicSnippets,
     searchSnippets,
     findByShortId,
+    getFeedSnippets,
 } from "./snippet.repo";
+import { findSnippetView, upsertSnippetView } from "./snippetView.repo";
+import { SnippetListQuery } from "./dto/snippet.dto";
+import { Transaction } from "sequelize";
+import { findFollowingIds } from "../follow/follow.repo";
 
-/**
+async function mapSnippetsWithFavorites(
+    rows: Snippets[],
+    auth0Id: string | undefined,
+    transaction?: Transaction,
+    allFavorited = false
+) {
+    if (allFavorited && auth0Id) {
+        return SnippetMapper.toListDTOs(rows, auth0Id, new Set(rows.map((r) => r.snippetId)));
+    }
+    const favoritedIds = auth0Id
+        ? await findFavoritedSnippetIds(auth0Id, rows.map((r) => r.snippetId), transaction)
+        : new Set<string>();
+    return SnippetMapper.toListDTOs(rows, auth0Id, favoritedIds);
+}/**
  * Protected fields that cannot be updated through the updateSnippet endpoint
  * These fields are system-managed and should not be modified by users
  */
@@ -91,7 +110,7 @@ export async function forkSnippetHandler(payload: ServicePayload<unknown, { snip
             }
 
             if (originalSnippet.isPrivate && originalSnippet.auth0Id !== auth0Id) {
-                throw new CustomError("Unauthorized to fork private snippet", 401);
+                throw new CustomError("Forbidden: cannot fork a private snippet", 403);
             }
 
             const forkData = {
@@ -101,6 +120,7 @@ export async function forkSnippetHandler(payload: ServicePayload<unknown, { snip
                 description: originalSnippet.description,
                 tags: originalSnippet.tags,
                 isPrivate: originalSnippet.isPrivate,
+                externalResources: originalSnippet.externalResources ?? [],
                 shortId: ''
             };
 
@@ -192,8 +212,11 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
 export async function updateSnippetViewCountHandler(payload: ServicePayload<unknown, { snippetId: string }>): Promise<ServiceResponse<never>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
-        const snippetId = payload.params?.snippetId;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
 
+        const snippetId = payload.params?.snippetId;
         if (!snippetId) {
             throw new CustomError("Snippet ID required", 400);
         }
@@ -208,11 +231,25 @@ export async function updateSnippetViewCountHandler(payload: ServicePayload<unkn
                 throw new CustomError("Forbidden: private snippet", 403);
             }
 
+            // Owners do not inflate their own view counts
+            if (snippet.auth0Id === auth0Id) {
+                return { viewCount: snippet.viewCount, counted: false };
+            }
+
+            const existingView = await findSnippetView(snippetId, auth0Id, t);
+            const now = new Date();
+            if (
+                existingView &&
+                now.getTime() - new Date(existingView.lastViewedAt).getTime() < config.views.cooldownMs
+            ) {
+                return { viewCount: snippet.viewCount, counted: false };
+            }
+
+            await upsertSnippetView(snippetId, auth0Id, now, t);
             await incrementSnippetViewCount(snippetId, t);
 
             const updatedSnippet = await findBySnippetId(snippetId, t) as Snippets;
-
-            return { viewCount: updatedSnippet.viewCount };
+            return { viewCount: updatedSnippet.viewCount, counted: true };
         });
     } catch (err: any) {
         handleError(err, 'updateSnippetViewCountHandler');
@@ -287,15 +324,19 @@ export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown
     }
 }
 // Get All Public Snippets (Pagination)
-export async function getAllPublicSnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery>): Promise<ServiceResponse<SnippetListDTO>> {
+export async function getAllPublicSnippetsHandler(
+    payload: ServicePayload<unknown, unknown, SnippetListQuery>
+): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const sort = payload.query?.sort;
+        const tag = payload.query?.tag;
 
         return await executeInTransaction(async (t) => {
-            const result = await getAllPublicSnippets(offset, limit, t);
+            const result = await getAllPublicSnippets(offset, limit, t, sort, tag);
             return {
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
             };
         });
@@ -321,9 +362,13 @@ export async function getUserPublicSnippetsHandler(payload: ServicePayload<unkno
                 throw new CustomError("User not found", 404);
             }
 
+            if (user.isPrivate && user.auth0Id !== auth0Id) {
+                throw new CustomError("Forbidden: user profile is private", 403);
+            }
+
             const result = await getUserPublicSnippets(user.auth0Id, offset, limit, t);
             return {
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
             };
         });
@@ -345,7 +390,7 @@ export async function getMySnippetsHandler(payload: ServicePayload<unknown, unkn
         return await executeInTransaction(async (t) => {
             const result = await getMySnippets(auth0Id, offset, limit, t);
             return {
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
             };
         });
@@ -355,19 +400,15 @@ export async function getMySnippetsHandler(payload: ServicePayload<unknown, unkn
 }
 
 // Search Snippets
-export async function searchSnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery & { q?: string; name?: string; description?: string }>): Promise<ServiceResponse<SnippetListDTO>> {
+export async function searchSnippetsHandler(
+    payload: ServicePayload<unknown, unknown, SnippetListQuery>
+): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
 
-        // Handle multiple search parameter formats:
-        // ?q=searchterm (general search)
-        // ?name=searchterm (search by name)
-        // ?description=searchterm (search by description)
         const generalQuery = payload.query?.q || '';
         const nameQuery = payload.query?.name || '';
         const descriptionQuery = payload.query?.description || '';
-
-        // Combine all search terms into a single query string
         const query = generalQuery || nameQuery || descriptionQuery || '';
 
         if (!query.trim()) {
@@ -375,16 +416,117 @@ export async function searchSnippetsHandler(payload: ServicePayload<unknown, unk
         }
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const sort = payload.query?.sort;
+        const tag = payload.query?.tag;
 
         return await executeInTransaction(async (t) => {
-            const result = await searchSnippets(query, offset, limit, t);
+            const result = await searchSnippets(query, offset, limit, t, sort, tag);
             return {
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
             };
         });
     } catch (err: any) {
         handleError(err, 'searchSnippetsHandler');
     }
+}
+
+// Feed: public pens from followed users
+export async function getFeedSnippetsHandler(
+    payload: ServicePayload<unknown, unknown, SnippetListQuery>
+): Promise<ServiceResponse<SnippetListDTO>> {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const sort = payload.query?.sort;
+
+        return await executeInTransaction(async (t) => {
+            const followingIds = await findFollowingIds(auth0Id, t);
+            const result = await getFeedSnippets(followingIds, offset, limit, t, sort);
+            return {
+                snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
+                totalCount: result.count
+            };
+        });
+    } catch (err: any) {
+        handleError(err, 'getFeedSnippetsHandler');
+    }
+}
+
+/** Build a standalone HTML document for public embed (no JWT). */
+export async function getSnippetEmbedHtmlHandler(
+    payload: ServicePayload<unknown, { shortId: string }>
+): Promise<string> {
+    try {
+        const shortId = payload.params?.shortId;
+        if (!shortId) {
+            throw new CustomError("Short ID required", 400);
+        }
+
+        const snippet = await findByShortId(shortId);
+        if (!snippet || snippet.isPrivate) {
+            throw new CustomError("Snippet not found", 404);
+        }
+
+        const files = snippet.snippetFiles || [];
+        const html = files.find((f) => f.fileType === 'html')?.content ?? '';
+        const css = files.find((f) => f.fileType === 'css')?.content ?? '';
+        const js = files.find((f) => f.fileType === 'js')?.content ?? '';
+
+        const externalLinks = (snippet.externalResources || [])
+            .map((r) => {
+                if (r.resourceType === 'css') {
+                    return `<link rel="stylesheet" href="${escapeHtmlAttr(r.url)}">`;
+                }
+                if (r.resourceType === 'js') {
+                    return `<script src="${escapeHtmlAttr(r.url)}"></script>`;
+                }
+                return `<!-- resource: ${escapeHtmlAttr(r.url)} -->`;
+            })
+            .join('\n');
+
+        const title = escapeHtmlText(snippet.name || 'Snippy Embed');
+
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${title}</title>
+${externalLinks}
+<style>
+${css}
+</style>
+</head>
+<body>
+${html}
+<script>
+${js}
+</script>
+</body>
+</html>`;
+    } catch (err: any) {
+        handleError(err, 'getSnippetEmbedHtmlHandler');
+        throw err;
+    }
+}
+
+function escapeHtmlAttr(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/"/g, '&quot;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
+}
+
+function escapeHtmlText(value: string): string {
+    return value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
 }
 //#endregion

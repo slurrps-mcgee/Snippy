@@ -47,3 +47,14 @@ export async function findAssetsByUserId(
         transaction,
     });
 }
+
+export async function findAllAssetsByUserId(
+    auth0Id: string,
+    transaction?: Transaction
+): Promise<Assets[]> {
+    return await Assets.findAll({
+        where: { auth0Id },
+        order: [['created_at', 'DESC']],
+        transaction,
+    });
+}

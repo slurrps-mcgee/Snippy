@@ -84,7 +84,11 @@ export async function getFavoriteSnippetsByUserHandler(
         return await executeInTransaction(async (t) => {
             const result = await findFavoriteSnippetsByUser(auth0Id, offset, limit, t);
             return {
-                snippets: SnippetMapper.toListDTOs(result.rows, auth0Id),
+                snippets: SnippetMapper.toListDTOs(
+                    result.rows,
+                    auth0Id,
+                    new Set(result.rows.map((r) => r.snippetId))
+                ),
                 totalCount: result.count
             };
         });

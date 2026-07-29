@@ -9,7 +9,9 @@ import {
     getSnippetByShortIdHandler,
     updateSnippetHandler,
     updateSnippetViewCountHandler,
-    searchSnippetsHandler
+    searchSnippetsHandler,
+    getFeedSnippetsHandler,
+    getSnippetEmbedHtmlHandler,
 } from "./snippet.service";
 import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validator';
 
@@ -240,6 +242,26 @@ export async function searchSnippets(req: Request, res: Response, next: NextFunc
     }
 }
 
+export async function getFeedSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { snippets, totalCount } = await getFeedSnippetsHandler(req);
+        res.status(200).json({ success: true, snippets, totalCount });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getSnippetEmbed(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const html = await getSnippetEmbedHtmlHandler(req);
+        res.removeHeader('X-Frame-Options');
+        res.setHeader('Content-Security-Policy', "frame-ancestors *");
+        res.type('html').status(200).send(html);
+    } catch (error) {
+        next(error);
+    }
+}
+
 /**
  * @swagger
  * /snippets/{shortId}:
@@ -302,27 +324,28 @@ export async function getUserPublicSnippets(req: Request, res: Response, next: N
 
 /**
  * @swagger
- * /snippets/{shortId}/view:
+ * /snippets/{snippetId}/view:
  *   post:
  *     tags:
  *       - Snippet
- *     summary: Increment view count for a snippet
+ *     summary: Record a unique view for a snippet (owner skipped; 24h cooldown per viewer)
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - name: shortId
+ *       - name: snippetId
  *         in: path
  *         required: true
  *         schema:
  *           type: string
+ *           format: uuid
  *     responses:
  *       '200':
- *         description: View count updated
+ *         description: Current view count; counted indicates whether this request incremented it
  */
 export async function updateSnippetViewCount(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { viewCount } = await updateSnippetViewCountHandler(req);
-        res.status(200).json({ success: true, viewCount });
+        const { viewCount, counted } = await updateSnippetViewCountHandler(req);
+        res.status(200).json({ success: true, viewCount, counted });
     } catch (error) {
         next(error);
     }

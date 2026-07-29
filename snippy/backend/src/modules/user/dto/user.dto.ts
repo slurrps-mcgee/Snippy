@@ -9,6 +9,9 @@ export interface UserDTO {
     pictureUrl: string | null;
     isAdmin?: boolean;
     isPrivate?: boolean;
+    isFollowing?: boolean;
+    followerCount?: number;
+    followingCount?: number;
     assets?: AssetDTO[];
 }
 
