@@ -18,7 +18,16 @@ This repository contains a 3-service application:
 - `api` – Node/TypeScript backend located in `snippy/backend`
 - `frontend` – Angular frontend located in `snippy/frontend`
 
-Docker Compose is used to run all services together and wire environment variables from a root `.env` file.
+Docker Compose is used to run services together and wire environment variables from a root `.env` file.
+
+**Two Docker workflows:**
+
+| | Local development | Production deploy |
+|---|---|---|
+| Compose file | [`docker-compose.yml`](docker-compose.yml) | [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) |
+| Images | Built locally from `Dockerfile.dev` | Pulled from Docker Hub (`kennyl777/snippy-*`) |
+| CI | Not used | [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) |
+| Frontend | `ng serve` on port 4200 (hot reload) | nginx on port 80 |
 
 ## Prerequisites
 
@@ -102,189 +111,54 @@ Notes: Not all of these variables are needed as most have defaults
 
 ## Primary Setup
 
-### Run the full stack using docker compose pulling from dockerhub
+### Run the production stack using pre-built Docker Hub images
 
-Notes: this assumes you are using portainer to setup .env variables. If not you can update to just use a .env file from the options in the [ENV](#env-file) section
+Production images are built and published by GitHub Actions. Deploy them with Portainer or Docker Compose — do **not** use the root `docker-compose.yml` for this (that file is for local development only).
 
-*** Important *** If you are running docker on another computer and want to access it locally only you will need to setup nginx proxy manager to setup a self signed cert as Auth0 requires a secure origin to work and will not work using the IP of the docker container. Follow the below to link to setup [nginx](#nginx-setup) instead of the Primary Setup
+Notes: this assumes you are using Portainer to set up `.env` variables. If not, you can use a `.env` file as described in the [ENV](#env-file) section (rename or copy to `stack.env` for the prod compose file).
 
-### Docker Compose File Example
+*** Important *** If you are running Docker on another computer and want to access it locally only, you will need to set up nginx proxy manager with a self-signed cert — Auth0 requires a secure origin and will not work using the IP of the Docker container. Follow [NGINX Setup](#nginx-setup) instead of this Primary Setup.
 
-```yaml
-version: '3.8'
-services:
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    command: server /data --console-address ":9001"
-    ports:
-      - "32570:9000"
-      - "32571:9001"
-    env_file:
-      - stack.env
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
-    networks:
-      - NPM
-        
-  minio-init:
-    image: kennyl777/snippy-minio:latest
-    container_name: minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    env_file:
-      - stack.env
-    restart: "no"
-    networks:
-      - NPM
+Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your starting point. Copy it into Portainer or run:
 
-  db:
-    image: kennyl777/snippy-db:latest
-    container_name: snippy-db
-    env_file:
-      - stack.env
-    ports:
-      - "${DB_PORT:-3306}:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-    networks:
-      - NPM
-
-  api:
-    image: kennyl777/snippy-api:latest
-    container_name: snippy-api
-    env_file:
-      - stack.env
-    ports:
-      - "${API_PORT:-3000}:3000"
-    depends_on:
-      db:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - NPM
-
-  frontend:
-    image: kennyl777/snippy-frontend:latest
-    container_name: snippy-frontend
-    env_file:
-      - stack.env
-    ports:
-      - "${FRONTEND_PORT:-4200}:80"
-    depends_on:
-      - api
-    restart: unless-stopped
-    networks:
-      - NPM
-
-volumes:
-  mysql-data:
-  minio_data:
-
-networks:
-  NPM:
-    external: true
+```bash
+docker compose -f docker-compose.prod.example.yml up -d
 ```
+
+Key differences from local dev:
+- Services use `kennyl777/snippy-*` images (nginx frontend on port 80, not `ng serve`)
+- Requires external `NPM` network when using nginx proxy manager
+- Environment file is typically named `stack.env`
 
 ## Development Setup
 
-### Run downloaded application locally
+### Run locally with hot reload
 
-Notes: You will need to create a .env file in the root of the folder next to the docker-compost.yml file
+The root [`docker-compose.yml`](docker-compose.yml) is **local development only**. It builds from `Dockerfile.dev`, bind-mounts source code, and runs:
 
-### Minimal Docker Compose File Example
+- **db** — `mysql:8.0` with `init.sh` mounted for easy script edits
+- **api** — `npm run dev` (ts-node-dev) on port 3000
+- **frontend** — `ng serve` on port 4200 with API proxy and runtime `env.js` from `.env`
 
-```yaml
-version: '3.8'
+Create a `.env` file in the repository root (next to `docker-compose.yml`), then start the stack:
 
-services:
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    command: server /data --console-address ":9001"
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    env_file:
-      - ./.env
-    volumes:
-      - minio_data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 5s
-      timeout: 3s
-      retries: 5
+```bash
+docker compose up --build
+```
 
-  minio-init:
-    build: ./snippy/minio
-    container_name: minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    env_file:
-      - ./.env
-    restart: "no"
+Open `http://localhost:4200`. The frontend entrypoint writes `public/env.js` from your `.env` before `ng serve` starts.
 
-  db:
-    image: mysql:8.0
-    container_name: snippy-db
-    env_file:
-      - ./.env
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./snippy/db/init.sh:/docker-entrypoint-initdb.d/init.sh
-    ports:
-      - "3306:3306"
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
+To pick up `.env` changes, restart the frontend container:
 
-  api:
-    container_name: snippy-api
-    build: ./snippy/backend
-    working_dir: /backend
-    volumes:
-      - ./snippy/backend:/backend
-    ports:
-      - "${API_PORT:-3000}:3000"
-    env_file:
-      - ./.env
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    command: npm run dev
+```bash
+docker compose restart frontend
+```
 
-  frontend:
-    container_name: snippy-frontend
-    build: ./snippy/frontend
-    ports:
-      - "${FRONTEND_PORT:-4200}:80"
-    env_file:
-      - ./.env
-    restart: unless-stopped
-    depends_on:
-      - api
+Production images (`Dockerfile`, not `Dockerfile.dev`) are built only by GitHub Actions and pushed to Docker Hub. To smoke-test a prod build locally:
 
-volumes:
-  mysql-data:
-  minio_data:
+```bash
+docker build -f snippy/backend/Dockerfile snippy/backend
+docker build -f snippy/frontend/Dockerfile snippy/frontend
 ```
 
 ## NGINX Setup

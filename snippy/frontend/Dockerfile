@@ -1,5 +1,5 @@
 # Step 1 build the angular application using production config
-FROM node:latest AS build
+FROM node:20 AS build
 
 WORKDIR /app
 
@@ -14,10 +14,10 @@ COPY . .
 RUN npm run build --configuration=production
 
 # Step 2 Use nginx to serve the application
-FROM nginx:latest
+FROM nginx:1.27-alpine
 
 # Install curl for health checks
-RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
+RUN apk add --no-cache curl
 
 COPY ./nginx.minio.conf /etc/nginx/nginx.minio.conf
 COPY ./nginx.nominio.conf /etc/nginx/nginx.nominio.conf

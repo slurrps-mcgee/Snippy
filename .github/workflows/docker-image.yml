@@ -50,6 +50,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: ./snippy/backend
+        file: ./snippy/backend/Dockerfile
         push: true
         tags: |
           kennyl777/snippy-api:${{ env.API_VERSION }}
@@ -59,6 +60,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: ./snippy/db
+        file: ./snippy/db/Dockerfile
         push: true
         tags: |
           kennyl777/snippy-db:${{ env.DB_VERSION }}
@@ -68,6 +70,7 @@ jobs:
       uses: docker/build-push-action@v5
       with:
         context: ./snippy/frontend
+        file: ./snippy/frontend/Dockerfile
         push: true
         tags: |
           kennyl777/snippy-frontend:${{ env.FE_VERSION }}
@@ -76,7 +79,8 @@ jobs:
     - name: Build and push MinIO image
       uses: docker/build-push-action@v5
       with:
-        context: ./snippy/minio # adjust if you have a custom Dockerfile here, else use official
+        context: ./snippy/minio
+        file: ./snippy/minio/Dockerfile
         push: true
         tags: |
           kennyl777/snippy-minio:${{ env.MINIO_VERSION }}

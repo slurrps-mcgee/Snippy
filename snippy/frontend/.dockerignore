@@ -1,0 +1,7 @@
+Dockerfile.dev
+entrypoint.dev.sh
+proxy.conf.json
+public/env.js
+node_modules
+dist
+.angular

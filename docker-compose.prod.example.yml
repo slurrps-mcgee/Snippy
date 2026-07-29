@@ -1,0 +1,89 @@
+# Production deployment example — pull pre-built images from Docker Hub.
+# Built and published by GitHub Actions (.github/workflows/docker-image.yml).
+# Use with Portainer or: docker compose -f docker-compose.prod.example.yml up -d
+
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "32570:9000"
+      - "32571:9001"
+    env_file:
+      - stack.env
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - NPM
+
+  minio-init:
+    image: kennyl777/snippy-minio:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - stack.env
+    restart: "no"
+    networks:
+      - NPM
+
+  db:
+    image: kennyl777/snippy-db:latest
+    container_name: snippy-db
+    env_file:
+      - stack.env
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$MYSQL_ROOT_PASSWORD"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - NPM
+
+  api:
+    image: kennyl777/snippy-api:latest
+    container_name: snippy-api
+    env_file:
+      - stack.env
+    ports:
+      - "${API_PORT:-3000}:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - NPM
+
+  frontend:
+    image: kennyl777/snippy-frontend:latest
+    container_name: snippy-frontend
+    env_file:
+      - stack.env
+    ports:
+      - "${FRONTEND_PORT:-4200}:80"
+    depends_on:
+      - api
+    restart: unless-stopped
+    networks:
+      - NPM
+
+volumes:
+  mysql-data:
+  minio_data:
+
+networks:
+  NPM:
+    external: true

@@ -1,4 +1,5 @@
-version: '3.8'
+# Local development only. Production images are built by GitHub Actions
+# and deployed via Docker Hub (kennyl777/snippy-*).
 
 services:
   # minio:
@@ -46,29 +47,59 @@ services:
       start_period: 10s
 
   api:
-    container_name: snippy-api
-    build: ./snippy/backend
-    working_dir: /backend
+    build:
+      context: ./snippy/backend
+      dockerfile: Dockerfile.dev
+
+    working_dir: /app
+
     volumes:
-      - ./snippy/backend:/backend
+      - ./snippy/backend:/app
+      - /app/node_modules
+
+    command: npm run dev
+
     ports:
       - "${API_PORT:-3000}:3000"
+
     env_file:
       - ./.env
-    restart: unless-stopped
+
     depends_on:
       db:
         condition: service_healthy
-    command: npm run dev
 
   frontend:
-    container_name: snippy-frontend
-    build: ./snippy/frontend
+    build:
+      context: ./snippy/frontend
+      dockerfile: Dockerfile.dev
+
+    working_dir: /app
+
+    volumes:
+      - ./snippy/frontend:/app
+      - /app/node_modules
+
+    entrypoint: ["/entrypoint.dev.sh"]
+    command:
+      - ng
+      - serve
+      - --host
+      - 0.0.0.0
+      - --poll
+      - "1000"
+      - --proxy-config
+      - proxy.conf.json
+
     ports:
-      - "${FRONTEND_PORT:-4200}:80"
+      - "4200:4200"
+
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+
     env_file:
       - ./.env
-    restart: unless-stopped
+
     depends_on:
       - api
 
