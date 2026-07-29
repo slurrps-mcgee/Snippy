@@ -8,6 +8,7 @@ export interface UserDTO {
     bio: string | null;
     pictureUrl: string | null;
     isAdmin?: boolean;
+    isPrivate?: boolean;
     assets?: AssetDTO[];
 }
 
@@ -38,4 +39,5 @@ export interface AssetDTO {
     fileName: string;
     fileType: string;
     url: string;
+    objectKey?: string;
 }

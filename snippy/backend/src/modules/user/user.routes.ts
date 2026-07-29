@@ -6,10 +6,10 @@ const userRouter = express.Router();
 
 // Public read operations - higher limit
 userRouter.get('/check-username/:userName', publicReadLimiter, checkUsername);
-userRouter.get('/:userName', publicReadLimiter, getUserProfile);
 
-// Authenticated read operations
+// Authenticated read — must be before /:userName so "me" is not treated as a username
 userRouter.get('/me', publicReadLimiter, getCurrentUserProfile);
+userRouter.get('/:userName', publicReadLimiter, getUserProfile);
 
 // Authentication endpoint - strictest limit
 userRouter.post('/', authLimiter, ensureUser);

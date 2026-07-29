@@ -1,6 +1,7 @@
 import { Transaction } from "sequelize";
 import { Favorites } from "../../entities/favorite.entity";
 import { Snippets } from "../../entities/snippet.entity";
+import { Users } from "../../entities/user.entity";
 
 // #region Favorite CREATE/DELETE
 // Create Favorite
@@ -32,7 +33,10 @@ export async function findFavoriteSnippetsByUser(
 ): Promise<{ rows: Snippets[]; count: number }> {
     const { rows, count } = await Favorites.findAndCountAll({
         where: { auth0Id },
-        include: [Snippets],
+        include: [{
+            model: Snippets,
+            include: [{ model: Users, attributes: ['userName', 'displayName'] }]
+        }],
         order: [['created_at', 'ASC']],
         offset,
         limit,
@@ -40,10 +44,10 @@ export async function findFavoriteSnippetsByUser(
         distinct: true
     });
 
-    // Extract Snippets from each Favorite
+    // Extract Snippets from each Favorite (BelongsTo association is `snippet`)
     const snippets = rows
-        .map((favorite: any) => favorite.Snippet || favorite.Snippets)
-        .filter((snippet: Snippets | undefined) => snippet !== undefined);
+        .map((favorite) => favorite.snippet)
+        .filter((snippet): snippet is Snippets => snippet !== undefined && snippet !== null);
 
     return { rows: snippets, count };
 }

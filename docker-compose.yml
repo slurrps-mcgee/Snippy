@@ -80,7 +80,7 @@ services:
       - ./snippy/frontend:/app
       - /app/node_modules
 
-    entrypoint: ["/entrypoint.dev.sh"]
+    entrypoint: ["/bin/sh", "/app/entrypoint.dev.sh"]
     command:
       - ng
       - serve

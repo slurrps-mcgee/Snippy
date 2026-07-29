@@ -8,6 +8,11 @@ export interface SnippetFileDTO {
     content: string;
 }
 
+export interface ExternalResource {
+    resourceType: 'css' | 'js' | 'other';
+    url: string;
+}
+
 export interface SnippetDTO {
     snippetId: string;
     shortId: string;
@@ -24,7 +29,7 @@ export interface SnippetDTO {
     userName?: string;
     displayName?: string;
     snippetFiles?: SnippetFileDTO[];
-    externalResources?: string[];
+    externalResources?: ExternalResource[];
 }
 
 export interface SnippetListDTO {
@@ -51,7 +56,7 @@ export interface CreateSnippetRequest {
         fileType: string;
         content: string;
     }>;
-    externalResources?: string[];
+    externalResources?: ExternalResource[];
 }
 
 export interface UpdateSnippetRequest {
@@ -64,5 +69,5 @@ export interface UpdateSnippetRequest {
         fileType: string;
         content: string;
     }>;
-    externalResources?: string[];
+    externalResources?: ExternalResource[];
 }

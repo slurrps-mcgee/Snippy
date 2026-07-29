@@ -10,14 +10,14 @@ const createSnippetSchema = Joi.object({
     isPrivate: Joi.boolean().optional(),
     snippetFiles: Joi.array().optional().items(
         Joi.object({
-            fileType: Joi.string().min(1).max(255).required(),
+            fileType: Joi.string().valid('html', 'css', 'js').required(),
             content: Joi.string().optional().allow(''),
         })
     ),
     externalResources: Joi.array().items(
         Joi.object({
-            resourceType: Joi.string().valid('css', 'js').optional(),
-            url: Joi.string().uri().optional(),
+            resourceType: Joi.string().valid('css', 'js', 'other').required(),
+            url: Joi.string().uri().required(),
         })
     ).optional(),
 });
@@ -60,8 +60,8 @@ const updateSnippetSchema = Joi.object({
     ).optional(),
     externalResources: Joi.array().items(
         Joi.object({
-            resourceType: Joi.string().valid('css', 'js').optional(),
-            url: Joi.string().uri().optional(),
+            resourceType: Joi.string().valid('css', 'js', 'other').required(),
+            url: Joi.string().uri().required(),
         })
     ).optional(),
 });

@@ -26,5 +26,5 @@ export const errorHandler = (
     logger.debug(err.stack); // log stack trace separately at debug level
   }
 
-  res.status(statusCode).json({ error: message });
+  res.status(statusCode).json({ success: false, error: message });
 };

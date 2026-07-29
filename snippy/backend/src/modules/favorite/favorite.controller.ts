@@ -1,39 +1,24 @@
-
 import { NextFunction, Request, Response } from 'express';
 import { validateCreateOrDeleteFavorite } from './favorite.validator';
-import { favoriteHandler, getFavoriteSnippetsByUserHandler } from './favorite.service';
-
-
+import { favoriteHandler, getFavoriteSnippetsByUserHandler, isFavoriteHandler } from './favorite.service';
 
 /**
  * @swagger
- * /favorites:
+ * /favorites/{snippetId}:
  *   post:
- *     summary: Add or DELETE a snippet to user's favorites
+ *     summary: Add or remove a snippet from user's favorites
  *     tags:
  *       - Favorites
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               snippetId:
- *                 type: string
- *                 description: The ID of the snippet to favorite
+ *     parameters:
+ *       - in: path
+ *         name: snippetId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
  *     responses:
  *       201:
- *         description: Favorite added successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 message:
- *                   type: string
+ *         description: Favorite toggled successfully
  *       400:
  *         description: Bad request
  *       401:
@@ -43,9 +28,37 @@ import { favoriteHandler, getFavoriteSnippetsByUserHandler } from './favorite.se
  */
 export async function favorite(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        validateCreateOrDeleteFavorite(req.body);
+        validateCreateOrDeleteFavorite(req.params);
         const { favoriteCount, isFavorited } = await favoriteHandler(req);
         res.status(201).json({ success: true, isFavorited, favoriteCount });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * @swagger
+ * /favorites/{snippetId}:
+ *   get:
+ *     summary: Check if a snippet is favorited by the current user
+ *     tags:
+ *       - Favorites
+ *     parameters:
+ *       - in: path
+ *         name: snippetId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       200:
+ *         description: Favorite status
+ */
+export async function isFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        validateCreateOrDeleteFavorite(req.params);
+        const { isFavorited } = await isFavoriteHandler(req);
+        res.status(200).json({ success: true, isFavorited });
     } catch (error) {
         next(error);
     }
@@ -72,19 +85,6 @@ export async function favorite(req: Request, res: Response, next: NextFunction):
  *     responses:
  *       200:
  *         description: List of favorited snippets
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                 snippets:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/SnippetListDTO'
- *                 totalCount:
- *                   type: integer
  *       401:
  *         description: Authentication required
  */

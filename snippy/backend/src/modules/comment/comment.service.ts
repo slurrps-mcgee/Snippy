@@ -40,6 +40,10 @@ export async function addCommentHandler(payload: ServicePayload<CreateCommentReq
             throw new CustomError('Snippet not found', 404);
         }
 
+        if (snippet.isPrivate && snippet.auth0Id !== auth0Id) {
+            throw new CustomError('Forbidden: cannot comment on a private snippet', 403);
+        }
+
         return await executeInTransaction(async (t) => {
             const createdComment = await createComment(
                 {
@@ -55,7 +59,7 @@ export async function addCommentHandler(payload: ServicePayload<CreateCommentReq
                 throw new CustomError('Failed to retrieve created comment', 500);
             }
 
-            return { comment: CommentMapper.toDTO(newComment) };
+            return { comment: CommentMapper.toDTO(newComment, auth0Id) };
         }, 'addComment');
 
     } catch (error) {
@@ -99,7 +103,7 @@ export async function updateCommentHandler(payload: ServicePayload<UpdateComment
             await updateComment(commentId, patch as any, t);
 
             comment = await findCommentByCommentId(commentId, t);
-            return { comment: CommentMapper.toDTO(comment!) };
+            return { comment: CommentMapper.toDTO(comment!, auth0Id) };
         });
     } catch (error) {
         handleError(error, 'updateComment');
@@ -155,6 +159,10 @@ export async function getCommentsBySnippetIdHandler(payload: ServicePayload<unkn
                 throw new CustomError('Snippet not found', 404);
             }
 
+            if (snippet.isPrivate && snippet.auth0Id !== auth0Id) {
+                throw new CustomError('Forbidden: private snippet', 403);
+            }
+
             const { rows: comments, count } = await findCommentsBySnippetId(
                 snippet.snippetId,
                 offset,
@@ -164,7 +172,7 @@ export async function getCommentsBySnippetIdHandler(payload: ServicePayload<unkn
 
             return { 
                 comments: CommentMapper.toDTOs(comments || [], auth0Id),
-                total: count
+                totalCount: count
             };
         });
     } catch (error) {

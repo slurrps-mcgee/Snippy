@@ -9,7 +9,7 @@ export class UserMapper {
     /**
      * Map user entity to DTO
      */
-    static toDTO(user: Users, includeAdmin: boolean = false): UserDTO {
+    static toDTO(user: Users, includeOwnerFields: boolean = false): UserDTO {
         const dto: UserDTO = {
             userName: user.userName,
             displayName: user.displayName ?? null,
@@ -18,8 +18,9 @@ export class UserMapper {
             assets: user.assets ? user.assets.map(asset => this.toAssetDTO(asset)) : []
         };
 
-        if (includeAdmin) {
+        if (includeOwnerFields) {
             dto.isAdmin = user.isAdmin;
+            dto.isPrivate = user.isPrivate;
         }
 
         return dto;
@@ -28,8 +29,8 @@ export class UserMapper {
     /**
      * Map multiple user entities to DTOs
      */
-    static toDTOs(users: Users[], includeAdmin: boolean = false): UserDTO[] {
-        return users.map(user => this.toDTO(user, includeAdmin));
+    static toDTOs(users: Users[], includeOwnerFields: boolean = false): UserDTO[] {
+        return users.map(user => this.toDTO(user, includeOwnerFields));
     }
 
     static toAssetDTO(asset: Assets): AssetDTO {
@@ -37,7 +38,8 @@ export class UserMapper {
             assetId: asset.assetId,
             fileName: asset.fileName,
             fileType: asset.fileType,
-            url: asset.url
+            url: asset.url,
+            objectKey: asset.objectKey,
         };
     }
 }

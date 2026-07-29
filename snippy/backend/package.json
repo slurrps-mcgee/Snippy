@@ -1,6 +1,6 @@
 {
   "name": "snippy_api",
-  "version": "0.6.8",
+  "version": "0.7.0",
   "main": "./src/index.js",
   "scripts": {
     "start": "node dist/index.js",

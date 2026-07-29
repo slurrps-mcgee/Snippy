@@ -6,11 +6,11 @@ import { CustomError } from '../exceptions/custom-error';
 export class AuthorizationService {
     /**
      * Verify that the current user owns the resource
-     * @throws CustomError with 401 if not authorized
+     * @throws CustomError with 403 if not authorized
      */
     static verifyOwnership(resourceAuth0Id: string, currentAuth0Id: string, resourceType: string = 'resource'): void {
         if (resourceAuth0Id !== currentAuth0Id) {
-            throw new CustomError(`Unauthorized: not ${resourceType} owner`, 401);
+            throw new CustomError(`Forbidden: not ${resourceType} owner`, 403);
         }
     }
 

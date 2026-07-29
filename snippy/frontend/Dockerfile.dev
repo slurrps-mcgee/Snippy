@@ -11,11 +11,10 @@ RUN npm install -g @angular/cli
 
 COPY . .
 
-COPY entrypoint.dev.sh /entrypoint.dev.sh
-RUN chmod +x /entrypoint.dev.sh
+RUN chmod +x /app/entrypoint.dev.sh
 
 EXPOSE 4200
 
-ENTRYPOINT ["/entrypoint.dev.sh"]
+ENTRYPOINT ["/bin/sh", "/app/entrypoint.dev.sh"]
 
 CMD ["ng", "serve", "--host", "0.0.0.0", "--poll", "1000", "--proxy-config", "proxy.conf.json"]

@@ -164,7 +164,7 @@ export class Snippets extends Model<Snippets> {
     allowNull: true,
     defaultValue: [],
   })
-  externalResources!: string[];
+  externalResources!: Array<{ resourceType: 'css' | 'js' | 'other'; url: string }>;
 
   // Relations
   @BelongsTo(() => Users, {

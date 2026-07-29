@@ -22,6 +22,7 @@ const updateUserSchema = Joi.object({
     displayName: Joi.string().max(100).optional(),
     bio: Joi.string().max(500).optional(),
     pictureUrl: Joi.string().uri().optional(),
+    isPrivate: Joi.boolean().optional(),
 });
 
 export const validateUpdateUser = (payload: any): void => {

@@ -70,6 +70,7 @@ export async function findCommentByCommentId(
 ): Promise<Comments | null> {
     return await Comments.findOne({
         where: { commentId },
+        include: [{ model: Users, attributes: ['userName', 'displayName'] }],
         transaction
     });
 }

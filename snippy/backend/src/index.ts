@@ -59,15 +59,18 @@ const startServer = async () => {
 
     if(config.minio.enableMinIO) {
       logger.info('⚠️  MinIO integration enabled - attempting connection...');
-      await connectMinioWithRetry().catch(error => {
-        logger.error('❌ MinIO connection failed:', error);
-        logger.error('MinIO integration is enabled but connection failed - server will start without MinIO functionality');
-        featureFlags.isMinioAvailable = false; // Set global flag to indicate MinIO is not available
-      });
-      featureFlags.isMinioAvailable = true; // Set global flag based on connection result
+      await connectMinioWithRetry()
+        .then(() => {
+          featureFlags.isMinioAvailable = true;
+        })
+        .catch(error => {
+          logger.error('❌ MinIO connection failed:', error);
+          logger.error('MinIO integration is enabled but connection failed - server will start without MinIO functionality');
+          featureFlags.isMinioAvailable = false;
+        });
     } else {
       logger.info('⚠️  MinIO integration disabled - skipping connection');
-      featureFlags.isMinioAvailable = false; // Ensure flag is false if MinIO is disabled
+      featureFlags.isMinioAvailable = false;
     }
     
     // Start the Express server

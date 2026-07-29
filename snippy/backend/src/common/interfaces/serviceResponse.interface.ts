@@ -19,9 +19,12 @@ export interface ServiceResponse<T> {
     
     // Common responses
     totalCount?: number;
+    viewCount?: number;
     message?: string;
 
-    //File upload responses
+    //File upload / asset responses
     url?: string;
     objectName?: string;
+    asset?: T;
+    assets?: T[];
 }

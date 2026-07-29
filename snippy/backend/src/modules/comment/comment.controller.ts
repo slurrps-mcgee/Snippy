@@ -38,7 +38,7 @@ import { validateCreateComment, validateUpdateComment } from './comment.validato
 export async function getComments(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
         const { comments, totalCount } = await getCommentsBySnippetIdHandler(req);
-        res.status(200).json({ success: true, comments, count: totalCount });
+        res.status(200).json({ success: true, comments, totalCount });
     } catch (error) {
         next(error);
     }
@@ -179,8 +179,8 @@ export async function updateComment(req: Request, res: Response, next: NextFunct
  */
 export async function deleteComment(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { message } = await deleteCommentHandler(req);
-        res.status(204).json({ success: true, message });
+        await deleteCommentHandler(req);
+        res.status(204).send();
     } catch (error) {
         next(error);
     }

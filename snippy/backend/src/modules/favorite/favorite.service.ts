@@ -28,16 +28,22 @@ export async function favoriteHandler(
         }
 
         return await executeInTransaction(async (t) => {
-            //find or create favorite
+            const snippet = await findBySnippetId(snippetId, t);
+            if (!snippet) {
+                throw new CustomError('Snippet not found', 404);
+            }
+
+            if (snippet.isPrivate && snippet.auth0Id !== auth0Id) {
+                throw new CustomError('Forbidden: cannot favorite a private snippet', 403);
+            }
+
+            // find or create favorite
             const existingFavorite = await findFavoriteSnippetByUserAndSnippet(auth0Id, snippetId, t);
             if (existingFavorite) {
-                //delete existing favorite to avoid duplicates
                 await deleteFavorite(auth0Id, snippetId, t);
                 isFavorited = false;
                 await decrementSnippetFavoriteCount(snippetId, t);
-            }
-            else {
-                //create new favorite
+            } else {
                 await createFavorite(
                     {
                         auth0Id,
@@ -46,16 +52,13 @@ export async function favoriteHandler(
                     t
                 );
                 isFavorited = true;
-
                 await incrementSnippetFavoriteCount(snippetId, t);
             }
 
-            const snippet = await findBySnippetId(snippetId, t);
-            if (!snippet) {
-                throw new CustomError('Snippet not found', 404);
-            }
+            const updatedSnippet = await findBySnippetId(snippetId, t);
             return {
-                isFavorited, favoriteCount: snippet.favoriteCount
+                isFavorited,
+                favoriteCount: updatedSnippet?.favoriteCount ?? snippet.favoriteCount
             };
         });
 
@@ -87,5 +90,29 @@ export async function getFavoriteSnippetsByUserHandler(
         });
     } catch (error) {
         return handleError(error, 'getFavoriteSnippetsByUser');
+    }
+}
+
+// Check if snippet is favorited by current user
+export async function isFavoriteHandler(
+    payload: ServicePayload<unknown, { snippetId: string }>
+): Promise<ServiceResponse<never>> {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        if (!auth0Id) {
+            throw new CustomError("Authentication required", 401);
+        }
+
+        const snippetId = payload.params?.snippetId;
+        if (!snippetId) {
+            throw new CustomError("Snippet ID required", 400);
+        }
+
+        return await executeInTransaction(async (t) => {
+            const existing = await findFavoriteSnippetByUserAndSnippet(auth0Id, snippetId, t);
+            return { isFavorited: !!existing };
+        });
+    } catch (error) {
+        return handleError(error, 'isFavorite');
     }
 }

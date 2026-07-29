@@ -13,7 +13,7 @@ router.use('/snippets', snippetRouter);
 router.use('/comments', commentRouter);
 router.use('/favorites', favoriteRouter);
 
-// Minio resource routes disabled for now
+// Resource / asset uploads (MinIO) — returns 503 when MinIO is unavailable
 router.use('/resources', resourceRouter);
 
 export default router;

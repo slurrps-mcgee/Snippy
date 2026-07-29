@@ -1,10 +1,11 @@
 import express from 'express';
-import { uploadFile, deleteFile } from './resource.controller';
-import { writeLimiter } from '../../common/middleware/rate-limit.service';
+import { uploadFile, deleteFile, listAssets } from './resource.controller';
+import { publicReadLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
 
 const resourceRouter = express.Router();
 
+resourceRouter.get('/', publicReadLimiter, listAssets);
 resourceRouter.post('/', writeLimiter, uploadFile);
-resourceRouter.delete('/:objectName', writeLimiter, deleteFile);
+resourceRouter.delete('/:assetId', writeLimiter, deleteFile);
 
 export default resourceRouter;

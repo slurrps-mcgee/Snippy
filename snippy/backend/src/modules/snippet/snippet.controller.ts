@@ -321,8 +321,8 @@ export async function getUserPublicSnippets(req: Request, res: Response, next: N
  */
 export async function updateSnippetViewCount(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { snippet } = await updateSnippetViewCountHandler(req);
-        res.status(200).json({ success: true, snippet });
+        const { viewCount } = await updateSnippetViewCountHandler(req);
+        res.status(200).json({ success: true, viewCount });
     } catch (error) {
         next(error);
     }

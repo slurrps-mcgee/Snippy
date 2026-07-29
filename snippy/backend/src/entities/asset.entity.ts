@@ -4,7 +4,6 @@ import {
     Model,
     PrimaryKey,
     DataType,
-    HasMany,
     BelongsTo,
     ForeignKey,
 } from 'sequelize-typescript';
@@ -17,8 +16,8 @@ import { Users } from "./user.entity";
     updatedAt: 'updated_at',
     indexes: [
         {
-            name: 'idx_assets_auth0Id_fileName',
-            fields: ['auth0_id', 'fileName', 'url'],
+            name: 'idx_assets_auth0_object_key',
+            fields: ['auth0_id', 'object_key'],
             unique: true
         },
         {
@@ -45,10 +44,18 @@ export class Assets extends Model<Assets> {
     auth0Id!: string;
 
     @Column({
+        field: 'file_name',
         type: DataType.STRING,
         allowNull: false
     })
     fileName!: string;
+
+    @Column({
+        field: 'object_key',
+        type: DataType.STRING,
+        allowNull: false,
+    })
+    objectKey!: string;
 
     @Column({
         type: DataType.STRING,
@@ -57,6 +64,7 @@ export class Assets extends Model<Assets> {
     url!: string;
 
     @Column({
+        field: 'file_type',
         type: DataType.STRING,
         allowNull: false,
     })

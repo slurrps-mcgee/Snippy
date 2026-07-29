@@ -142,14 +142,9 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
         }
 
         return await executeInTransaction(async (t) => {
-            console.log('Fetching snippet for update:', snippetId);
-
             let snippet = await findBySnippetId(snippetId, t);
 
-            console.log(snippet)
-
             if (!snippet) {
-                console.log('Snippet not found');
                 throw new CustomError("Snippet not found", 404);
             }
 
@@ -194,7 +189,7 @@ export async function updateSnippetHandler(payload: ServicePayload<UpdateSnippet
 }
 
 // Update Snippet View Count
-export async function updateSnippetViewCountHandler(payload: ServicePayload<unknown, { snippetId: string }>): Promise<ServiceResponse<SnippetDTO>> {
+export async function updateSnippetViewCountHandler(payload: ServicePayload<unknown, { snippetId: string }>): Promise<ServiceResponse<never>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         const snippetId = payload.params?.snippetId;
@@ -204,11 +199,20 @@ export async function updateSnippetViewCountHandler(payload: ServicePayload<unkn
         }
 
         return await executeInTransaction(async (t) => {
+            const snippet = await findBySnippetId(snippetId, t);
+            if (!snippet) {
+                throw new CustomError("Snippet not found", 404);
+            }
+
+            if (snippet.isPrivate && snippet.auth0Id !== auth0Id) {
+                throw new CustomError("Forbidden: private snippet", 403);
+            }
+
             await incrementSnippetViewCount(snippetId, t);
 
             const updatedSnippet = await findBySnippetId(snippetId, t) as Snippets;
 
-            return { snippet: SnippetMapper.toDTO(updatedSnippet, auth0Id) };
+            return { viewCount: updatedSnippet.viewCount };
         });
     } catch (err: any) {
         handleError(err, 'updateSnippetViewCountHandler');
@@ -238,7 +242,10 @@ export async function deleteSnippetHandler(payload: ServicePayload<unknown, { sn
             AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
 
             if (snippet.parentShortId) {
-                await decrementSnippetForkCount(snippet.parentShortId, t);
+                const parent = await findByShortId(snippet.parentShortId, t);
+                if (parent) {
+                    await decrementSnippetForkCount(parent.snippetId, t);
+                }
             }
 
             await deleteSnippet(snippetId, t);
@@ -270,7 +277,7 @@ export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown
             }
 
             if (snippet.auth0Id !== auth0Id && snippet.isPrivate) {
-                throw new CustomError("Unauthorized", 401);
+                throw new CustomError("Forbidden: private snippet", 403);
             }
 
             return { snippet: SnippetMapper.toDTO(snippet, auth0Id) };
@@ -364,7 +371,7 @@ export async function searchSnippetsHandler(payload: ServicePayload<unknown, unk
         const query = generalQuery || nameQuery || descriptionQuery || '';
 
         if (!query.trim()) {
-            return { snippets: [] };
+            return { snippets: [], totalCount: 0 };
         }
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});

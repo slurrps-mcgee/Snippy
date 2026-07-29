@@ -1,1280 +1,834 @@
 # Snippy Backend Architecture & API Documentation
 
 ## Table of Contents
+
 1. [Overview](#overview)
 2. [Tech Stack](#tech-stack)
 3. [Architecture Layers](#architecture-layers)
-4. [Database Schema](#database-schema)
-5. [API Endpoints Quick Reference](#api-endpoints-quick-reference)
-6. [Detailed API Endpoints](#detailed-api-endpoints)
-7. [Authentication & Authorization](#authentication--authorization)
-8. [Middleware](#middleware)
-9. [Error Handling](#error-handling)
-10. [Data Access Layer](#data-access-layer)
-11. [Service Layer](#service-layer)
-12. [Request/Response Flow](#requestresponse-flow)
-13. [Best Practices](#best-practices)
-14. [Debugging Tips](#debugging-tips)
+4. [Startup Workflow](#startup-workflow)
+5. [Database Schema](#database-schema)
+6. [Authentication & Authorization](#authentication--authorization)
+7. [Middleware](#middleware)
+8. [Common Response Shapes](#common-response-shapes)
+9. [Pagination](#pagination)
+10. [API Quick Reference](#api-quick-reference)
+11. [Detailed API Endpoints](#detailed-api-endpoints)
+12. [End-to-End Workflows](#end-to-end-workflows)
+13. [Environment Variables](#environment-variables)
+14. [Operational Notes](#operational-notes)
+15. [Debugging](#debugging)
 
 ---
 
 ## Overview
 
-The Snippy backend is a Node.js/Express REST API built with TypeScript that provides snippet management, user profiles, favorites, and comments. It uses Sequelize ORM for database operations, Auth0 for authentication, and follows a layered architecture pattern.
+The Snippy backend is a Node.js / Express REST API that powers a CodePen-like product: users authenticate with Auth0, create HTML/CSS/JS snippets, fork and favorite pens, comment, and optionally upload image assets to MinIO for use as URLs inside snippet HTML/CSS.
 
-**Key Features:**
-- User authentication via Auth0
-- Create, read, update, delete snippets
-- Fork snippets with parent tracking
-- Comment on snippets
-- Favorite snippets
-- Search snippets by name/description
-- Track snippet views
-- Public/private snippet management
-- Admin functionality (pending)
+**Base URL:** `/api/v1`
+
+**Modules:**
+
+| Module | Mount | Responsibility |
+|--------|-------|----------------|
+| User | `/users` | Ensure/create profile, update, delete, username check |
+| Snippet | `/snippets` | CRUD, fork, search, views, public/private |
+| Comment | `/comments` | CRUD on snippet comments |
+| Favorite | `/favorites` | List, status check, toggle |
+| Resource | `/resources` | MinIO asset list / upload / delete |
+
+**Deployment:**
+
+- **Local development:** root [`docker-compose.yml`](../docker-compose.yml) builds `snippy/backend/Dockerfile.dev` with hot reload (`npm run dev`)
+- **Production images:** GitHub Actions builds `snippy/backend/Dockerfile` and pushes to Docker Hub (`kennyl777/snippy-api`)
 
 ---
 
 ## Tech Stack
 
-- **Runtime:** Node.js
-- **Framework:** Express.js
-- **Language:** TypeScript
-- **Database:** MySQL with Sequelize ORM
-- **Authentication:** Auth0 (JWT bearer tokens)
-- **Validation:** Custom validators
-- **Documentation:** Swagger/OpenAPI
-- **Storage:** MinIO (disabled, for future file uploads)
-- **Logging:** Custom logger with Winston/Pino pattern
-- **Security:** Helmet, CORS, rate limiting
+| Concern | Choice |
+|---------|--------|
+| Runtime | Node.js 20 |
+| Framework | Express 5 |
+| Language | TypeScript |
+| ORM / DB | Sequelize-TypeScript + MySQL 8 |
+| Auth | Auth0 JWT via `express-oauth2-jwt-bearer` (RS256) |
+| Validation | Joi + DOMPurify sanitization |
+| Object storage | MinIO (optional, feature-flagged) |
+| Uploads | Multer (memory storage) |
+| Security | Helmet, CORS, express-rate-limit |
+| Logging | Winston-based custom logger |
+| API docs (dev) | Swagger UI at `/api-docs` (non-production) |
 
 ---
 
 ## Architecture Layers
 
-### Layer Structure
-
 ```
-Request → Middleware → Controller → Service → Repository → Database
-  ↓         (Auth0)   (Validation) (Logic)   (SQL/Queries)
-  ↓         (Logging)
-  ↓
-Response ← Middleware ← Controller ← Service ← Repository
-(Serialized) (Error Handler) (DTO Mapping) (Transactions)
+Client
+  → Middleware (cookie, helmet, CORS, rate limit, Auth0 JWT, JSON body)
+  → /api/v1 router
+  → Module router + per-route limiter
+  → Controller (Joi validate)
+  → Service (business rules, ownership, transactions)
+  → Repository (Sequelize queries)
+  → Entity / MySQL
+  ← Mapper → DTO JSON { success: true, ... }
+  ← Error handler { success: false, error }
 ```
 
-### Responsibility Breakdown
+### Responsibility breakdown
 
-**Controller Layer** (`modules/*/_.controller.ts`)
-- Receives HTTP requests
-- Validates input using validators
-- Calls service handlers
-- Serializes response (DTO mapping)
-- Catches and forwards errors to global error handler
+| Layer | Location | Role |
+|-------|----------|------|
+| Routes | `modules/*/*.routes.ts` | HTTP method/path + rate limiter |
+| Controller | `modules/*/*.controller.ts` | Validate input, call service, send JSON status |
+| Validator | `modules/*/*.validator.ts` | Joi schemas + sanitize user text |
+| Service | `modules/*/*.service.ts` | AuthZ, privacy, orchestration, transactions |
+| Repository | `modules/*/*.repo.ts` | Sequelize CRUD / queries |
+| Mapper | `modules/*/*.mapper.ts` | Entity → DTO |
+| Entity | `entities/*.entity.ts` | Table definitions and associations |
+| Common | `common/` | Auth, errors, pagination, rate limit, logger |
 
-**Service Layer** (`modules/*/_.service.ts`)
-- Business logic (authorization, calculations)
-- Orchestrates repository calls
-- Manages database transactions
-- Maps entities to DTOs for API responses
-- Throws CustomError for error handling
+**Do not leak Sequelize entities to clients.** Always return mapped DTOs.
 
-**Repository Layer** (`modules/*/_.repo.ts`)
-- Direct database access using Sequelize
-- CRUD operations
-- Query building
-- Respects database constraints
+---
 
-**Entity Layer** (`entities/*.entity.ts`)
-- Sequelize model definitions
-- Column types and constraints
-- Relationships (hasMany, belongsTo)
-- Hooks (beforeCreate, etc.)
+## Startup Workflow
+
+Source: [`snippy/backend/src/index.ts`](../snippy/backend/src/index.ts)
+
+1. `validateConfig()` — requires `AUTH0_DOMAIN` and `DB_PASS`
+2. Create Express app (`trust proxy = 1`)
+3. Mount middleware stack (see [Middleware](#middleware))
+4. Mount `/api/v1` routes
+5. Mount global error handler
+6. Connect MySQL + `sequelize.sync({ force: false })` — **required**; failure exits process
+7. If `ENABLE_MINIO=true`, attempt MinIO connect/bucket check and set `featureFlags.isMinioAvailable`
+8. Listen on `PORT` (default `3000`)
+
+MinIO failure does **not** stop the API. Resource endpoints return **503** when MinIO is unavailable.
 
 ---
 
 ## Database Schema
 
-### Entity Relationships
+Schema is defined by Sequelize entities and applied with `sequelize.sync({ force: false })`. There is no migration framework yet. [`snippy/db/init.sh`](../snippy/db/init.sh) only creates the database/user grants.
+
+### Entity relationships
 
 ```
-Users (1) ──────────── (Many) Snippets
-  │                       │
-  ├── Snippets           ├── SnippetFiles
-  ├── Favorites          ├── Favorites
-  └── Comments           └── Comments
+Users (PK: auth0_id)
+  ├── HasMany Snippets
+  ├── HasMany Comments
+  ├── HasMany Favorites
+  └── HasMany Assets
 
-Users (Many) ←────────→ (Many) Favorites ←────────→ (Many) Snippets
-                        (Join Table)
+Snippets (PK: snippet_id UUID; unique short_id 7 chars)
+  ├── BelongsTo Users (auth0_id, CASCADE)
+  ├── BelongsTo parent Snippet via parent_snippet_short_id → short_id (no DB FK)
+  ├── HasMany SnippetFiles (unique snippet_id + file_type)
+  ├── HasMany Comments
+  └── HasMany Favorites
 
-Users (Many) ──→ Comments ←─ (Many) Snippets
+SnippetFiles — html | css | js content per snippet
+Comments    — BelongsTo Users + Snippets
+Favorites   — unique (auth0_id, snippet_id)
+Assets      — BelongsTo Users; unique (auth0_id, object_key)
 ```
 
-### Entities
+### Entity field highlights
 
 #### Users
 
-**Purpose:** Store user profiles linked to Auth0 identities
-
-```typescript
-Users {
-  auth0Id: string (PK)        // Auth0 unique ID
-  userName: string (UNIQUE)   // Username for profile URL
-  displayName: string         // User's display name
-  email: string              // Email address
-  picture: string            // Profile picture URL
-  bio: string                // User bio/description
-  createdAt: timestamp       // Account creation time
-  updatedAt: timestamp       // Last update time
-  
-  Relationships:
-  - HasMany Snippets (auth0Id)
-  - HasMany Favorites (auth0Id)
-  - HasMany Comments (auth0Id)
-  
-  Indexes:
-  - idx_users_username (for profile lookups)
-  - idx_users_display_name (for display)
-}
-```
+| Field | Notes |
+|-------|--------|
+| `auth0Id` | PK = Auth0 JWT `sub` |
+| `userName` | Unique; auto-generated on create if needed |
+| `displayName`, `bio`, `pictureUrl` | Profile |
+| `isAdmin` | First registered user becomes admin |
+| `isPrivate` | Private profiles return 403 to non-owners |
 
 #### Snippets
 
-**Purpose:** Store code snippets with metadata
-
-```typescript
-Snippets {
-  snippetId: UUID (PK)          // Unique snippet ID
-  auth0Id: string (FK→Users)    // Owner of snippet
-  shortId: string (UNIQUE)      // Short URL identifier (auto-generated)
-  name: string                  // Snippet title
-  description: string           // Snippet description
-  tags: string[]               // Search tags
-  isPrivate: boolean           // Visibility setting
-  parentShortId: string        // Parent snippet if forked
-  viewCount: number            // Times viewed
-  forkCount: number            // Number of forks
-  favoriteCount: number        // Number of favorites
-  commentCount: number         // Number of comments
-  externalResources: object    // CDN scripts/stylesheets
-  createdAt: timestamp
-  updatedAt: timestamp
-  
-  Relationships:
-  - BelongsTo User (auth0Id)
-  - HasMany SnippetFiles (snippetId)
-  - HasMany Favorites (snippetId)
-  - HasMany Comments (snippetId)
-  
-  Indexes:
-  - idx_snippets_auth0 (finding user's snippets)
-  - idx_snippets_short_id (URL lookups)
-  - idx_snippets_parent (finding forks)
-  - idx_snippets_auth0_private (user's private snippets)
-  - idx_snippets_view_count (trending)
-  - idx_snippets_name_search (search)
-  - idx_snippets_description_search (search)
-}
-```
+| Field | Notes |
+|-------|--------|
+| `snippetId` | UUID — used for update/delete/fork/view/favorites/comments |
+| `shortId` | 7-char public id — used for GET by shortId |
+| `parentShortId` | Fork parent link |
+| `isPrivate` | Owner-only for non-owners |
+| Counters | `viewCount`, `forkCount`, `favoriteCount`, `commentCount` (denormalized) |
+| `tags` | JSON string array |
+| `externalResources` | JSON array of `{ resourceType: 'css'\|'js'\|'other', url }` |
 
 #### SnippetFiles
 
-**Purpose:** Store individual code files within a snippet
+| Field | Notes |
+|-------|--------|
+| `fileType` | ENUM `html` \| `css` \| `js` |
+| `content` | Source text (not HTML-sanitized) |
 
-```typescript
-SnippetFiles {
-  snippetFileID: UUID (PK)      // Unique file ID
-  snippetId: UUID (FK)          // Parent snippet
-  fileType: string              // 'html' | 'css' | 'javascript'
-  content: longtext             // Code content
-  createdAt: timestamp
-  updatedAt: timestamp
-  
-  Relationships:
-  - BelongsTo Snippet (snippetId)
-}
-```
+#### Assets (MinIO metadata)
 
-#### Favorites
+| Field | Notes |
+|-------|--------|
+| `assetId` | UUID — delete by this id |
+| `objectKey` | Unencoded MinIO key (`{auth0Sub}/{subFolder}/{fileName}`) |
+| `url` | Public path `/content/{urlencodedObjectKey}` |
+| `fileName`, `fileType` | Original name + MIME |
 
-**Purpose:** Join table linking users to favorite snippets
-
-```typescript
-Favorites {
-  favoriteId: UUID (PK)         // Unique favorite record
-  auth0Id: string (FK→Users)    // User who favorited
-  snippetId: UUID (FK→Snippets) // Favorited snippet
-  createdAt: timestamp
-  
-  Relationships:
-  - BelongsTo User (auth0Id)
-  - BelongsTo Snippet (snippetId)
-  
-  Constraints:
-  - Unique on (auth0Id, snippetId)
-}
-```
-
-#### Comments
-
-**Purpose:** Store comments on snippets
-
-```typescript
-Comments {
-  commentId: UUID (PK)          // Unique comment ID
-  auth0Id: string (FK→Users)    // Comment author
-  snippetId: UUID (FK→Snippets) // Commented snippet
-  content: text                 // Comment text
-  createdAt: timestamp
-  updatedAt: timestamp
-  
-  Relationships:
-  - BelongsTo User (auth0Id)
-  - BelongsTo Snippet (snippetId)
-}
-```
-
----
-
-## API Endpoints Quick Reference
-
-### All Endpoints at a Glance
-
-| Method | Endpoint | Auth | Description |
-|--------|----------|------|-------------|
-| **SNIPPET ENDPOINTS** |
-| POST | `/api/v1/snippets` | ✓ | Create new snippet |
-| GET | `/api/v1/snippets/:shortId` | ○ | Get snippet by short ID |
-| PUT | `/api/v1/snippets/:shortId` | ✓ | Update snippet (owner only) |
-| DELETE | `/api/v1/snippets/:shortId` | ✓ | Delete snippet (owner only) |
-| POST | `/api/v1/snippets/:snippetId/fork` | ✓ | Fork a snippet |
-| GET | `/api/v1/snippets/my-snippets` | ✓ | Get user's snippets (paginated) |
-| GET | `/api/v1/snippets/user/:userName` | ○ | Get user's public snippets |
-| GET | `/api/v1/snippets` | ○ | Get all public snippets (paginated) |
-| GET | `/api/v1/snippets/search` | ○ | Search snippets by query |
-| POST | `/api/v1/snippets/:snippetId/view` | ○ | Increment view count |
-| **FAVORITE ENDPOINTS** |
-| POST | `/api/v1/favorites` | ✓ | Add snippet to favorites |
-| DELETE | `/api/v1/favorites/:snippetId` | ✓ | Remove from favorites |
-| GET | `/api/v1/favorites/my-favorites` | ✓ | Get user's favorites (paginated) |
-| **COMMENT ENDPOINTS** |
-| POST | `/api/v1/comments` | ✓ | Create comment on snippet |
-| DELETE | `/api/v1/comments/:commentId` | ✓ | Delete comment (author only) |
-| GET | `/api/v1/comments/snippet/:snippetId` | ○ | Get snippet's comments (paginated) |
-| **USER ENDPOINTS** |
-| GET | `/api/v1/users/:userName` | ○ | Get user profile |
-| GET | `/api/v1/users/me` | ✓ | Get current user profile |
-| PUT | `/api/v1/users/me` | ✓ | Update current user profile |
-
-**Legend:**
-- ✓ = Authentication required (Bearer token)
-- ○ = Optional / Public
-
-### Query Parameters
-
-**Pagination (for GET endpoints returning lists):**
-```
-?page=1           // Page number (default: 1)
-&limit=10         // Items per page (default: 10)
-&sort=created_at:DESC  // Sort field and direction
-```
-
-**Search:**
-```
-?query=react      // Search term (searches name and description)
-```
-
----
-
-## Detailed API Endpoints
-
-### Snippet Endpoints
-
-#### Create Snippet
-```
-POST /api/v1/snippets
-Auth: Required (Bearer Token)
-Body: CreateSnippetRequest
-├── name: string
-├── description: string
-├── tags: string[]
-├── isPrivate: boolean
-├── externalResources: object
-└── snippetFiles: SnippetFile[]
-    ├── fileType: 'html'|'css'|'js'
-    └── content: string
-
-Response: 201 Created
-{
-  success: true,
-  snippet: SnippetDTO
-}
-```
-
-#### Get Snippet by Short ID
-```
-GET /api/v1/snippets/:shortId
-Auth: Optional (public for non-private)
-Response: 200 OK
-{
-  success: true,
-  snippet: SnippetDTO
-}
-```
-
-#### Update Snippet
-```
-PUT /api/v1/snippets/:shortId
-Auth: Required (owner only)
-Body: UpdateSnippetRequest
-├── name: string (optional)
-├── description: string (optional)
-├── tags: string[] (optional)
-├── isPrivate: boolean (optional)
-└── snippetFiles: SnippetFile[] (optional)
-
-Protected Fields (cannot be updated):
-- snippetId, auth0Id, shortId, parentShortId
-
-Response: 200 OK
-{
-  success: true,
-  snippet: SnippetDTO
-}
-```
-
-#### Delete Snippet
-```
-DELETE /api/v1/snippets/:shortId
-Auth: Required (owner only)
-Response: 204 No Content
-  or 200 OK { success: true }
-```
-
-#### Fork Snippet
-```
-POST /api/v1/snippets/:snippetId/fork
-Auth: Required
-Response: 201 Created
-{
-  success: true,
-  snippet: SnippetDTO (with parentShortId set)
-}
-```
-
-#### Get My Snippets (Paginated)
-```
-GET /api/v1/snippets/my-snippets?page=1&limit=10&sort=created_at:DESC
-Auth: Required
-Response: 200 OK
-{
-  success: true,
-  snippets: SnippetDTO[],
-  pagination: {
-    total: number,
-    page: number,
-    limit: number,
-    pages: number
-  }
-}
-```
-
-#### Get User's Public Snippets
-```
-GET /api/v1/snippets/user/:userName?page=1&limit=10
-Auth: Optional
-Response: 200 OK
-{
-  success: true,
-  snippets: SnippetDTO[],
-  pagination: PaginationMeta
-}
-```
-
-#### Get All Public Snippets
-```
-GET /api/v1/snippets?page=1&limit=10&sort=created_at:DESC
-Auth: Optional
-Response: 200 OK
-{
-  success: true,
-  snippets: SnippetDTO[],
-  pagination: PaginationMeta
-}
-```
-
-#### Search Snippets
-```
-GET /api/v1/snippets/search?query=react&page=1&limit=10
-Auth: Optional
-Response: 200 OK
-{
-  success: true,
-  snippets: SnippetDTO[],
-  pagination: PaginationMeta
-}
-```
-
-#### Increment View Count
-```
-POST /api/v1/snippets/:snippetId/view
-Auth: Optional
-Response: 200 OK
-{
-  success: true
-}
-```
-
-### Favorite Endpoints
-
-#### Add Favorite
-```
-POST /api/v1/favorites
-Auth: Required
-Body:
-{
-  snippetId: string
-}
-Response: 201 Created
-{
-  success: true,
-  favorite: FavoriteDTO
-}
-```
-
-#### Remove Favorite
-```
-DELETE /api/v1/favorites/:snippetId
-Auth: Required
-Response: 204 No Content
-```
-
-#### Get User's Favorites
-```
-GET /api/v1/favorites/my-favorites?page=1&limit=10
-Auth: Required
-Response: 200 OK
-{
-  success: true,
-  favorites: FavoriteDTO[],
-  pagination: PaginationMeta
-}
-```
-
-### Comment Endpoints
-
-#### Create Comment
-```
-POST /api/v1/comments
-Auth: Required
-Body:
-{
-  snippetId: string,
-  content: string
-}
-Response: 201 Created
-{
-  success: true,
-  comment: CommentDTO
-}
-```
-
-#### Delete Comment
-```
-DELETE /api/v1/comments/:commentId
-Auth: Required (author only)
-Response: 204 No Content
-```
-
-#### Get Snippet's Comments
-```
-GET /api/v1/comments/snippet/:snippetId?page=1&limit=20
-Auth: Optional
-Response: 200 OK
-{
-  success: true,
-  comments: CommentDTO[],
-  pagination: PaginationMeta
-}
-```
-
-### User Endpoints
-
-#### Get User Profile
-```
-GET /api/v1/users/:userName
-Auth: Optional
-Response: 200 OK
-{
-  success: true,
-  user: UserDTO
-}
-```
-
-#### Get Current User Profile
-```
-GET /api/v1/users/me
-Auth: Required
-Response: 200 OK
-{
-  success: true,
-  user: UserDTO
-}
-```
-
-#### Update User Profile
-```
-PUT /api/v1/users/me
-Auth: Required
-Body: Partial<UserDTO>
-├── displayName: string (optional)
-├── bio: string (optional)
-└── picture: string (optional)
-
-Protected Fields (cannot be updated):
-- auth0Id, userName, email
-
-Response: 200 OK
-{
-  success: true,
-  user: UserDTO
-}
-```
+Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed asset URLs in HTML/CSS content.
 
 ---
 
 ## Authentication & Authorization
 
-### Auth0 Integration
+### Auth0 JWT (global)
 
-**Flow:**
+Every request under `/api/v1` requires a valid Bearer token:
+
 ```
-Frontend (Angular)
-    ↓ (requests access token)
-Auth0
-    ↓ (returns JWT token)
-Frontend
-    ↓ (includes token in Authorization header)
-Backend
-    ↓ (auth0Check middleware)
-Extract & Validate Token
-    ↓
-Attach decoded payload to req.auth
-    ↓
-Continue to route handler
+Authorization: Bearer <access_token>
 ```
 
-### Auth0 Middleware
+Configured in `common/middleware/auth0.service.ts`:
 
-**File:** `src/common/middleware/auth0.service.ts`
+- Audience: `AUTH0_AUDIENCE` (default `http://localhost:3000`)
+- Issuer: `https://${AUTH0_DOMAIN}/`
+- Algorithm: RS256
 
-```typescript
-auth0Check(req, res, next):
-├── Get token from Authorization header
-├── Verify JWT signature using Auth0 JWKS
-├── Extract sub (Auth0 ID) from decoded token
-└── Attach to req.auth = { payload: { sub: auth0Id } }
-```
+User identity: `req.auth.payload.sub` → `auth0Id`.
 
-**Token Expected Format:**
-```
-Authorization: Bearer <JWT_TOKEN>
-```
+There is **no anonymous public browse** path. Clients must send a JWT for all API calls (including “public” list/read endpoints).
 
-**Decoded Payload Contains:**
-```typescript
-{
-  sub: "auth0|...",       // Auth0 ID (primary key)
-  email: "user@...",
-  email_verified: boolean,
-  aud: string,
-  iat: number,            // Issued at
-  exp: number,            // Expiration
-  ...other Auth0 claims
-}
-```
+### Ownership
 
-### Authorization
+`AuthorizationService.verifyOwnership` throws **403** when the caller is not the resource owner (snippets, comments, profile mutations).
 
-**Ownership Check Pattern:**
+### Privacy rules
 
-```typescript
-// In service handler:
-const auth0Id = payload.auth?.payload?.sub
-const snippet = await findBySnippetId(snippetId)
-
-if (snippet.auth0Id !== auth0Id) {
-  throw new CustomError("Unauthorized", 401)
-}
-// Proceed with update
-```
-
-**Visibility Check Pattern:**
-
-```typescript
-// Public snippet - anyone can view
-if (!snippet.isPrivate) {
-  return snippet
-}
-
-// Private snippet - only owner
-if (snippet.auth0Id === auth0Id) {
-  return snippet
-}
-
-throw new CustomError("Forbidden", 403)
-```
+| Resource | Non-owner behavior |
+|----------|--------------------|
+| Private user profile | 403 on `GET /users/:userName` |
+| Private snippet | 403 on GET by shortId, view, comment, favorite (unless owner) |
+| Public snippet / profile | Allowed for any authenticated user |
+| `GET /snippets/user/:userName` | Returns that user’s **public** snippets only |
 
 ---
 
 ## Middleware
 
-### Execution Order
+Order in `index.ts`:
 
-```
-Request
-  ↓
-1. Cookie Parser
-  ↓
-2. Helmet (Security headers)
-  ↓
-3. CORS (Origin check)
-  ↓
-4. Global Rate Limiter
-  ↓
-5. Express JSON (Parse body)
-  ↓
-6. Auth0 Check (JWT validation)
-  ↓
-7. Routes
-  ↓
-8. Error Handler (Last middleware)
-  ↓
-Response
-```
+1. Cookie parser
+2. Helmet
+3. CORS (`FRONTEND_URL`, credentials, `Authorization` header)
+4. Global rate limiter (200 / 15 min)
+5. `express.json()`
+6. Auth0 JWT check
+7. `/api/v1` routers (with per-route limiters)
+8. Error handler
 
-### Cookie Parser
-- Parses incoming cookies
-- Populates `req.cookies`
+### Rate limiters (`rate-limit.service.ts`)
 
-### Helmet
-- Sets security headers (X-Frame-Options, X-Content-Type-Options, etc.)
-- Protects against common attacks
-
-### CORS
-```typescript
-{
-  origin: config.frontend.url,  // Allow only from frontend
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true             // Allow cookies
-}
-```
-
-### Global Rate Limiter
-- Basic DOS protection
-- Limits requests per IP
-- Default: 100 requests per 15 minutes (configurable)
-
-### Auth0 Check
-- Validates JWT tokens
-- Extracts Auth0 ID
-- Protects all routes after middleware
-
-### Error Handler
-```typescript
-errorHandler(err, req, res, next):
-├── Check if CustomError
-├── Extract status code (or default 500)
-├── Log error with context
-└── Send JSON response { error: message }
-```
+| Limiter | Max / 15 min | Used for |
+|---------|--------------|----------|
+| `globalLimiter` | 200 | All requests |
+| `publicReadLimiter` | 150 | GET routes |
+| `writeLimiter` | 50 | Mutations |
+| `authLimiter` | 20 | `POST /users` |
+| `searchLimiter` | 60 | `GET /snippets/search` |
 
 ---
 
-## Error Handling
+## Common Response Shapes
 
-### Custom Error Class
+### Success
 
-```typescript
-class CustomError extends Error {
-  statusCode: number
-  
-  constructor(message: string, statusCode: number = 500) {
-    super(message)
-    this.statusCode = statusCode
-  }
+```json
+{ "success": true, "...": "payload fields" }
+```
+
+### Error
+
+```json
+{ "success": false, "error": "Human-readable message" }
+```
+
+### Typical status codes
+
+| Code | Meaning |
+|------|---------|
+| 200 | OK |
+| 201 | Created / favorite toggled |
+| 204 | Deleted (empty body) |
+| 400 | Validation / bad input |
+| 401 | Missing/invalid JWT |
+| 403 | Forbidden (ownership or private resource) |
+| 404 | Not found |
+| 429 | Rate limited |
+| 500 | Unexpected server error |
+| 503 | MinIO unavailable (resource routes) |
+
+---
+
+## Pagination
+
+Query params on list endpoints:
+
+| Param | Default | Max |
+|-------|---------|-----|
+| `page` | `1` | — |
+| `limit` | `10` | `100` |
+
+Implemented by `PaginationService` (`common/services/pagination.service.ts`).
+
+List responses include `totalCount` (total matching rows, not just page size).
+
+---
+
+## API Quick Reference
+
+All paths are under `/api/v1`. All require `Authorization: Bearer …`.
+
+### Users
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/users/check-username/:userName` | Username available? |
+| GET | `/users/me` | Current user (owner fields) |
+| GET | `/users/:userName` | Public profile by username |
+| POST | `/users` | Ensure / create user from Auth0 |
+| PUT | `/users` | Update own profile |
+| DELETE | `/users` | Delete own account |
+
+### Snippets
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/snippets/search` | Search public snippets |
+| GET | `/snippets/public` | Paginated public list |
+| GET | `/snippets/me` | Current user’s snippets (incl. private) |
+| GET | `/snippets/user/:userName` | User’s public snippets |
+| GET | `/snippets/:shortId` | Full snippet by short id |
+| POST | `/snippets` | Create |
+| POST | `/snippets/fork/:snippetId` | Fork by UUID |
+| PUT | `/snippets/:snippetId` | Update (owner) |
+| POST | `/snippets/:snippetId/view` | Increment view count |
+| DELETE | `/snippets/:snippetId` | Delete (owner) |
+
+### Comments
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/comments/:snippetId` | List comments |
+| POST | `/comments/:snippetId` | Create comment |
+| PUT | `/comments/:commentId` | Update own comment |
+| DELETE | `/comments/:commentId` | Delete own comment |
+
+### Favorites
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/favorites` | List favorited snippets |
+| GET | `/favorites/:snippetId` | Is favorited? |
+| POST | `/favorites/:snippetId` | Toggle favorite |
+
+### Resources (MinIO)
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/resources` | List my assets |
+| POST | `/resources` | Upload file (`multipart`) |
+| DELETE | `/resources/:assetId` | Delete asset by UUID |
+
+---
+
+## Detailed API Endpoints
+
+### DTOs (reference)
+
+**UserDTO**
+
+```ts
+{
+  userName: string;
+  displayName: string | null;
+  bio: string | null;
+  pictureUrl: string | null;
+  isAdmin?: boolean;      // owner responses only
+  isPrivate?: boolean;    // owner responses only
+  assets?: AssetDTO[];
 }
 ```
 
-### Error Codes
+**AssetDTO**
 
-```
-200 OK                           Success
-201 Created                      Resource created
-204 No Content                   Success (no body)
-400 Bad Request                  Validation error
-401 Unauthorized                 Auth required / invalid token
-403 Forbidden                    Insufficient permissions
-404 Not Found                    Resource not found
-409 Conflict                     Unique constraint violation
-500 Internal Server Error        Unexpected error
+```ts
+{
+  assetId: string;
+  fileName: string;
+  fileType: string;
+  url: string;
+  objectKey?: string;
+}
 ```
 
-### Error Flow
+**SnippetDTO** — full pen (includes files + external resources)  
+**SnippetListDTO** — list card fields (no files)  
+**CommentDTO** — `commentId`, `content`, `userName?`, `displayName?`, `isOwner`, timestamps  
+**ExternalResource** — `{ resourceType: 'css' | 'js' | 'other', url: string }`
 
-```typescript
-// In repository
-if (!found) throw new Error('Not found')
+---
 
-// In service
-try {
-  // repo call
-} catch (err) {
-  handleError(err, 'serviceName')  // Maps to CustomError
+### User endpoints
+
+#### `GET /users/check-username/:userName`
+
+**Response `200`:** `{ success: true, available: boolean }`
+
+#### `GET /users/me`
+
+Returns the authenticated user’s profile including `isAdmin`, `isPrivate`, and `assets`.
+
+**Response `200`:** `{ success: true, user: UserDTO }`
+
+#### `GET /users/:userName`
+
+Public profile. Returns **403** if the profile is private and the caller is not the owner.
+
+**Response `200`:** `{ success: true, user: UserDTO }` (without owner-only flags)
+
+#### `POST /users` — Ensure user
+
+Called after Auth0 login to create the DB row if missing, or sync allowed profile fields.
+
+**Body:**
+
+```json
+{
+  "name": "Optional Display Name",
+  "pictureUrl": "https://..."
 }
-
-// handleError function
-export function handleError(err, method): never {
-  if (err instanceof CustomError) throw err  // Already mapped
-  
-  // Map Sequelize errors
-  if (err.name === 'SequelizeUniqueConstraintError') {
-    throw new CustomError('Conflict', 409)
-  }
-  if (err.name === 'SequelizeValidationError') {
-    throw new CustomError(err.message, 400)
-  }
-  // ... other Sequelize mappings
-  
-  throw new CustomError('Database error', 500)
-}
-
-// In controller
-try {
-  const result = await service()
-  res.status(200).json(result)
-} catch (error) {
-  next(error)  // Pass to error handler middleware
-}
-
-// Error handler catches CustomError
-// Sends: { error: "message" }
 ```
 
-### Response Format
+- First user in the database is created with `isAdmin: true`
+- Username may be auto-generated from adjective+noun helper
 
-**Success:**
+**Response:** `200` (existing) or `201` (created) — `{ success: true, user: UserDTO }`
+
+#### `PUT /users`
+
+**Body (all optional):**
+
+```json
+{
+  "userName": "string",
+  "displayName": "string",
+  "bio": "string",
+  "pictureUrl": "https://...",
+  "isPrivate": false
+}
+```
+
+Cannot change `auth0Id` or `isAdmin`.
+
+**Response `200`:** `{ success: true, user: UserDTO }`
+
+#### `DELETE /users`
+
+Deletes the current user (DB cascades to snippets/comments/favorites/assets rows). MinIO objects are **not** automatically removed yet.
+
+**Response `204`:** empty body
+
+---
+
+### Snippet endpoints
+
+#### `POST /snippets`
+
+**Body:**
+
+```json
+{
+  "name": "My Pen",
+  "description": "optional",
+  "tags": ["html", "css"],
+  "isPrivate": false,
+  "snippetFiles": [
+    { "fileType": "html", "content": "<h1>Hi</h1>" },
+    { "fileType": "css", "content": "h1 { color: red; }" },
+    { "fileType": "js", "content": "console.log('hi')" }
+  ],
+  "externalResources": [
+    { "resourceType": "css", "url": "https://cdn.example.com/lib.css" },
+    { "resourceType": "js", "url": "https://cdn.example.com/lib.js" }
+  ]
+}
+```
+
+`fileType` must be `html` | `css` | `js`.
+
+**Response `201`:** `{ success: true, snippet: SnippetDTO }`
+
+#### `GET /snippets/:shortId`
+
+Full snippet including files. Private → owner only (else **403**).
+
+**Response `200`:** `{ success: true, snippet: SnippetDTO }`
+
+#### `PUT /snippets/:snippetId`
+
+Owner only. Same optional fields as create; files may include `snippetFileID` to update an existing file.
+
+Protected (ignored) fields: `snippetId`, `auth0Id`, `shortId`, `parentShortId`.
+
+**Response `200`:** `{ success: true, snippet: SnippetDTO }`
+
+#### `DELETE /snippets/:snippetId`
+
+Owner only. If the snippet is a fork, parent `forkCount` is decremented via parent `shortId` lookup.
+
+**Response `204`:** empty body
+
+#### `POST /snippets/fork/:snippetId`
+
+Forks by **UUID** (`snippetId`), not shortId. Copies files; sets `parentShortId` to the source short id. Cannot fork another user’s private snippet.
+
+**Response `201`:** `{ success: true, snippet: SnippetDTO }`
+
+#### `GET /snippets/me`
+
+Current user’s pens (public + private). Paginated.
+
+**Response `200`:** `{ success: true, snippets: SnippetListDTO[], totalCount: number }`
+
+#### `GET /snippets/public`
+
+All public pens. Paginated.
+
+#### `GET /snippets/user/:userName`
+
+That user’s **public** pens only. Paginated.
+
+#### `GET /snippets/search`
+
+Query: `q` and/or `name` / `description`, plus `page` / `limit`. Searches public snippets.
+
+Empty query returns `{ success: true, snippets: [], totalCount: 0 }`.
+
+#### `POST /snippets/:snippetId/view`
+
+Increments `viewCount` if the snippet is public or owned by the caller. Does **not** return full snippet content.
+
+**Response `200`:** `{ success: true, viewCount: number }`
+
+---
+
+### Comment endpoints
+
+`snippetId` / `commentId` in the path are UUIDs.
+
+#### `GET /comments/:snippetId`
+
+Paginated. Private snippet → owner only.
+
+**Response `200`:** `{ success: true, comments: CommentDTO[], totalCount: number }`
+
+#### `POST /comments/:snippetId`
+
+**Body:** `{ "content": "Nice pen!" }` (required, length-validated)
+
+**Response `201`:** `{ success: true, comment: CommentDTO }`
+
+#### `PUT /comments/:commentId`
+
+Owner only. **Body:** `{ "content": "..." }`
+
+**Response `200`:** `{ success: true, comment: CommentDTO }`
+
+#### `DELETE /comments/:commentId`
+
+Owner only. Decrements snippet `commentCount`.
+
+**Response `204`:** empty body
+
+---
+
+### Favorite endpoints
+
+#### `GET /favorites`
+
+Paginated list of favorited snippets as `SnippetListDTO[]` (includes author `userName` / `displayName`).
+
+**Response `200`:** `{ success: true, snippets: SnippetListDTO[], totalCount: number }`
+
+#### `GET /favorites/:snippetId`
+
+**Response `200`:** `{ success: true, isFavorited: boolean }`
+
+#### `POST /favorites/:snippetId`
+
+Toggle. Creates favorite if missing; deletes if present. Updates snippet `favoriteCount`. Rejects favoriting another user’s private snippet (**403**).
+
+**Response `201`:** `{ success: true, isFavorited: boolean, favoriteCount: number }`
+
+There is **no** separate DELETE route for favorites.
+
+---
+
+### Resource endpoints (MinIO)
+
+Require `featureFlags.isMinioAvailable === true` or return **503**.
+
+#### `GET /resources`
+
+Current user’s assets. Paginated.
+
+**Response `200`:** `{ success: true, assets: AssetDTO[], totalCount: number }`
+
+#### `POST /resources`
+
+`multipart/form-data`:
+
+| Field | Required | Notes |
+|-------|----------|-------|
+| `file` | yes | Image file |
+| `subFolder` | no | Sanitized; default `general` |
+
+**Constraints:**
+
+- Max size: **5 MB**
+- Allowed MIME: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/svg+xml`
+- Object key: `{auth0Sub}/{subFolder}/{sanitizedFileName}`
+- Public URL: `/content/{encodeURIComponent(objectKey)}` (served by nginx in prod when MinIO enabled)
+
+**Response `201`:**
+
 ```json
 {
   "success": true,
-  "snippet": { ... }
+  "message": "File uploaded successfully",
+  "url": "/content/...",
+  "asset": { "assetId": "...", "fileName": "...", "fileType": "...", "url": "...", "objectKey": "..." }
 }
 ```
 
-**Error:**
-```json
-{
-  "error": "Validation failed"
-}
-```
+#### `DELETE /resources/:assetId`
+
+Deletes MinIO object + DB row. Owner only (**403** otherwise).
+
+**Response `204`:** empty body
 
 ---
 
-## Data Access Layer
+## End-to-End Workflows
 
-### Repository Pattern
+### 1. First login / ensure user
 
-Each module has a repository file (`*.repo.ts`) that encapsulates all database queries.
+```mermaid
+sequenceDiagram
+  participant FE as Frontend
+  participant Auth0
+  participant API as Snippy_API
+  participant DB as MySQL
 
-**Example: Snippet Repository**
-
-```typescript
-// CREATE
-export async function createSnippet(
-  snippetData: Partial<Snippets>,
-  transaction?: Transaction
-): Promise<Snippets>
-
-// READ
-export async function findBySnippetId(
-  snippetId: string,
-  transaction?: Transaction
-): Promise<Snippets | null>
-
-export async function findByShortId(
-  shortId: string,
-  transaction?: Transaction
-): Promise<Snippets | null>
-
-// UPDATE
-export async function updateSnippet(
-  snippetId: string,
-  patch: Partial<Snippets>,
-  transaction?: Transaction
-): Promise<void>
-
-// DELETE
-export async function deleteSnippet(
-  snippetId: string,
-  transaction?: Transaction
-): Promise<void>
-
-// ADVANCED
-export async function searchSnippets(
-  query: string,
-  pagination: PaginationQuery
-): Promise<{ rows: Snippets[]; count: number }>
+  FE->>Auth0: Login
+  Auth0-->>FE: Access token
+  FE->>API: POST /api/v1/users Bearer token
+  API->>API: Validate JWT sub
+  API->>DB: Find or create Users row
+  API-->>FE: user DTO
 ```
 
-### Transaction Support
+1. User authenticates with Auth0 in the SPA
+2. SPA calls `POST /users` with optional `name` / `pictureUrl` from Auth0 profile
+3. API creates user (first user = admin) or returns existing profile
+4. SPA stores profile and uses token for subsequent calls
 
-Repositories support optional `transaction` parameter for multi-step operations:
+### 2. Create → edit → fork → delete snippet
 
-```typescript
-export async function forkSnippet(snippetId: string, auth0Id: string) {
-  return await executeInTransaction(async (t) => {
-    // All repo calls with { transaction: t } are part of same transaction
-    const original = await findBySnippetId(snippetId, t)
-    const fork = await createSnippet({
-      auth0Id,
-      parentShortId: original.shortId,
-      ...copyData
-    }, t)
-    await createSnippetFiles(files, t)
-    
-    // If any call throws, all changes are rolled back
-    return fork
-  }, 'forkSnippet')
-}
-```
+1. `POST /snippets` with name + html/css/js files → receive `snippetId` + `shortId`
+2. Navigate / share via `shortId` (`GET /snippets/:shortId`)
+3. Owner edits with `PUT /snippets/:snippetId`
+4. Another user (or same) forks with `POST /snippets/fork/:snippetId` → new pen with `parentShortId`
+5. Owner deletes with `DELETE /snippets/:snippetId` → parent `forkCount` decrements if applicable
+6. Optional: `POST /snippets/:snippetId/view` when opening a pen (returns new `viewCount` only)
 
-### Relationships
+### 3. Favorite toggle
 
-Eager loading in queries:
+1. `GET /favorites/:snippetId` → `{ isFavorited }`
+2. `POST /favorites/:snippetId` → toggles; response includes `isFavorited` + `favoriteCount`
+3. `GET /favorites` → paginated list for the user’s favorites page
 
-```typescript
-export async function findBySnippetId(snippetId: string) {
-  return await Snippets.findByPk(snippetId, {
-    include: [
-      SnippetFiles,  // Include all files
-      {
-        model: Users,
-        attributes: ['userName', 'displayName']  // Only specific fields
-      }
-    ]
-  })
-}
-```
+### 4. Comment lifecycle
+
+1. `GET /comments/:snippetId?page=1&limit=20`
+2. `POST /comments/:snippetId` with `{ content }`
+3. Author updates via `PUT /comments/:commentId`
+4. Author deletes via `DELETE /comments/:commentId` (204)
+
+### 5. Asset upload → use in HTML → delete
+
+1. Enable MinIO (`ENABLE_MINIO=true`) and ensure bucket/init succeeded
+2. `POST /resources` multipart with image → receive `url` like `/content/...`
+3. Insert that URL into snippet HTML/CSS (`<img src="/content/...">`)
+4. `GET /resources` to show the user’s asset list in the UI
+5. `DELETE /resources/:assetId` when removing an unused asset
+
+In local `ng serve` without a `/content` proxy, asset URLs only resolve if nginx/MinIO fronting is configured (prod compose / nginx.minio.conf).
 
 ---
 
-## Service Layer
+## Environment Variables
 
-### Service Handler Pattern
+Loaded from the repo root `.env` (Compose `env_file`) or process environment.
 
-```typescript
-export async function getSnippetHandler(
-  payload: ServicePayload<unknown, { snippetId: string }>
-): Promise<ServiceResponse<SnippetDTO>> {
-  try {
-    // 1. Extract data
-    const { snippetId } = payload.params
-    const { sub: auth0Id } = payload.auth?.payload || {}
-    
-    // 2. Validation
-    if (!snippetId) {
-      throw new CustomError('Snippet ID required', 400)
-    }
-    
-    // 3. Authorization
-    const snippet = await findBySnippetId(snippetId)
-    if (!snippet) {
-      throw new CustomError('Not found', 404)
-    }
-    if (snippet.isPrivate && snippet.auth0Id !== auth0Id) {
-      throw new CustomError('Forbidden', 403)
-    }
-    
-    // 4. Increment view count
-    await incrementSnippetViewCount(snippetId)
-    
-    // 5. Return mapped response
-    return {
-      snippet: SnippetMapper.toDTO(snippet, auth0Id)
-    }
-  } catch (err) {
-    handleError(err, 'getSnippetHandler')
-  }
-}
-```
+### Required
 
-### ServicePayload Type
+| Variable | Purpose |
+|----------|---------|
+| `AUTH0_DOMAIN` | Auth0 tenant domain |
+| `DB_PASS` | MySQL password for app user |
 
-```typescript
-interface ServicePayload<Body = any, Params = any> {
-  body?: Body
-  params?: Params
-  query?: QueryParams
-  auth?: {
-    payload: {
-      sub: string  // Auth0 ID
-    }
-  }
-}
-```
+### Common
 
-### ServiceResponse Type
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `PORT` | `3000` | API listen port |
+| `NODE_ENV` | `development` | Logging / swagger |
+| `DB_NAME` | `snippy` | Database name |
+| `DB_USER` | `snippy_api` | DB user |
+| `DB_HOST` | `db` | Hostname (Compose service name) |
+| `DB_PORT` | `3306` | MySQL port |
+| `AUTH0_AUDIENCE` | `http://localhost:3000` | JWT audience |
+| `FRONTEND_URL` | `http://localhost:4200` | CORS origin |
 
-```typescript
-interface ServiceResponse<T> {
-  [key: string]: T | any
-}
+### MinIO (optional)
 
-// Example response
-type SnippetResponse = ServiceResponse<SnippetDTO>
-// = { snippet: SnippetDTO }
-```
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `ENABLE_MINIO` | `false` | Enable MinIO bootstrap |
+| `MINIO_ENDPOINT` | `minio` | Host |
+| `MINIO_PORT` | `9000` | Port |
+| `MINIO_USE_SSL` | `false` | TLS |
+| `MINIO_APP_USER` | `snippyappuser` | Access key |
+| `MINIO_APP_PASSWORD` | (dev default) | Secret key |
+| `MINIO_BUCKET` | `content` | Bucket name |
 
-### Mapper Pattern
-
-DTOs (Data Transfer Objects) transform entities before sending to client:
-
-```typescript
-class SnippetMapper {
-  static toDTO(snippet: Snippets, requesterId?: string): SnippetDTO {
-    return {
-      snippetId: snippet.snippetId,
-      shortId: snippet.shortId,
-      name: snippet.name,
-      description: snippet.description,
-      // ... other fields
-      owner: {
-        auth0Id: snippet.user?.auth0Id,
-        userName: snippet.user?.userName,
-        displayName: snippet.user?.displayName
-      },
-      isMine: snippet.auth0Id === requesterId,
-      snippetFiles: snippet.snippetFiles || []
-    }
-  }
-}
-```
-
-**Purpose:**
-- Hide internal IDs
-- Reduce payload size
-- Add computed fields (isMine)
-- Format data for frontend
+Runtime flag: `featureFlags.isMinioAvailable` — set only after a successful connect when MinIO is enabled.
 
 ---
 
-## Request/Response Flow
+## Operational Notes
 
-### Creating a Snippet
+### Schema sync
 
-```
-1. Frontend sends POST /api/v1/snippets
-   {
-     name: "My Code",
-     description: "...",
-     snippetFiles: [...]
-   }
+- Production/dev currently use `sequelize.sync({ force: false })`
+- New columns/indexes (e.g. Assets `object_key`) are **not** reliably altered on existing volumes
+- After Asset model changes locally: recreate the MySQL volume (`docker compose down -v`) or run manual `ALTER TABLE`
 
-2. Express receives request
-   ├── auth0Check middleware validates JWT
-   ├── Attaches req.auth.payload.sub (Auth0 ID)
-   └── Passes to route handler
+### Local vs production Docker
 
-3. SnippetController.createSnippet()
-   ├── validateCreateSnippet(req.body)
-   │   └── Checks required fields, types, etc.
-   │       Throws CustomError if invalid
-   └── Calls createSnippetHandler(req)
+| | Local | Production |
+|---|--------|------------|
+| Compose | [`docker-compose.yml`](../docker-compose.yml) | [`docker-compose.prod.example.yml`](../docker-compose.prod.example.yml) |
+| Backend image | `Dockerfile.dev` + bind mount | `Dockerfile` (compiled `dist/`) |
+| Frontend | `ng serve` + proxy `/api` | nginx + runtime `env.js` |
 
-4. SnippetService.createSnippetHandler()
-   ├── Extract auth0Id from req.auth
-   ├── executeInTransaction(async (t) => {
-   │   ├── createSnippet() → repo call
-   │   ├── createSnippetFiles() → repo call
-   │   └── Return new snippet with files
-   │ }, 'createSnippet')
-   ├── Map entity to DTO
-   └── Return { snippet: SnippetDTO }
+### Known follow-ups (not architectural blockers)
 
-5. SnippetController sends response
-   res.status(201).json({
-     success: true,
-     snippet: SnippetDTO
-   })
-
-6. Frontend receives and parses response
-```
-
-### Updating a Snippet
-
-```
-1. Frontend sends PUT /api/v1/snippets/:shortId
-   {
-     name: "Updated Name",
-     snippetFiles: [
-       { fileType: "html", content: "..." }
-     ]
-   }
-
-2. auth0Check middleware validates token → req.auth.payload.sub
-
-3. SnippetController.updateSnippet()
-   ├── validateUpdateSnippet(req.body)
-   └── Calls updateSnippetHandler(req)
-
-4. SnippetService.updateSnippetHandler()
-   ├── Extract auth0Id, shortId
-   ├── Get current snippet by shortId
-   ├── Check authorization
-   │   └── if (snippet.auth0Id !== auth0Id) throw 403
-   ├── Filter protected fields
-   │   └── Remove: snippetId, auth0Id, shortId, parentShortId
-   ├── executeInTransaction(async (t) => {
-   │   ├── updateSnippet() for metadata
-   │   ├── updateSnippetFiles() for each file
-   │   └── Load updated snippet
-   │ }, 'updateSnippet')
-   ├── Map to DTO
-   └── Return { snippet: SnippetDTO }
-
-5. SnippetController sends 200 OK with updated snippet
-
-6. Frontend updates its store, refreshes preview
-```
+- Introduce Sequelize migrations for safer schema changes
+- Delete MinIO objects when a user account is deleted
+- Copy `externalResources` on fork
+- Optional `/health` endpoint outside JWT for probes
+- Improve MinIO put/delete vs DB ordering for orphan cleanup
 
 ---
 
-## Best Practices
+## Debugging
 
-### 1. Always Validate Input
+### Swagger
 
-```typescript
-// Use dedicated validator functions
-export function validateCreateSnippet(body: any) {
-  if (!body.name || typeof body.name !== 'string') {
-    throw new CustomError('Name is required and must be string', 400)
-  }
-  if (body.name.length > 255) {
-    throw new CustomError('Name too long', 400)
-  }
-}
-```
+In non-production, open `http://localhost:3000/api-docs` (mounted before JWT).
 
-### 2. Check Authorization Before Operations
+### Inspect JWT
 
-```typescript
-const snippet = await findBySnippetId(snippetId)
-if (!snippet) throw new CustomError('Not found', 404)
+Decode the access token and confirm:
 
-// Owner-only operation
-if (snippet.auth0Id !== auth0Id) {
-  throw new CustomError('Unauthorized', 401)
-}
+- `aud` matches `AUTH0_AUDIENCE`
+- `iss` is `https://<AUTH0_DOMAIN>/`
+- `sub` is the Auth0 user id stored as `auth0Id`
 
-// Proceed with operation
-```
+### Curl examples
 
-### 3. Use Transactions for Multi-Step Operations
-
-```typescript
-// Bad: independent calls, can leave DB in bad state
-await createSnippet(data)
-await createSnippetFiles(files)  // If this fails, orphaned snippet
-
-// Good: atomic transaction
-return await executeInTransaction(async (t) => {
-  const snippet = await createSnippet(data, t)
-  await createSnippetFiles(files, t)
-  return snippet
-}, 'operationName')
-```
-
-### 4. Map Entities to DTOs Before Returning
-
-```typescript
-// Bad: returning raw entity
-return { snippet }  // Exposes internal structure
-
-// Good: map to clean DTO
-return { snippet: SnippetMapper.toDTO(snippet, auth0Id) }
-```
-
-### 5. Log Errors for Debugging
-
-```typescript
-// Bad: silent failure
-if (!found) return null
-
-// Good: log and throw
-if (!found) {
-  logger.error('Snippet not found:', snippetId)
-  throw new CustomError('Not found', 404)
-}
-```
-
-### 6. Use Descriptive Error Messages
-
-```typescript
-// Bad: generic error
-throw new CustomError('Error', 500)
-
-// Good: specific, actionable error
-throw new CustomError('ShortId generation failed - try again', 500)
-throw new CustomError('You can only edit your own snippets', 403)
-```
-
-### 7. Eager Load Related Data
-
-```typescript
-// Bad: N+1 query problem
-const snippets = await findAllSnippets()
-for (const s of snippets) {
-  const files = await findSnippetFiles(s.snippetId)  // Query per snippet
-}
-
-// Good: eager load
-const snippets = await Snippets.findAll({
-  include: [SnippetFiles, Users]  // Load all in one query
-})
-```
-
-### 8. Use Indexes on Frequently Queried Columns
-
-```typescript
-// In entity definition
-@Table({
-  indexes: [
-    { fields: ['auth0_id'] },        // Find user's snippets
-    { fields: ['short_id'] },        // URL lookups
-    { fields: ['is_private', 'created_at'] }  // Public feed
-  ]
-})
-```
-
----
-
-## Debugging Tips
-
-### 1. Enable SQL Logging
-
-In `sequelize.ts`:
-```typescript
-const sequelize = new Sequelize({
-  // ... config
-  logging: (sql) => logger.debug(`[SQL] ${sql}`)
-})
-```
-
-View logs to see actual queries being executed.
-
-### 2. Check Auth0 Token
-
-```typescript
-// Log decoded token in auth0Check middleware
-const decoded = jwt.decode(token)
-console.log('Decoded token:', decoded)
-```
-
-### 3. Trace Authorization Failures
-
-```typescript
-const snippet = await findBySnippetId(snippetId)
-console.log('Snippet owner:', snippet.auth0Id)
-console.log('Request user:', auth0Id)
-console.log('Match:', snippet.auth0Id === auth0Id)
-```
-
-### 4. Check Database Connection
+Replace `$TOKEN` with a valid Auth0 access token.
 
 ```bash
-# In terminal
-docker-compose logs db  # View MySQL logs
-
-# Or test manually
-mysql -h localhost -u user -p database_name
-> SHOW TABLES;
-> SELECT * FROM snippets LIMIT 1;
-```
-
-### 5. Validate Request Format
-
-Add logging in controller:
-```typescript
-console.log('Received request:', {
-  body: req.body,
-  params: req.params,
-  auth: req.auth
-})
-```
-
-### 6. Check Rate Limiter
-
-If getting 429 Too Many Requests:
-```typescript
-// Check configuration
-const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000,  // 15 minutes
-  max: 100  // 100 requests per window
-})
-```
-
-### 7. Inspect Error Stack Traces
-
-Errors are logged at debug level:
-```bash
-# In docker logs
-docker-compose logs backend | grep "stack"
-
-# Or check log files
-tail -f logs/debug.log
-```
-
-### 8. Test Endpoints with Curl
-
-```bash
-# Create snippet
-curl -X POST http://localhost:3000/api/v1/snippets \
+# Ensure user
+curl -s -X POST http://localhost:3000/api/v1/users \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -d '{"name":"Test",...}'
+  -d '{"name":"Kenneth"}'
 
-# Get snippet
-curl http://localhost:3000/api/v1/snippets/shortId
+# Current profile
+curl -s http://localhost:3000/api/v1/users/me \
+  -H "Authorization: Bearer $TOKEN"
 
-# Check response status
-curl -i http://localhost:3000/api/v1/snippets/invalid
+# Create snippet
+curl -s -X POST http://localhost:3000/api/v1/snippets \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name":"Hello",
+    "snippetFiles":[{"fileType":"html","content":"<h1>Hi</h1>"}]
+  }'
+
+# Get by shortId
+curl -s http://localhost:3000/api/v1/snippets/$SHORT_ID \
+  -H "Authorization: Bearer $TOKEN"
+
+# Toggle favorite
+curl -s -X POST http://localhost:3000/api/v1/favorites/$SNIPPET_UUID \
+  -H "Authorization: Bearer $TOKEN"
+
+# List comments
+curl -s "http://localhost:3000/api/v1/comments/$SNIPPET_UUID?page=1&limit=20" \
+  -H "Authorization: Bearer $TOKEN"
+
+# Upload asset (MinIO enabled)
+curl -s -X POST http://localhost:3000/api/v1/resources \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "file=@./image.png" \
+  -F "subFolder=general"
+
+# Delete asset
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE \
+  http://localhost:3000/api/v1/resources/$ASSET_UUID \
+  -H "Authorization: Bearer $TOKEN"
 ```
+
+### Logs
+
+```bash
+docker compose logs api -f
+# or grep stack traces
+docker compose logs api | grep -i error
+```
+
+Logger writes under `src/common/logs/` inside the container/workdir depending on mount.
+
+### Common failures
+
+| Symptom | Likely cause |
+|---------|----------------|
+| 401 on all routes | Missing/expired Bearer token or wrong audience |
+| 403 on snippet/profile | Private resource or not owner |
+| 503 on `/resources` | MinIO disabled or connection failed at boot |
+| Empty favorites list | Fixed association mapping; rebuild/restart API if on old image |
+| Schema / missing column errors | Stale MySQL volume after entity changes — recreate volume |
 
 ---
 
 ## Summary
 
-The Snippy backend is organized into clear layers:
-
-1. **Middleware** - Cross-cutting concerns (auth, logging, errors)
-2. **Controllers** - HTTP interface, validation, response formatting
-3. **Services** - Business logic, transactions, authorization
-4. **Repositories** - Database access, queries
-5. **Entities** - Data model, relationships
-
-**Key Principles:**
-- Always validate input
-- Always authorize before operations
-- Use transactions for multi-step operations
-- Map entities to DTOs before responding
-- Log errors with context
-- Handle errors consistently
-
-**Common Patterns:**
-- Service handler takes `ServicePayload`, returns `ServiceResponse<T>`
-- Repositories support optional `transaction` parameter
-- All errors are mapped to `CustomError` for consistent handling
-- DTOs hide internal structure and add computed fields
-- Authorization checks happen in service, not middleware
-
-This structure keeps concerns separated, makes code testable, and ensures reliable data operations.
+The Snippy API is a layered Express/TypeScript service with Auth0 JWT on every `/api/v1` route, Sequelize models for users/snippets/files/comments/favorites/assets, and optional MinIO-backed user assets. Controllers validate, services enforce privacy and ownership inside transactions, repositories talk to MySQL, and mappers emit stable DTOs. Prefer extending modules inside this pattern rather than introducing a new architecture.
