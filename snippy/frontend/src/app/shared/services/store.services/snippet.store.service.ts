@@ -185,17 +185,40 @@ export class SnippetStoreService {
             };
           });
         } else {
-          this.favoritesList.update(list => {
-            if (!list) return list;
-            return {
-              ...list,
-              snippets: list.snippets.map(item =>
-                item.snippetId === snippetId
-                  ? { ...item, favoriteCount: response.favoriteCount, isFavorited: response.isFavorited }
-                  : item
-              ),
-            };
-          });
+          const existing = this.favoritesList()?.snippets.some(item => item.snippetId === snippetId);
+          if (existing) {
+            this.favoritesList.update(list => {
+              if (!list) return list;
+              return {
+                ...list,
+                snippets: list.snippets.map(item =>
+                  item.snippetId === snippetId
+                    ? { ...item, favoriteCount: response.favoriteCount, isFavorited: true }
+                    : item
+                ),
+              };
+            });
+          } else {
+            const row = this.resolveSnippetListItem(snippetId, response.favoriteCount);
+            if (row) {
+              this.favoritesList.update(list => {
+                if (!list) {
+                  return {
+                    success: true,
+                    snippets: [row],
+                    totalCount: 1,
+                  };
+                }
+                return {
+                  ...list,
+                  snippets: [row, ...list.snippets],
+                  totalCount: (list.totalCount ?? list.snippets.length) + 1,
+                };
+              });
+            } else {
+              await this.loadFavorites(1, 6);
+            }
+          }
         }
       }
       return response;
@@ -203,6 +226,38 @@ export class SnippetStoreService {
       this.error.set('Failed to favorite snippet');
       throw err;
     }
+  }
+
+  /** Build a favorites-list row from currently loaded list/detail state. */
+  private resolveSnippetListItem(snippetId: string, favoriteCount: number): SnippetList | null {
+    const fromList = this.snippetList()?.snippets.find(item => item.snippetId === snippetId);
+    if (fromList) {
+      return {
+        ...fromList,
+        favoriteCount,
+        isFavorited: true,
+      };
+    }
+
+    const detail = this.snippet();
+    if (detail?.snippetId === snippetId) {
+      return {
+        snippetId: detail.snippetId,
+        shortId: detail.shortId,
+        name: detail.name,
+        description: detail.description ?? null,
+        tags: detail.tags?.length ? detail.tags : null,
+        userName: detail.userName,
+        displayName: detail.displayName,
+        commentCount: detail.commentCount ?? 0,
+        favoriteCount,
+        viewCount: detail.viewCount ?? 0,
+        isOwner: detail.isOwner,
+        isFavorited: true,
+      };
+    }
+
+    return null;
   }
 
   async forkSnippet(snippetId: string): Promise<SnippetResponse> {
