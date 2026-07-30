@@ -1,123 +1,160 @@
-import { Injectable, signal, computed, effect, inject } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Snippet } from '../../interfaces/snippet.interface';
 import { ExternalResource } from '../../interfaces/externalResource.interface';
-import { SnippetAPIService } from '../api.services/snippet.api.service';
+import { SnippetAPIService, SnippetSort } from '../api.services/snippet.api.service';
 import { FavoriteService } from '../api.services/favorite.api.service';
 import { SnippetListResponse } from '../../interfaces/snippetListResponse.interface';
 import { FavoriteResponse } from '../../interfaces/favoriteResponse.interface';
+import { SnippetResponse } from '../../interfaces/snippetResponse.interface';
+import { SnippetList } from '../../interfaces/snippetList.interface';
 
-
+/**
+ * Global snippet domain store (root singleton).
+ *
+ * Ownership rules:
+ * - Call `loadSnippet(id)` / list loaders to populate.
+ * - Editor / fullpage views should call `clearSnippet()` on destroy
+ *   so list pages do not see a stale open pen.
+ */
 @Injectable({ providedIn: 'root' })
 export class SnippetStoreService {
   snippet = signal<Snippet | null>(null);
   snippetList = signal<SnippetListResponse | null>(null);
+  favoritesList = signal<SnippetListResponse | null>(null);
   previewUpdateType = signal<string | null>(null);
   loading = signal<boolean>(false);
+  favoritesLoading = signal<boolean>(false);
   error = signal<string | null>(null);
 
   private originalSnippet = signal<Snippet | null>(null);
+  private listGeneration = 0;
+  private favoritesGeneration = 0;
+  private detailGeneration = 0;
   private snippetService = inject(SnippetAPIService);
   private favoriteService = inject(FavoriteService);
 
   //#region API Methods
-  // Load a snippet by id (store pattern, async)
   async loadSnippet(snippetId: string) {
+    const gen = ++this.detailGeneration;
     this.loading.set(true);
     this.error.set(null);
     try {
       const res = await firstValueFrom(this.snippetService.getSnippet(snippetId));
+      if (gen !== this.detailGeneration) return;
       if (res?.snippet) {
         this.setSnippet(res.snippet, true);
       }
       this.loading.set(false);
-    } catch (err) {
+    } catch {
+      if (gen !== this.detailGeneration) return;
       this.error.set('Failed to load snippet');
       this.loading.set(false);
     }
   }
 
-  // Load user snippets and update snippetList
+  private async runListLoad(
+    loader: () => Promise<SnippetListResponse | null | undefined>,
+    errorMessage: string
+  ) {
+    const gen = ++this.listGeneration;
+    this.loading.set(true);
+    this.error.set(null);
+    try {
+      const res = await loader();
+      if (gen !== this.listGeneration) return res ?? null;
+      this.snippetList.set(res ?? null);
+      this.loading.set(false);
+      return res ?? null;
+    } catch (err) {
+      if (gen !== this.listGeneration) throw err;
+      this.error.set(errorMessage);
+      this.snippetList.set(null);
+      this.loading.set(false);
+      throw err;
+    }
+  }
+
   async loadUserSnippets(page: number, limit: number) {
-    this.loading.set(true);
+    return this.runListLoad(
+      () => firstValueFrom(this.snippetService.getUserSnippets(page, limit)),
+      'Failed to load user snippets'
+    );
+  }
+
+  async loadPublicSnippets(page: number, limit: number, sort: SnippetSort = 'newest') {
+    return this.runListLoad(
+      () => firstValueFrom(this.snippetService.getPublicSnippets(page, limit, sort)),
+      'Failed to load public snippets'
+    );
+  }
+
+  async loadFeedSnippets(page: number, limit: number, sort: SnippetSort = 'newest') {
+    return this.runListLoad(
+      () => firstValueFrom(this.snippetService.getFeedSnippets(page, limit, sort)),
+      'Failed to load feed'
+    );
+  }
+
+  async loadUserPublicSnippets(userName: string, page: number, limit: number) {
+    return this.runListLoad(
+      () => firstValueFrom(this.snippetService.getUserPublicSnippets(userName, page, limit)),
+      'Failed to load user snippets'
+    );
+  }
+
+  async loadFavorites(page: number, limit: number) {
+    const gen = ++this.favoritesGeneration;
+    this.favoritesLoading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.snippetService.getUserSnippets(page, limit));
-      this.snippetList.set(res ?? null);
-      this.loading.set(false);
-      return res;
+      const res = await firstValueFrom(this.favoriteService.getFavorites(page, limit));
+      if (gen !== this.favoritesGeneration) return res ?? null;
+      this.favoritesList.set(res ?? null);
+      this.favoritesLoading.set(false);
+      return res ?? null;
     } catch (err) {
-      this.error.set('Failed to load user snippets');
-      this.snippetList.set(null);
-      this.loading.set(false);
+      if (gen !== this.favoritesGeneration) throw err;
+      this.error.set('Failed to load favorites');
+      this.favoritesList.set(null);
+      this.favoritesLoading.set(false);
       throw err;
     }
   }
 
-  // Load public snippets and update snippetList
-  async loadPublicSnippets(page: number, limit: number) {
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      const res = await firstValueFrom(this.snippetService.getPublicSnippets(page, limit));
-      this.snippetList.set(res ?? null);
-      this.loading.set(false);
-      return res;
-    } catch (err) {
-      this.error.set('Failed to load public snippets');
-      this.snippetList.set(null);
-      this.loading.set(false);
-      throw err;
-    }
+  async searchSnippets(query: string, page: number, limit: number, sort: SnippetSort = 'newest') {
+    return this.runListLoad(
+      () => firstValueFrom(this.snippetService.searchSnippets(query, page, limit, sort)),
+      'Failed to search snippets'
+    );
   }
 
-  // Search snippets and update snippetList
-  async searchSnippets(query: string, page: number, limit: number) {
-    this.loading.set(true);
-    this.error.set(null);
-    try {
-      const res = await firstValueFrom(this.snippetService.searchSnippets(query, page, limit));
-      this.snippetList.set(res ?? null);
-      this.loading.set(false);
-      return res;
-    } catch (err) {
-      this.error.set('Failed to search snippets');
-      this.snippetList.set(null);
-      this.loading.set(false);
-      throw err;
-    }
-  }
-
-  // Save the current snippet (store pattern, async)
   async saveSnippet() {
     const s = this.snippet();
     if (!s) throw new Error('No snippet to save');
     this.error.set(null);
     try {
-       let res = await firstValueFrom(this.snippetService.saveSnippet(s));
-       // Update both snippet and originalSnippet to mark as saved and in sync
-       this.snippet.set(res.snippet);
-       this.originalSnippet.set(JSON.parse(JSON.stringify(res.snippet)));
-       return res;
+      const res = await firstValueFrom(this.snippetService.saveSnippet(s));
+      this.snippet.set(res.snippet);
+      this.originalSnippet.set(JSON.parse(JSON.stringify(res.snippet)));
+      return res;
     } catch (err) {
       this.error.set('Failed to save snippet');
       throw err;
     }
   }
 
-  // Delete a snippet by id (store pattern, async)
   async deleteSnippet(snippetId: string) {
     this.loading.set(true);
     this.error.set(null);
     try {
       await firstValueFrom(this.snippetService.deleteSnippet(snippetId));
-      // Remove the deleted snippet from the snippetList signal
       this.snippetList.update(list => {
         if (!list) return list;
         return {
           ...list,
           snippets: list.snippets.filter(s => s.snippetId !== snippetId),
-          totalCount: Math.max(0, (list.totalCount ?? 0) - 1)
+          totalCount: Math.max(0, (list.totalCount ?? 0) - 1),
         };
       });
       this.clearSnippet();
@@ -129,26 +166,93 @@ export class SnippetStoreService {
     }
   }
 
-  // Favorite a snippet and update favorite count
   async favoriteSnippet(snippetId: string): Promise<FavoriteResponse | undefined> {
-    this.loading.set(true);
     this.error.set(null);
     try {
       const response = await firstValueFrom(this.favoriteService.favoriteSnippet(snippetId)) as FavoriteResponse;
       if (response && typeof response.favoriteCount === 'number') {
-        this.snippet.update(s => s ? { ...s, favoriteCount: response.favoriteCount } : s);
+        this.patchSnippetCounts(snippetId, {
+          favoriteCount: response.favoriteCount,
+          isFavorited: response.isFavorited,
+        });
+        if (!response.isFavorited) {
+          this.favoritesList.update(list => {
+            if (!list) return list;
+            return {
+              ...list,
+              snippets: list.snippets.filter(item => item.snippetId !== snippetId),
+              totalCount: Math.max(0, (list.totalCount ?? 0) - 1),
+            };
+          });
+        } else {
+          this.favoritesList.update(list => {
+            if (!list) return list;
+            return {
+              ...list,
+              snippets: list.snippets.map(item =>
+                item.snippetId === snippetId
+                  ? { ...item, favoriteCount: response.favoriteCount, isFavorited: response.isFavorited }
+                  : item
+              ),
+            };
+          });
+        }
       }
-      this.loading.set(false);
       return response;
     } catch (err) {
       this.error.set('Failed to favorite snippet');
-      this.loading.set(false);
       throw err;
     }
   }
+
+  async forkSnippet(snippetId: string): Promise<SnippetResponse> {
+    this.error.set(null);
+    try {
+      const res = await firstValueFrom(this.snippetService.forkSnippet(snippetId));
+      this.snippet.update(s =>
+        s && s.snippetId === snippetId
+          ? { ...s, forkCount: (s.forkCount ?? 0) + 1 }
+          : s
+      );
+      return res;
+    } catch (err) {
+      this.error.set('Failed to fork snippet');
+      throw err;
+    }
+  }
+
+  async recordView(snippetId: string): Promise<void> {
+    try {
+      const res = await firstValueFrom(this.snippetService.recordView(snippetId));
+      if (res?.counted && typeof res.viewCount === 'number') {
+        this.patchSnippetCounts(snippetId, { viewCount: res.viewCount });
+      }
+    } catch {
+      // Non-blocking
+    }
+  }
+
+  bumpCommentCount(snippetId: string, delta: number) {
+    const apply = (count: number) => Math.max(0, count + delta);
+    this.snippet.update(s =>
+      s && s.snippetId === snippetId
+        ? { ...s, commentCount: apply(s.commentCount ?? 0) }
+        : s
+    );
+    this.snippetList.update(list => {
+      if (!list) return list;
+      return {
+        ...list,
+        snippets: list.snippets.map(item =>
+          item.snippetId === snippetId
+            ? { ...item, commentCount: apply(item.commentCount ?? 0) }
+            : item
+        ),
+      };
+    });
+  }
   //#endregion API Methods
 
-  // Determine if the snippet has unsaved changes
   isDirty = computed(() => {
     const s = this.snippet();
     const o = this.originalSnippet();
@@ -158,9 +262,11 @@ export class SnippetStoreService {
     if (s.isPrivate !== o.isPrivate) return true;
     if (s.tags.length !== o.tags.length) return true;
     if (s.externalResources?.length !== o.externalResources?.length) return true;
-    for(let i = 0; i < (s.externalResources?.length || 0); i++) {
-      if (s.externalResources![i].resourceType !== o.externalResources![i].resourceType ||
-          s.externalResources![i].url !== o.externalResources![i].url) {
+    for (let i = 0; i < (s.externalResources?.length || 0); i++) {
+      if (
+        s.externalResources![i].resourceType !== o.externalResources![i].resourceType ||
+        s.externalResources![i].url !== o.externalResources![i].url
+      ) {
         return true;
       }
     }
@@ -174,69 +280,126 @@ export class SnippetStoreService {
     return false;
   });
 
-  // Set the current snippet
   setSnippet(snippet: Snippet, updatePreview: boolean = false) {
-    // Ensure tags is always an array
     if (!snippet.tags) {
       snippet.tags = [];
     }
     this.snippet.set(snippet);
     this.originalSnippet.set(JSON.parse(JSON.stringify(snippet)));
-    // If updating from API response, trigger preview update for all code files
     if (updatePreview) {
-      this.previewUpdateType.set('full'); // Set to trigger preview update
+      this.previewUpdateType.set('full');
     }
   }
 
-  //#region Update Methods 
-  // Update the content of a specific snippet file
+  //#region Update Methods
   updateSnippetFile(fileType: string, content: string) {
-    this.previewUpdateType.set((fileType.toLowerCase() === 'html' || fileType.toLowerCase() === 'js') ? 'full' : 'partial');
-    this.snippet.update(s => ({
-      ...s!,
-      snippetFiles: s!.snippetFiles.map(f =>
-        f.fileType === fileType ? { ...f, content } : f
-      )
-    }));
+    this.previewUpdateType.set(
+      fileType.toLowerCase() === 'html' || fileType.toLowerCase() === 'js' ? 'full' : 'partial'
+    );
+    this.snippet.update(s => {
+      if (!s) return s;
+      return {
+        ...s,
+        snippetFiles: s.snippetFiles.map(f =>
+          f.fileType === fileType ? { ...f, content } : f
+        ),
+      };
+    });
   }
 
-  // Update snippet name
   updateSnippetName(name: string) {
     this.previewUpdateType.set('full');
-    this.snippet.update(s => ({ ...s!, name }));
+    this.snippet.update(s => (s ? { ...s, name } : s));
   }
 
-  // Update snippet settings: description, isPrivate, tags
-  updateSnippetSettings(settings: { description: string; isPrivate: boolean; tags: string[]; externalResources?: ExternalResource[] }) {
+  updateSnippetSettings(settings: {
+    description: string;
+    isPrivate: boolean;
+    tags: string[];
+    externalResources?: ExternalResource[];
+  }) {
     this.previewUpdateType.set('full');
-    this.snippet.update(s => ({
-      ...s!,
-      description: settings.description,
-      isPrivate: settings.isPrivate,
-      tags: settings.tags,
-      externalResources: settings.externalResources ?? s!.externalResources
-    }));
+    this.snippet.update(s => {
+      if (!s) return s;
+      return {
+        ...s,
+        description: settings.description,
+        isPrivate: settings.isPrivate,
+        tags: settings.tags,
+        externalResources: settings.externalResources ?? s.externalResources,
+      };
+    });
   }
 
-  // Update snippet counts
-  updateSnippetCounts(counts: { forkCount?: number; viewCount?: number; commentCount?: number; favoriteCount?: number }) {
-    this.snippet.update(s => ({
-      ...s!,
-      forkCount: counts.forkCount !== undefined ? counts.forkCount : s!.forkCount,
-      viewCount: counts.viewCount !== undefined ? counts.viewCount : s!.viewCount,
-      commentCount: counts.commentCount !== undefined ? counts.commentCount : s!.commentCount,
-      favoriteCount: counts.favoriteCount !== undefined ? counts.favoriteCount : s!.favoriteCount,
-    }));
+  updateSnippetCounts(counts: {
+    forkCount?: number;
+    viewCount?: number;
+    commentCount?: number;
+    favoriteCount?: number;
+  }) {
+    const id = this.snippet()?.snippetId;
+    if (!id) return;
+    this.patchSnippetCounts(id, counts);
   }
 
-  // Clear the current snippet
+  private patchSnippetCounts(
+    snippetId: string,
+    patch: {
+      forkCount?: number;
+      viewCount?: number;
+      commentCount?: number;
+      favoriteCount?: number;
+      isFavorited?: boolean;
+    }
+  ) {
+    this.snippet.update(s => {
+      if (!s || s.snippetId !== snippetId) return s;
+      return {
+        ...s,
+        ...(patch.forkCount !== undefined ? { forkCount: patch.forkCount } : {}),
+        ...(patch.viewCount !== undefined ? { viewCount: patch.viewCount } : {}),
+        ...(patch.commentCount !== undefined ? { commentCount: patch.commentCount } : {}),
+        ...(patch.favoriteCount !== undefined ? { favoriteCount: patch.favoriteCount } : {}),
+        ...(patch.isFavorited !== undefined ? { isFavorited: patch.isFavorited } : {}),
+      };
+    });
+
+    this.snippetList.update(list => {
+      if (!list) return list;
+      return {
+        ...list,
+        snippets: list.snippets.map(item =>
+          item.snippetId === snippetId ? this.applyListPatch(item, patch) : item
+        ),
+      };
+    });
+  }
+
+  private applyListPatch(
+    item: SnippetList,
+    patch: {
+      viewCount?: number;
+      commentCount?: number;
+      favoriteCount?: number;
+      isFavorited?: boolean;
+    }
+  ): SnippetList {
+    return {
+      ...item,
+      ...(patch.viewCount !== undefined ? { viewCount: patch.viewCount } : {}),
+      ...(patch.commentCount !== undefined ? { commentCount: patch.commentCount } : {}),
+      ...(patch.favoriteCount !== undefined ? { favoriteCount: patch.favoriteCount } : {}),
+      ...(patch.isFavorited !== undefined ? { isFavorited: patch.isFavorited } : {}),
+    };
+  }
+
   clearSnippet() {
+    this.detailGeneration++;
     this.snippet.set(null);
     this.originalSnippet.set(null);
     this.previewUpdateType.set(null);
     this.loading.set(false);
     this.error.set(null);
   }
-
   //#endregion Update Methods
 }

@@ -1,0 +1,24 @@
+.logo-link {
+  color: inherit;
+  cursor: pointer;
+
+  h2 {
+    color: inherit;
+  }
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
+
+.logo-text {
+  color: inherit;
+}
+
+:host ::ng-deep {
+  mat-form-field {
+    .mat-mdc-form-field-bottom-align {
+      display: none !important;
+    }
+  }
+}

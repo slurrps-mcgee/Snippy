@@ -3,14 +3,6 @@
   border: 1px solid dimgray !important;
 }
 
-:host ::ng-deep {
-  mat-form-field {
-    .mat-mdc-form-field-bottom-align {
-      display: none !important;
-    }
-  }
-}
-
 header a {
   color: var(--mat-sys-on-primary-container);
   text-decoration: none;

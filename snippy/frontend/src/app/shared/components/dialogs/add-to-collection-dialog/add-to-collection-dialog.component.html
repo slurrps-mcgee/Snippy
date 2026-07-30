@@ -1,0 +1,49 @@
+<h2 mat-dialog-title>Add to Collection</h2>
+
+<mat-dialog-content>
+  @if (loading) {
+  <div class="d-flex justify-content-center p-4">
+    <mat-spinner diameter="32"></mat-spinner>
+  </div>
+  } @else if (collections.length === 0) {
+  <div class="d-flex flex-column align-items-center p-4 opacity-50">
+    <mat-icon>collections_bookmark</mat-icon>
+    <p class="mb-0">You don't have any collections yet.</p>
+  </div>
+  } @else {
+  <div class="d-flex flex-column gap-2">
+    @for (collection of collections; track collection.collectionId) {
+    <div class="d-flex align-items-center justify-content-between collection-row p-2">
+      <div class="overflow-hidden">
+        <div class="fw-bold text-truncate">{{ collection.name }}</div>
+        <small class="opacity-50">{{ collection.snippetCount ?? 0 }} snippet(s)</small>
+      </div>
+      @if (isInCollection(collection)) {
+      <span class="d-flex align-items-center gap-1 opacity-75 pe-2">
+        <mat-icon>check</mat-icon>
+        In collection
+      </span>
+      } @else {
+      <button mat-stroked-button
+        [disabled]="addingId() === collection.collectionId"
+        (click)="addTo(collection)">
+        @if (addingId() === collection.collectionId) {
+        <mat-spinner diameter="16"></mat-spinner>
+        } @else {
+        Add
+        }
+      </button>
+      }
+    </div>
+    }
+  </div>
+  }
+</mat-dialog-content>
+
+<mat-dialog-actions class="d-flex justify-content-between">
+  <button mat-button (click)="createNewCollection()">
+    <mat-icon>add</mat-icon>
+    New Collection
+  </button>
+  <button mat-button (click)="close()">Close</button>
+</mat-dialog-actions>

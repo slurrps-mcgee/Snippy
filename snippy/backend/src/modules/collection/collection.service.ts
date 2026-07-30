@@ -27,6 +27,8 @@ import {
     findUserPublicCollections,
     findCollectionSnippetsOrdered,
     countCollectionSnippets,
+    countSnippetsForCollections,
+    findCollectionIdsContainingSnippet,
     findCollectionSnippet,
     getMaxCollectionPosition,
     addCollectionSnippet,
@@ -35,6 +37,28 @@ import {
 } from './collection.repo';
 
 const PROTECTED_FIELDS = ['collectionId', 'auth0Id', 'shortId'] as const;
+
+async function mapCollectionsWithExtras(
+    rows: Awaited<ReturnType<typeof findMyCollections>>['rows'],
+    auth0Id: string | undefined,
+    snippetId: string | undefined,
+    t: Parameters<typeof countSnippetsForCollections>[1]
+) {
+    const ids = rows.map((c) => c.collectionId);
+    const counts = await countSnippetsForCollections(ids, t);
+    const containing = snippetId
+        ? await findCollectionIdsContainingSnippet(ids, snippetId, t)
+        : null;
+
+    const extrasById = new Map<string, { snippetCount?: number; containsSnippet?: boolean }>();
+    for (const id of ids) {
+        extrasById.set(id, {
+            snippetCount: counts.get(id) ?? 0,
+            ...(containing ? { containsSnippet: containing.has(id) } : {}),
+        });
+    }
+    return CollectionMapper.toDTOs(rows, auth0Id, extrasById);
+}
 
 export async function createCollectionHandler(
     payload: ServicePayload<CreateCollectionRequest>
@@ -116,18 +140,19 @@ export async function deleteCollectionHandler(
 }
 
 export async function getMyCollectionsHandler(
-    payload: ServicePayload<unknown, unknown, PaginationQuery>
+    payload: ServicePayload<unknown, unknown, PaginationQuery & { snippetId?: string }>
 ): Promise<ServiceResponse<CollectionDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) throw new CustomError('Authentication required', 401);
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const snippetId = payload.query?.snippetId;
 
         return await executeInTransaction(async (t) => {
             const result = await findMyCollections(auth0Id, offset, limit, t);
             return {
-                collections: CollectionMapper.toDTOs(result.rows, auth0Id),
+                collections: await mapCollectionsWithExtras(result.rows, auth0Id, snippetId, t),
                 totalCount: result.count,
             };
         });
@@ -159,7 +184,7 @@ export async function getUserCollectionsHandler(
                 : await findUserPublicCollections(user.auth0Id, offset, limit, t);
 
             return {
-                collections: CollectionMapper.toDTOs(result.rows, auth0Id),
+                collections: await mapCollectionsWithExtras(result.rows, auth0Id, undefined, t),
                 totalCount: result.count,
             };
         });

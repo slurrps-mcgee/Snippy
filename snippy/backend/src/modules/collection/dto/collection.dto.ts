@@ -10,6 +10,7 @@ export interface CollectionDTO {
     userName?: string;
     displayName?: string;
     snippetCount?: number;
+    containsSnippet?: boolean;
     snippets?: SnippetListDTO[];
 }
 

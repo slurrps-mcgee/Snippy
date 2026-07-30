@@ -205,7 +205,7 @@ Assets      — BelongsTo Users; unique (auth0_id, object_key)
 |-------|--------|
 | `assetId` | UUID — delete by this id |
 | `objectKey` | Unencoded MinIO key (`{auth0Sub}/{subFolder}/{fileName}`) |
-| `url` | Public path `/content/{urlencodedObjectKey}` |
+| `url` | Public path `/content/{segment-encoded-objectKey}` |
 | `fileName`, `fileType` | Original name + MIME |
 
 Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed asset URLs in HTML/CSS content.
@@ -741,7 +741,7 @@ Current user’s assets. Paginated.
 - Max size: **5 MB**
 - Allowed MIME: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/svg+xml`
 - Object key: `{auth0Sub}/{subFolder}/{sanitizedFileName}`
-- Public URL: `/content/{encodeURIComponent(objectKey)}` (served by nginx in prod when MinIO enabled)
+- Public URL: path-style `/content/{segment-encoded key}` (each `/`-separated segment URI-encoded; nginx or Angular proxy serves `/content/`)
 
 **Response `201`:**
 
@@ -829,7 +829,7 @@ sequenceDiagram
 4. `GET /resources` to show the user’s asset list in the UI
 5. `DELETE /resources/:assetId` when removing an unused asset
 
-In local `ng serve` without a `/content` proxy, asset URLs only resolve if nginx/MinIO fronting is configured (prod compose / nginx.minio.conf).
+In local `ng serve`, `proxy.conf.json` proxies both `/api` → API and `/content` → MinIO (MinIO must be running). Prod uses nginx `location /content/`.
 
 ---
 

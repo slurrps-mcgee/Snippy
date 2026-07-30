@@ -1,0 +1,67 @@
+<section>
+  <div class="d-flex justify-content-between pb-2 gap-2 flex-wrap">
+    <mat-form-field appearance="outline" class="flex-grow-1" style="min-width: 200px; max-width: 50%;">
+      <mat-label>Search Collections</mat-label>
+      <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
+        placeholder="Search by name or description...">
+      <mat-icon matPrefix>search</mat-icon>
+    </mat-form-field>
+
+    @if (showNewButton) {
+    <button matButton="filled" (click)="onCreate()">
+      <mat-icon>add</mat-icon>
+      New Collection
+    </button>
+    }
+  </div>
+
+  <div class="overflow-hidden">
+    <div class="row g-3">
+      @for (collection of collections; track collection.collectionId) {
+      <div class="col-12 col-md-6 col-lg-4">
+        <mat-card class="h-100" (click)="onOpen(collection)">
+          <mat-card-header class="pb-2">
+            <mat-card-title class="py-2 d-flex justify-content-between align-items-center w-100 gap-2">
+              <span class="text-truncate">{{ collection.name }}</span>
+              @if (showDelete) {
+              <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+                <mat-icon>more_vert</mat-icon>
+              </button>
+              <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="onDelete(collection, $event)">
+                  <mat-icon>delete</mat-icon>
+                  <span>Delete</span>
+                </button>
+              </mat-menu>
+              }
+            </mat-card-title>
+            <mat-card-subtitle class="opacity-50">
+              {{ collection.isPrivate ? 'Private' : 'Public' }}
+              · {{ collection.snippetCount ?? 0 }} {{ (collection.snippetCount ?? 0) === 1 ? 'pen' : 'pens' }}
+            </mat-card-subtitle>
+          </mat-card-header>
+
+          <mat-card-content>
+            <p>{{ collection.description || 'No description' }}</p>
+          </mat-card-content>
+        </mat-card>
+      </div>
+      } @empty {
+      <div class="col-12">
+        <div class="d-flex flex-column align-items-center p-5 opacity-50">
+          <mat-icon>folder_open</mat-icon>
+          <p class="mb-0">No collections found</p>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+
+  @if (total > pageSize || pageIndex > 0) {
+  <div class="p-3 d-flex justify-content-center">
+    <mat-paginator [length]="total" [pageSize]="pageSize" [pageSizeOptions]="[6, 12, 24]" [pageIndex]="pageIndex"
+      (page)="onPageChange($event)" showFirstLastButtons>
+    </mat-paginator>
+  </div>
+  }
+</section>

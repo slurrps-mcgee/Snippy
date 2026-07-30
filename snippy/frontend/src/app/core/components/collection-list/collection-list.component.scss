@@ -1,0 +1,12 @@
+:host {
+  display: block;
+}
+
+:host ::ng-deep mat-card {
+  cursor: pointer;
+  background-color: var(--mat-sys-surface-container-high) !important;
+}
+
+:host ::ng-deep .mat-mdc-paginator {
+  background-color: transparent !important;
+}

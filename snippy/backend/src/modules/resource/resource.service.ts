@@ -34,6 +34,15 @@ function sanitizeSubFolder(subFolder?: string): string {
     return cleaned || 'general';
 }
 
+/** Encode each path segment so `/` stays as path separators for MinIO path-style URLs. */
+function buildContentUrl(objectKey: string): string {
+    const encoded = objectKey
+        .split('/')
+        .map((segment) => encodeURIComponent(segment))
+        .join('/');
+    return `/content/${encoded}`;
+}
+
 /**
  * Upload a file to MinIO under a user folder and optional subfolder.
  */
@@ -76,7 +85,7 @@ export async function uploadFileHandler(
             { 'Content-Type': mimetype }
         );
 
-        const url = `/content/${encodeURIComponent(objectKey)}`;
+        const url = buildContentUrl(objectKey);
 
         const asset = await executeInTransaction(async (t) => {
             const existing = await findByObjectKey(userPrefix, objectKey, t);

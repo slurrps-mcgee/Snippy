@@ -1,18 +1,17 @@
 <section>
-  <!-- Search Bar -->
-  <div class="d-flex justify-content-between pb-2">
-    <mat-form-field appearance="outline" class="w-50">
+  <div class="d-flex justify-content-between pb-2 gap-2 flex-wrap">
+    <mat-form-field appearance="outline" class="flex-grow-1" style="min-width: 200px; max-width: 50%;">
       <mat-label>Search Snippets</mat-label>
       <input matInput [(ngModel)]="searchQuery" (ngModelChange)="onSearchChange()"
         placeholder="Search by name or description...">
       <mat-icon matPrefix>search</mat-icon>
     </mat-form-field>
 
+    @if (showNewButton) {
     <button matButton="filled" (click)="createNewSnippet()">New Snippet</button>
-
+    }
   </div>
 
-  <!-- Snippet Cards Grid -->
   <div class="overflow-hidden">
     <div class="row g-3">
       @for (snippet of snippets; track snippet.shortId) {
@@ -20,7 +19,12 @@
         <mat-card class="h-100" (click)="openSnippet(snippet)">
           <mat-card-header class="pb-2">
             <mat-card-title class="py-2">{{ snippet.name }}</mat-card-title>
-            <mat-card-subtitle class="opacity-50">by {{ snippet.userName }}</mat-card-subtitle>
+            <mat-card-subtitle class="opacity-50">
+              by
+              <a class="text-decoration-none" (click)="goToProfile(snippet, $event)" href="javascript:void(0)">
+                {{ snippet.userName || 'unknown' }}
+              </a>
+            </mat-card-subtitle>
           </mat-card-header>
 
           <mat-card-content>
@@ -39,23 +43,20 @@
             <div class="d-flex align-items-center justify-content-between pt-2">
               <div class="d-flex gap-2">
                 <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
-                  matTooltip="View count (coming soon)"
-                  matTooltipPosition="above"
-                  (click)="viewSnippet(snippet); $event.stopPropagation()" disabled>
+                  matTooltip="Views" matTooltipPosition="above"
+                  (click)="$event.stopPropagation()" disabled>
                   <mat-icon>visibility</mat-icon>
                   {{ snippet.viewCount }}
                 </button>
                 <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
-                  matTooltip="Favorite this snippet"
-                  matTooltipPosition="above"
+                  [matTooltip]="snippet.isFavorited ? 'Unfavorite' : 'Favorite'" matTooltipPosition="above"
                   (click)="favoriteSnippet(snippet, $event)">
-                  <mat-icon>favorite</mat-icon>
+                  <mat-icon>{{ snippet.isFavorited ? 'favorite' : 'favorite_border' }}</mat-icon>
                   {{ snippet.favoriteCount }}
                 </button>
                 <button matButton="tonal" class="d-flex align-items-center pe-2 gap-1"
-                  matTooltip="Comment on this snippet (Coming soon)"
-                  matTooltipPosition="above"
-                  (click)="commentOnSnippet(snippet, $event)" disabled>
+                  matTooltip="Comments" matTooltipPosition="above"
+                  (click)="commentOnSnippet(snippet, $event)">
                   <mat-icon>comment</mat-icon>
                   {{ snippet.commentCount }}
                 </button>
@@ -65,13 +66,35 @@
                 <mat-icon>more_vert</mat-icon>
               </button>
               <mat-menu #menu="matMenu" xPosition="before">
+                <button mat-menu-item (click)="addToCollection(snippet)">
+                  <mat-icon>dashboard</mat-icon>
+                  <span>Add to Collection</span>
+                </button>
+                <button mat-menu-item (click)="forkSnippet(snippet)">
+                  <mat-icon>fork_right</mat-icon>
+                  <span>Fork</span>
+                </button>
+                @if (!snippet.isOwner && snippet.userName) {
+                <button mat-menu-item (click)="toggleFollow(snippet)">
+                  <mat-icon>{{ snippet.isFollowing ? 'person_remove' : 'person_add' }}</mat-icon>
+                  <span>{{ snippet.isFollowing ? 'Unfollow' : 'Follow' }} @{{ snippet.userName }}</span>
+                </button>
+                }
+                @if (showRemoveFromCollection) {
+                <button mat-menu-item (click)="emitRemoveFromCollection(snippet)">
+                  <mat-icon>remove_circle_outline</mat-icon>
+                  <span>Remove from Collection</span>
+                </button>
+                }
+                @if (snippet.isOwner) {
+                <mat-divider></mat-divider>
                 <button mat-menu-item (click)="deleteSnippet(snippet)">
                   <mat-icon>delete</mat-icon>
                   <span>Delete</span>
                 </button>
+                }
               </mat-menu>
             </div>
-
           </mat-card-content>
         </mat-card>
       </div>
@@ -86,7 +109,6 @@
     </div>
   </div>
 
-  <!-- Paginator -->
   <div class="p-3 d-flex justify-content-center">
     <mat-paginator [length]="total" [pageSize]="pageSize" [pageSizeOptions]="[6, 12, 24]" [pageIndex]="pageIndex"
       (page)="onPageChange($event)" showFirstLastButtons>

@@ -1,3 +1,75 @@
-<p>profile-page works!</p>
+<div class="d-flex flex-column h-100">
+  @if (loading()) {
+  <div class="d-flex align-items-center justify-content-center flex-grow-1">
+    <mat-spinner diameter="40"></mat-spinner>
+  </div>
+  } @else if (errorMessage()) {
+  <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 gap-2 opacity-50">
+    <mat-icon>lock</mat-icon>
+    <p class="mb-0">{{ errorMessage() }}</p>
+  </div>
+  } @else if (profileUser(); as user) {
+  <div class="container p-5 flex-grow-1 overflow-auto">
+    <div class="d-flex align-items-start gap-3 pb-3">
+      <img [src]="user.pictureUrl || 'https://www.gravatar.com/avatar/?d=mp'" alt="Avatar"
+        class="rounded-circle profile-avatar" />
 
-<p>Welcome to {{ user?.displayName }}'s Profile</p>
+      <div class="flex-grow-1">
+        <div class="d-flex align-items-center gap-3 flex-wrap">
+          <h1 class="mb-0">{{ user.displayName || user.userName }}</h1>
+
+          @if (!isSelf()) {
+          <button mat-raised-button [color]="user.isFollowing ? undefined : 'primary'" [disabled]="followLoading()"
+            (click)="toggleFollow()">
+            @if (followLoading()) {
+            <mat-spinner diameter="16"></mat-spinner>
+            } @else {
+            {{ user.isFollowing ? 'Unfollow' : 'Follow' }}
+            }
+          </button>
+          }
+        </div>
+
+        <p class="opacity-50 mb-2">&#64;{{ user.userName }}</p>
+
+        @if (user.bio) {
+        <p class="mb-2">{{ user.bio }}</p>
+        }
+
+        <div class="d-flex gap-4 opacity-75">
+          <span><strong>{{ user.followerCount ?? 0 }}</strong> Followers</span>
+          <span><strong>{{ user.followingCount ?? 0 }}</strong> Following</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex-grow-1 overflow-auto">
+      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+        <mat-tab label="Pens">
+          @if (isLoadingPens) {
+          <div class="text-center p-4">Loading pens...</div>
+          } @else {
+          <app-snippet-list-component class="d-block pt-3" [snippets]="snippets" [total]="total"
+            [pageSize]="pageSize" [pageIndex]="pageIndex" [showNewButton]="false"
+            (searchChange)="handlePenSearch($event)"
+            (pageChange)="handlePenPageChange($event)">
+          </app-snippet-list-component>
+          }
+        </mat-tab>
+
+        <mat-tab label="Collections">
+          @if (collectionsLoading) {
+          <div class="text-center p-4">Loading collections...</div>
+          } @else {
+          <app-collection-list class="d-block pt-3" [collections]="collections" [total]="collectionsTotal"
+            [pageSize]="collectionPageSize" [pageIndex]="collectionPageIndex" [showNewButton]="false"
+            [showDelete]="false" (searchChange)="handleCollectionSearch($event)"
+            (pageChange)="handleCollectionPageChange($event)" (openCollection)="openCollection($event)">
+          </app-collection-list>
+          }
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+  }
+</div>

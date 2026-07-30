@@ -1,1 +1,84 @@
-<p>settings-page works!</p>
+<div class="d-flex flex-column h-100">
+  <div class="container settings-container p-4 p-md-5 flex-grow-1 overflow-auto">
+    <div class="settings-hero mb-4">
+      <h1 class="mb-1">Settings</h1>
+      <p class="opacity-75 mb-0">Manage your profile and account.</p>
+    </div>
+
+    @if (!user()) {
+    <div class="text-center p-5">Loading…</div>
+    } @else {
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start" class="settings-tabs">
+      <mat-tab label="Profile">
+        <div class="settings-panel pt-4">
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Display name</mat-label>
+            <input matInput [(ngModel)]="displayName" maxlength="100" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Bio</mat-label>
+            <textarea matInput rows="4" [(ngModel)]="bio" maxlength="500"></textarea>
+            <mat-hint align="end">{{ bio.length }}/500</mat-hint>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" (click)="saveProfile()"
+            [disabled]="!isProfileDirty() || profileSaving()">
+            @if (profileSaving()) {
+            <mat-spinner diameter="18"></mat-spinner>
+            } @else {
+            Save profile
+            }
+          </button>
+        </div>
+      </mat-tab>
+
+      <mat-tab label="Account">
+        <div class="settings-panel pt-4">
+          <h3 class="h6 text-uppercase opacity-50 mb-3">Username</h3>
+
+          <mat-form-field appearance="outline" class="w-100">
+            <mat-label>Username</mat-label>
+            <input matInput [ngModel]="userName" (ngModelChange)="onUsernameInput($event)" maxlength="50" />
+            <mat-hint>
+              @switch (usernameStatus()) {
+              @case ('checking') { Checking availability… }
+              @case ('available') { Username is available }
+              @case ('taken') { Username is taken }
+              @case ('invalid') { Enter at least 2 characters }
+              @case ('current') { This is your current username }
+              @default { }
+              }
+            </mat-hint>
+          </mat-form-field>
+
+          <button mat-raised-button color="primary" class="mb-4" (click)="saveUsername()"
+            [disabled]="!canSaveUsername()">
+            @if (usernameSaving()) {
+            <mat-spinner diameter="18"></mat-spinner>
+            } @else {
+            Update username
+            }
+          </button>
+
+          <mat-divider class="my-4"></mat-divider>
+
+          <div class="danger-zone p-3">
+            <h3 class="h6 text-uppercase mb-2">Danger zone</h3>
+            <p class="opacity-75 mb-3">
+              Permanently delete your account and all associated data. This cannot be undone.
+            </p>
+            <button mat-stroked-button color="warn" (click)="confirmDeleteAccount()" [disabled]="deleting()">
+              @if (deleting()) {
+              <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+              Delete account
+              }
+            </button>
+          </div>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
+    }
+  </div>
+</div>

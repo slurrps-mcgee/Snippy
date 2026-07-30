@@ -1,0 +1,41 @@
+<div class="d-flex flex-column h-100">
+  <div class="container p-5 flex-grow-1 overflow-auto">
+    <button mat-button class="mb-3 back-link" (click)="goBack()">
+      <mat-icon>arrow_back</mat-icon>
+      Back
+    </button>
+
+    @if (loading()) {
+    <div class="d-flex align-items-center justify-content-center p-5">
+      <mat-spinner diameter="40"></mat-spinner>
+    </div>
+    } @else if (notFound() || !collection) {
+    <div class="d-flex flex-column align-items-center p-5 opacity-50">
+      <mat-icon>collections_bookmark</mat-icon>
+      <p class="mb-0">Collection not found.</p>
+    </div>
+    } @else {
+    <div class="pb-4">
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <h1 class="mb-0">{{ collection.name }}</h1>
+        <mat-chip>{{ collection.isPrivate ? 'Private' : 'Public' }}</mat-chip>
+      </div>
+      @if (collection.description) {
+      <p class="opacity-75 pt-2 mb-0">{{ collection.description }}</p>
+      }
+      <p class="opacity-50 pt-1 mb-0">
+        {{ penCount }} {{ penCount === 1 ? 'pen' : 'pens' }}
+        @if (collection.userName) {
+        · by &#64;{{ collection.userName }}
+        }
+      </p>
+    </div>
+
+    <app-snippet-list-component [snippets]="snippets" [total]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
+      [showNewButton]="false" [showRemoveFromCollection]="!!collection.isOwner"
+      (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)"
+      (removeFromCollection)="removeSnippet($event)">
+    </app-snippet-list-component>
+    }
+  </div>
+</div>

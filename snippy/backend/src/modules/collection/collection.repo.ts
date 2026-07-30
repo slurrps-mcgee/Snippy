@@ -106,6 +106,33 @@ export async function countCollectionSnippets(
     return await CollectionSnippets.count({ where: { collectionId }, transaction });
 }
 
+export async function countSnippetsForCollections(
+    collectionIds: string[],
+    transaction?: Transaction
+): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    await Promise.all(
+        collectionIds.map(async (id) => {
+            counts.set(id, await countCollectionSnippets(id, transaction));
+        })
+    );
+    return counts;
+}
+
+export async function findCollectionIdsContainingSnippet(
+    collectionIds: string[],
+    snippetId: string,
+    transaction?: Transaction
+): Promise<Set<string>> {
+    if (collectionIds.length === 0) return new Set();
+    const rows = await CollectionSnippets.findAll({
+        attributes: ['collectionId'],
+        where: { collectionId: collectionIds, snippetId },
+        transaction,
+    });
+    return new Set(rows.map((r) => r.collectionId));
+}
+
 export async function findCollectionSnippet(
     collectionId: string,
     snippetId: string,

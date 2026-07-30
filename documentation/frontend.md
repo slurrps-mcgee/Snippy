@@ -28,6 +28,25 @@ The Snippy frontend is an Angular 20+ single-page application (SPA) built with s
 - Material Design (UI components)
 - Angular Split (resizable panels)
 
+### Runtime configuration (`/env.js`)
+
+Container entrypoints write `/env.js` (or `public/env.js` in Docker Compose dev) before the app starts. [`index.html`](../snippy/frontend/src/index.html) loads it before the Angular bundles. Typed access lives in [`src/app/core/config/runtime-env.ts`](../snippy/frontend/src/app/core/config/runtime-env.ts):
+
+| Field | Used for |
+|-------|----------|
+| `auth0_*` | `provideAuth0` in `app.config.ts` |
+| `api_base` | `ApiService` base path (default `/api/v1`) |
+| `minio_enabled` | Whether nginx/proxy has MinIO `/content` available |
+
+Do not use build-time `environment.ts` for Auth0 — the same image must run under different Auth0 tenants.
+
+### Proxies
+
+| Context | `/api` | `/content` |
+|---------|--------|------------|
+| Dev (`proxy.conf.json`) | → `api:3000` | → `minio:9000` |
+| Prod nginx | → `api:3000` | → `minio:9000` when `ENABLE_MINIO` + healthy |
+
 ---
 
 ## Routing
@@ -35,20 +54,14 @@ The Snippy frontend is an Angular 20+ single-page application (SPA) built with s
 ### Route Structure
 
 ```
-Routes:
-├── '' (HomePageComponent)
-│   └── Default landing page, unauthenticated
-├── 'home' (UserHomePageComponent, guarded)
-│   └── User's snippet collection
-├── 'public' (PublicPageComponent, guarded)
-│   └── Publicly shared snippets
-├── ':username/snippet/:id' (SnippetEditorPageComponent, guarded)
-│   └── Edit existing snippet by owner
-├── 'snippet' (SnippetEditorPageComponent, guarded)
-│   └── Create new snippet
-├── ':username' (ProfilePageComponent, guarded)
-│   └── User profile & their public snippets
-└── '**' → redirects to home
+Routes (lazy except marketing ''):
+├── '' (HomePageComponent) — redirects to /home when Auth0 session exists
+├── 'home' (UserHomePageComponent, AuthGuard)
+├── 'public' / 'settings' (AuthGuard, lazy)
+├── 'snippet' / ':username/snippet/:id' (editor, AuthGuard + unsavedChangesGuard, lazy)
+├── ':username/fullpage/:id' (AuthGuard, lazy)
+├── ':username' (ProfilePageComponent, AuthGuard, lazy)
+└── '**' → ''
 ```
 
 ### Route Guards

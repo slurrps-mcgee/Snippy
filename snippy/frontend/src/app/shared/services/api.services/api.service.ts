@@ -1,31 +1,25 @@
 import { Injectable, inject } from '@angular/core';
-import { AuthService } from '@auth0/auth0-angular';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { from, Observable, throwError } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, defer, from, throwError } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { defaultPolicy } from './resiliance.service';
+import { getRuntimeEnv } from '../../../core/config/runtime-env';
 
 export type ApiOptions = {
-    path: string; // path under /api/v1
+    path: string; // path under api_base (e.g. /snippets/me)
     method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     body?: any;
     params?: Record<string, any>;
     headers?: Record<string, string>;
-    // when true, wait for Auth0 to be authenticated before sending the request
-    // requireAuth?: boolean;
 };
 
 @Injectable({ providedIn: 'root' })
 export class ApiService {
     private http = inject(HttpClient);
-    private auth = inject(AuthService);
-    
-    // Generic API request method
-    request<T = any>(opts: ApiOptions): Observable<T> {
-        const url = `/api/v1${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
+    private readonly apiBase = getRuntimeEnv().api_base;
 
-        // Use caller-provided headers but do not attach Authorization here.
-        // Authorization is handled centrally by the HTTP interceptor.
+    request<T = any>(opts: ApiOptions): Observable<T> {
+        const url = `${this.apiBase}${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
         const headers = new HttpHeaders(opts.headers || {});
 
         let params = new HttpParams();
@@ -38,25 +32,24 @@ export class ApiService {
 
         const method = (opts.method || 'GET').toUpperCase();
 
-        // defaultPolicy.execute returns a Promise/Observable that resolves to an Observable<T>;
-        // flatten the inner Observable to return Observable<T>.
-        return from(defaultPolicy.execute(async () => {
+        // Create a fresh HttpClient call per attempt so cockatiel can retry failed responses
+        const runOnce = () => {
             switch (method) {
                 case 'GET':
-                    return this.http.get<T>(url, { headers, params });
+                    return firstValueFrom(this.http.get<T>(url, { headers, params }));
                 case 'POST':
-                    return this.http.post<T>(url, opts.body, { headers, params });
+                    return firstValueFrom(this.http.post<T>(url, opts.body, { headers, params }));
                 case 'PUT':
-                    return this.http.put<T>(url, opts.body, { headers, params });
+                    return firstValueFrom(this.http.put<T>(url, opts.body, { headers, params }));
                 case 'PATCH':
-                    return this.http.patch<T>(url, opts.body, { headers, params });
+                    return firstValueFrom(this.http.patch<T>(url, opts.body, { headers, params }));
                 case 'DELETE':
-                    return this.http.delete<T>(url, { headers, params });
+                    return firstValueFrom(this.http.delete<T>(url, { headers, params }));
                 default:
-                    return throwError(() => new Error(`Unsupported method ${method}`));
+                    return Promise.reject(new Error(`Unsupported method ${method}`));
             }
-        })).pipe(
-            switchMap(inner => inner)
-        );
+        };
+
+        return defer(() => from(defaultPolicy.execute(() => runOnce())));
     }
 }

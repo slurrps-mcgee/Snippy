@@ -1,0 +1,38 @@
+<h2 mat-dialog-title>New Collection</h2>
+
+<mat-dialog-content>
+  <div class="d-flex flex-column gap-3 pt-1">
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Name</mat-label>
+      <input matInput [(ngModel)]="name" maxlength="120" placeholder="My favorite snippets" required>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="w-100">
+      <mat-label>Description</mat-label>
+      <textarea matInput [(ngModel)]="description" rows="4" [maxlength]="descriptionMaxLength"
+        placeholder="What's this collection about?"></textarea>
+      <mat-hint align="end">{{ description.length }}/{{ descriptionMaxLength }}</mat-hint>
+    </mat-form-field>
+
+    <div class="d-flex align-items-center justify-content-between">
+      <div>
+        <div class="fw-bold">{{ isPrivate ? 'Private' : 'Public' }}</div>
+        <small class="opacity-50">
+          {{ isPrivate ? 'Only you can view this collection' : 'Anyone can view this collection' }}
+        </small>
+      </div>
+      <mat-slide-toggle [(ngModel)]="isPrivate"></mat-slide-toggle>
+    </div>
+  </div>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="onCancel()">Cancel</button>
+  <button mat-raised-button color="primary" [disabled]="!isValid || creating()" (click)="onCreate()">
+    @if (creating()) {
+    <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+    Create
+    }
+  </button>
+</mat-dialog-actions>

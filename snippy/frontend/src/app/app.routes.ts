@@ -1,30 +1,86 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '@auth0/auth0-angular';
 import { HomePageComponent } from './core/pages/home-page/home-page.component';
-import { UserHomePageComponent } from './core/pages/user-home-page/user-home-page.component';
-import { ProfilePageComponent } from './core/pages/profile-page/profile-page.component';
 import { unsavedChangesGuard } from './shared/guards/unsaved-changes.guard';
-import { PublicPageComponent } from './core/pages/public-page/public-page.component';
-import { SnippetWebViewComponent } from './shared/components/views/snippet-web-view/snippet-web-view.component';
-import { FullpageViewComponent } from './shared/components/views/fullpage-view/fullpage-view.component';
-import { SettingsPageComponent } from './core/pages/settings-page/settings-page.component';
+
+export type HeaderMode = 'landing' | 'feed' | 'editor' | 'minimal';
 
 export const routes: Routes = [
+  { path: '', component: HomePageComponent, data: { header: 'landing' satisfies HeaderMode } },
 
-//Main pages
-{ path: '', component: HomePageComponent}, //Home page, shows welcome message and login button if not authenticated, otherwise redirects to user home page
-{ path: 'home', component: UserHomePageComponent, canActivate: [AuthGuard] }, //User home page, shows user snippets and profile info
-{ path: 'public', component: PublicPageComponent, canActivate: [AuthGuard] }, //Public page, shows all public snippets and allows searching/filtering
-{ path: 'settings', component: SettingsPageComponent, canActivate: [AuthGuard] }, //Settings page, allows user to update profile info and manage account settings
+  {
+    path: 'home',
+    loadComponent: () =>
+      import('./core/pages/user-home-page/user-home-page.component').then(m => m.UserHomePageComponent),
+    canActivate: [AuthGuard],
+    data: { header: 'feed' satisfies HeaderMode },
+  },
+  {
+    path: 'following',
+    loadComponent: () =>
+      import('./core/pages/following-page/following-page.component').then(m => m.FollowingPageComponent),
+    canActivate: [AuthGuard],
+    data: { header: 'feed' satisfies HeaderMode },
+  },
+  {
+    path: 'public',
+    loadComponent: () =>
+      import('./core/pages/public-page/public-page.component').then(m => m.PublicPageComponent),
+    canActivate: [AuthGuard],
+    data: { header: 'feed' satisfies HeaderMode },
+  },
+  {
+    path: 'settings',
+    loadComponent: () =>
+      import('./core/pages/settings-page/settings-page.component').then(m => m.SettingsPageComponent),
+    canActivate: [AuthGuard],
+    data: { header: 'feed' satisfies HeaderMode },
+  },
+  {
+    path: 'collections/:shortId',
+    loadComponent: () =>
+      import('./core/pages/collection-detail-page/collection-detail-page.component').then(
+        m => m.CollectionDetailPageComponent
+      ),
+    canActivate: [AuthGuard],
+    data: { header: 'feed' satisfies HeaderMode },
+  },
+  {
+    path: 'snippet',
+    loadComponent: () =>
+      import('./shared/components/views/snippet-web-view/snippet-web-view.component').then(
+        m => m.SnippetWebViewComponent
+      ),
+    canActivate: [AuthGuard],
+    canDeactivate: [unsavedChangesGuard],
+    data: { header: 'editor' satisfies HeaderMode },
+  },
+  {
+    path: ':username/snippet/:id',
+    loadComponent: () =>
+      import('./shared/components/views/snippet-web-view/snippet-web-view.component').then(
+        m => m.SnippetWebViewComponent
+      ),
+    canActivate: [AuthGuard],
+    canDeactivate: [unsavedChangesGuard],
+    data: { header: 'editor' satisfies HeaderMode },
+  },
+  {
+    path: ':username/fullpage/:id',
+    loadComponent: () =>
+      import('./shared/components/views/fullpage-view/fullpage-view.component').then(
+        m => m.FullpageViewComponent
+      ),
+    canActivate: [AuthGuard],
+    data: { header: 'minimal' satisfies HeaderMode },
+  },
+  {
+    path: ':username',
+    loadComponent: () =>
+      import('./core/pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent),
+    canActivate: [AuthGuard],
+    data: { header: 'feed' satisfies HeaderMode },
+  },
 
-//Snippet editor routes
-{ path: ':username/snippet/:id', component: SnippetWebViewComponent, canActivate: [AuthGuard], canDeactivate: [unsavedChangesGuard] },
-{ path: 'snippet', component: SnippetWebViewComponent, canActivate: [AuthGuard], canDeactivate: [unsavedChangesGuard] },
-{ path: ':username/fullpage/:id', component: FullpageViewComponent, canActivate: [AuthGuard] },
-
-//Profile page route
-{ path: ':username', component: ProfilePageComponent, canActivate: [AuthGuard] }, //Profile page, shows user profile info and their public snippets
-
-//Catch-all route
-{ path: '**', redirectTo: '' }, // catch-all -> home
+  { path: '**', redirectTo: '' },
 ];

@@ -10,7 +10,11 @@ export class SnippetMapper {
     /**
      * Map full snippet entity to DTO
      */
-    static toDTO(snippet: Snippets, currentUserId: string | undefined): SnippetDTO {
+    static toDTO(
+        snippet: Snippets,
+        currentUserId: string | undefined,
+        isFavorited?: boolean
+    ): SnippetDTO {
         return {
             snippetId: snippet.snippetId,
             shortId: snippet.shortId,
@@ -24,6 +28,7 @@ export class SnippetMapper {
             favoriteCount: snippet.favoriteCount,
             parentShortId: snippet.parentShortId ?? null,
             isOwner: currentUserId ? AuthorizationService.isOwner(snippet.auth0Id, currentUserId) : false,
+            isFavorited,
             userName: (snippet as any).user?.userName,
             displayName: (snippet as any).user?.displayName,
             snippetFiles: snippet.snippetFiles?.map(file => this.fileToDTO(file)),
@@ -37,8 +42,12 @@ export class SnippetMapper {
     static toListDTO(
         snippet: Snippets,
         currentUserId?: string,
-        favoritedIds?: Set<string>
+        favoritedIds?: Set<string>,
+        followingAuth0Ids?: Set<string>
     ): SnippetListDTO {
+        const isOwner = currentUserId
+            ? AuthorizationService.isOwner(snippet.auth0Id, currentUserId)
+            : false;
         return {
             snippetId: snippet.snippetId,
             shortId: snippet.shortId,
@@ -50,8 +59,11 @@ export class SnippetMapper {
             commentCount: snippet.commentCount,
             favoriteCount: snippet.favoriteCount,
             viewCount: snippet.viewCount,
-            isOwner: currentUserId ? AuthorizationService.isOwner(snippet.auth0Id, currentUserId) : false,
+            isOwner,
             isFavorited: favoritedIds ? favoritedIds.has(snippet.snippetId) : undefined,
+            isFollowing: followingAuth0Ids && !isOwner
+                ? followingAuth0Ids.has(snippet.auth0Id)
+                : undefined,
         };
     }
 
@@ -72,8 +84,11 @@ export class SnippetMapper {
     static toListDTOs(
         snippets: Snippets[],
         currentUserId?: string,
-        favoritedIds?: Set<string>
+        favoritedIds?: Set<string>,
+        followingAuth0Ids?: Set<string>
     ): SnippetListDTO[] {
-        return snippets.map(snippet => this.toListDTO(snippet, currentUserId, favoritedIds));
+        return snippets.map(snippet =>
+            this.toListDTO(snippet, currentUserId, favoritedIds, followingAuth0Ids)
+        );
     }
 }

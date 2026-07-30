@@ -26,6 +26,7 @@ export interface SnippetDTO {
     favoriteCount: number;
     parentShortId: string | null;
     isOwner: boolean;
+    isFavorited?: boolean;
     userName?: string;
     displayName?: string;
     snippetFiles?: SnippetFileDTO[];
@@ -47,6 +48,7 @@ export interface SnippetListDTO {
     viewCount: number;
     isOwner: boolean;
     isFavorited?: boolean;
+    isFollowing?: boolean;
 }
 
 export interface SnippetListQuery {

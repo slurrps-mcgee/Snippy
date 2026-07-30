@@ -39,13 +39,22 @@ async function mapSnippetsWithFavorites(
     transaction?: Transaction,
     allFavorited = false
 ) {
+    const followingAuth0Ids = auth0Id
+        ? new Set(await findFollowingIds(auth0Id, transaction))
+        : undefined;
+
     if (allFavorited && auth0Id) {
-        return SnippetMapper.toListDTOs(rows, auth0Id, new Set(rows.map((r) => r.snippetId)));
+        return SnippetMapper.toListDTOs(
+            rows,
+            auth0Id,
+            new Set(rows.map((r) => r.snippetId)),
+            followingAuth0Ids
+        );
     }
     const favoritedIds = auth0Id
         ? await findFavoritedSnippetIds(auth0Id, rows.map((r) => r.snippetId), transaction)
         : new Set<string>();
-    return SnippetMapper.toListDTOs(rows, auth0Id, favoritedIds);
+    return SnippetMapper.toListDTOs(rows, auth0Id, favoritedIds, followingAuth0Ids);
 }/**
  * Protected fields that cannot be updated through the updateSnippet endpoint
  * These fields are system-managed and should not be modified by users
@@ -317,7 +326,13 @@ export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown
                 throw new CustomError("Forbidden: private snippet", 403);
             }
 
-            return { snippet: SnippetMapper.toDTO(snippet, auth0Id) };
+            let isFavorited: boolean | undefined;
+            if (auth0Id) {
+                const favoritedIds = await findFavoritedSnippetIds(auth0Id, [snippet.snippetId], t);
+                isFavorited = favoritedIds.has(snippet.snippetId);
+            }
+
+            return { snippet: SnippetMapper.toDTO(snippet, auth0Id, isFavorited) };
         });
     } catch (err: any) {
         handleError(err, 'getSnippetHandler');

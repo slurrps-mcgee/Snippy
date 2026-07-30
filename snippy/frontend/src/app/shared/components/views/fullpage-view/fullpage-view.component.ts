@@ -1,25 +1,26 @@
-import { Component, inject, OnInit, ViewChild, effect } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ViewChild, effect, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetPreviewComponent } from "../../../../core/components/snippet-preview/snippet-preview.component";
 import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
-import { ActivatedRoute, RouterModule } from '@angular/router';
-import { UserMenuComponent } from "../../modules/user-menu/user-menu.component";
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-fullpage-view',
-  imports: [SnippetPreviewComponent, RouterModule, UserMenuComponent],
+  imports: [SnippetPreviewComponent],
   templateUrl: './fullpage-view.component.html',
   styleUrl: './fullpage-view.component.scss',
 })
-export class FullpageViewComponent implements OnInit {
+export class FullpageViewComponent implements OnInit, OnDestroy {
   @ViewChild(SnippetPreviewComponent) previewComponent?: SnippetPreviewComponent;
 
   snippetStoreService = inject(SnippetStoreService);
   private route = inject(ActivatedRoute);
+  private destroyRef = inject(DestroyRef);
 
   snippetId: string | null = null;
+  private viewRecorded = false;
 
   constructor() {
-    // React to snippet changes after load completes
     effect(() => {
       const snippet = this.snippetStoreService.snippet();
       const previewUpdateType = this.snippetStoreService.previewUpdateType();
@@ -28,8 +29,6 @@ export class FullpageViewComponent implements OnInit {
         const htmlFile = snippet.snippetFiles.find(f => f.fileType === 'html');
         const cssFile = snippet.snippetFiles.find(f => f.fileType === 'css');
         const jsFile = snippet.snippetFiles.find(f => f.fileType === 'js');
-
-        console.log('Preview updated with loaded snippet', { htmlFile, cssFile, jsFile, previewUpdateType });
 
         this.previewComponent.updatePreview(
           htmlFile?.content || '',
@@ -40,13 +39,29 @@ export class FullpageViewComponent implements OnInit {
         );
       }
     });
+
+    effect(() => {
+      const snippet = this.snippetStoreService.snippet();
+      if (!snippet?.snippetId || snippet.isOwner || this.viewRecorded) return;
+      this.viewRecorded = true;
+      void this.snippetStoreService.recordView(snippet.snippetId);
+    });
   }
 
   ngOnInit() {
-    this.snippetId = this.route.snapshot.paramMap.get('id');
+    this.route.paramMap
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(params => {
+        const id = params.get('id');
+        this.snippetId = id;
+        this.viewRecorded = false;
+        if (id) {
+          void this.snippetStoreService.loadSnippet(id);
+        }
+      });
+  }
 
-    if (this.snippetId) {
-      this.snippetStoreService.loadSnippet(this.snippetId);
-    }
+  ngOnDestroy(): void {
+    this.snippetStoreService.clearSnippet();
   }
 }

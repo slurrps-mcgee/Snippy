@@ -1,0 +1,23 @@
+.settings-container {
+  max-width: 720px;
+}
+
+.settings-hero h1 {
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.settings-panel {
+  max-width: 520px;
+}
+
+.danger-zone {
+  border: 1px solid rgba(244, 67, 54, 0.35);
+  border-radius: 8px;
+  background: rgba(244, 67, 54, 0.06);
+}
+
+button mat-spinner {
+  display: inline-block;
+  margin: 0 4px;
+}

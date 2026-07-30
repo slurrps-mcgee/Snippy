@@ -1,91 +1,90 @@
-import { Injectable, signal, effect, computed, inject } from '@angular/core';
+import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
-import { of, tap, filter, take, catchError } from 'rxjs';
+import { of, tap, take, catchError, switchMap, EMPTY, filter, finalize, firstValueFrom } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthAPIService } from '../api.services/auth.api.service';
-import { UserResponse } from '../../interfaces/userResponse.interface';
 import { User } from '../../interfaces/user.interface';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStoreService {
   /**
-   * Signal-based user state
+   * Backend user profile (null until Auth0 session is synced via POST /users).
+   * Auth0 AuthGuard may pass before this is set — wait for this signal when you need the API user.
    */
   readonly user = signal<User | null>(null);
 
-  /**
-   * Derived signal for authentication status
-   */
+  /** True when backend user row is loaded (not merely Auth0 session). */
   readonly isAuthenticated = computed(() => !!this.user());
+
+  /** True while an Auth0→backend sync is in flight. */
+  readonly syncing = signal(false);
 
   private auth0Service = inject(AuthService);
   private authApiService = inject(AuthAPIService);
+  private destroyRef = inject(DestroyRef);
 
   constructor() {
-    // Effect: react to Auth0 authentication changes
-    effect(() => {
-      this.auth0Service.isAuthenticated$.subscribe(isAuth => {
-        if (!isAuth) {
-          this.clearUserState();
-        } else {
-          this.auth0Service.user$.pipe(take(1)).subscribe(profile => {
-            this.syncBackendUser(profile);
-          });
-        }
-      });
-    });
+    this.auth0Service.isAuthenticated$
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        switchMap((isAuth) => {
+          if (!isAuth) {
+            this.clearUserState();
+            this.syncing.set(false);
+            return EMPTY;
+          }
+
+          this.syncing.set(true);
+          return this.auth0Service.user$.pipe(
+            filter((profile): profile is NonNullable<typeof profile> => !!profile),
+            take(1),
+            switchMap((profile) =>
+              this.authApiService.syncBackendUser(profile).pipe(
+                tap((res) => {
+                  const user = res?.user ?? res;
+                  if (user) this.setUser(user as User);
+                }),
+                catchError((err) => {
+                  console.warn('User sync failed', err);
+                  return of(null);
+                })
+              )
+            ),
+            finalize(() => this.syncing.set(false))
+          );
+        })
+      )
+      .subscribe();
   }
 
-  /** Save user to signal */
   private setUser(user: User) {
     this.user.set(user);
   }
 
-  /** Clear user state */
+  /** Merge fields into the cached backend user (e.g. after settings save). */
+  public patchUser(partial: Partial<User>) {
+    this.user.update(u => (u ? { ...u, ...partial } : u));
+  }
+
+  public setUserFromApi(user: User) {
+    this.setUser(user);
+  }
+
   private clearUserState() {
     this.user.set(null);
   }
 
-  /** Login + Create/Load backend user */
-  private syncBackendUser(profile: any) {
-    this.authApiService.syncBackendUser(profile).pipe(
-      tap(res => {
-        const user = res?.user ?? res;
-        if (user) this.setUser(user);
-      }),
-      catchError((err) => {
-        console.warn('User sync failed', err);
-        return of(null);
-      })
-    ).subscribe();
-  }
-
-  /** Manual logout trigger */
   public logout() {
     this.clearUserState();
     this.auth0Service.logout({ logoutParams: { returnTo: window.location.origin } });
   }
 
-  /** Returns current user synchronously */
-  public getCurrentUserSync() {
-    return this.user();
-  }
-
-
-  /** Returns authentication status as signal */
-  public isAuthenticatedSignal() {
-    return this.isAuthenticated;
-  }
-
-  /** Refresh user from backend and update signal */
-  public refreshUserFromBackend() {
-    this.authApiService.getCurrentUser().pipe(
-      tap(res => {
-        if (res?.user) this.setUser(res.user);
-      }),
-      catchError(() => {
-        console.warn('User refresh failed');
-        return of(null);
-      })
-    ).subscribe();
+  public async refreshUserFromBackend() {
+    try {
+      const res = await firstValueFrom(this.authApiService.getCurrentUser());
+      if (res?.user) this.setUser(res.user);
+    } catch {
+      console.warn('User refresh failed');
+    }
   }
 }

@@ -1,14 +1,13 @@
-import { Component, Inject, DOCUMENT, inject, DestroyRef } from '@angular/core';
-import { AuthService } from '@auth0/auth0-angular';
+import { Component, DOCUMENT, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthStoreService } from '../../../services/store.services/authStore.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
-import { User } from '../../../interfaces/user.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
 import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
+import { AssetsDialogComponent } from '../../dialogs/assets-dialog/assets-dialog.component';
 import { Router } from '@angular/router';
 
 @Component({
@@ -18,11 +17,9 @@ import { Router } from '@angular/router';
   styleUrl: './user-menu.component.scss',
 })
 export class UserMenuComponent {
-  // Use signal directly from AuthStoreService
   get user() { return this.authStoreService.user; }
 
   document = inject(DOCUMENT);
-  auth0Service = inject(AuthService);
   private router = inject(Router);
   private authStoreService = inject(AuthStoreService);
   private snippetStoreService = inject(SnippetStoreService);
@@ -53,13 +50,24 @@ export class UserMenuComponent {
     }
   }
 
-  // Navigate to pages
   settings() {
     this.router.navigate(['/settings']);
   }
 
   home() {
     this.router.navigate(['/home']);
+  }
+
+  profile() {
+    const name = this.user()?.userName;
+    if (name) this.router.navigate(['/', name]);
+  }
+
+  assets() {
+    this.dialog.open(AssetsDialogComponent, {
+      width: '640px',
+      maxHeight: '85vh',
+    });
   }
 
   createNewSnippet() {

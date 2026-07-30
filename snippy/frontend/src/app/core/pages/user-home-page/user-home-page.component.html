@@ -1,10 +1,8 @@
 @if(user()) {
 <div class="d-flex flex-column h-100">
-  <app-page-header></app-page-header>
-
   <div class="container p-5">
     <div class="d-flex align-items-center gap-3 pb-3">
-      <img [src]="user()?.pictureUrl" alt="User Picture" class="rounded-circle" />
+      <img [src]="user()?.pictureUrl" alt="User Picture" class="rounded-circle" width="80" height="80" />
       <div class="fw-bold">
         <h1>{{ user()?.displayName }}</h1>
         <p class="opacity-50">@{{ user()?.userName }}</p>
@@ -15,13 +13,39 @@
       <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
         <mat-tab label="Snippets">
           @if (isLoading) {
-          <div class="text-center">Loading snippets...</div>
+          <div class="text-center p-4">Loading snippets...</div>
           } @else {
-          <app-snippet-list-component class="container" [snippets]="snippets" [total]="total" [pageSize]="pageSize"
-            [pageIndex]="pageIndex" (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)">
+          <app-snippet-list-component class="d-block pt-3" [snippets]="snippets" [total]="total"
+            [pageSize]="pageSize" [pageIndex]="pageIndex" (searchChange)="handleSearch($event)"
+            (pageChange)="handlePageChange($event)">
           </app-snippet-list-component>
           }
         </mat-tab>
+
+        <mat-tab label="Collections">
+          @if (collectionsLoading) {
+          <div class="text-center p-4">Loading collections...</div>
+          } @else {
+          <app-collection-list class="d-block pt-3" [collections]="collections" [total]="collectionsTotal"
+            [pageSize]="collectionPageSize" [pageIndex]="collectionPageIndex" [showNewButton]="true"
+            [showDelete]="true" (searchChange)="handleCollectionSearch($event)"
+            (pageChange)="handleCollectionPageChange($event)" (createNew)="openCreateCollection()"
+            (openCollection)="openCollection($event)" (deleteCollection)="deleteCollection($event)">
+          </app-collection-list>
+          }
+        </mat-tab>
+
+        <mat-tab label="Favorites">
+          @if (favoritesLoading) {
+          <div class="text-center p-4">Loading favorites...</div>
+          } @else {
+          <app-snippet-list-component class="d-block pt-3" [snippets]="favorites" [total]="favoritesTotal"
+            [pageSize]="favoritesPageSize" [pageIndex]="favoritesPageIndex" [showNewButton]="false"
+            (searchChange)="handleFavoritesSearch($event)" (pageChange)="handleFavoritesPageChange($event)">
+          </app-snippet-list-component>
+          }
+        </mat-tab>
+
         <mat-tab label="Projects">
           <div class="text-center p-5">
             <p>Projects feature coming soon!</p>

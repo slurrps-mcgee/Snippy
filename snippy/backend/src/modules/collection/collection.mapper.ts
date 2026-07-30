@@ -7,7 +7,11 @@ export class CollectionMapper {
     static toDTO(
         collection: Collections,
         currentUserId?: string,
-        extras?: { snippetCount?: number; snippets?: SnippetListDTO[] }
+        extras?: {
+            snippetCount?: number;
+            snippets?: SnippetListDTO[];
+            containsSnippet?: boolean;
+        }
     ): CollectionDTO {
         return {
             collectionId: collection.collectionId,
@@ -21,11 +25,18 @@ export class CollectionMapper {
             userName: (collection as any).user?.userName,
             displayName: (collection as any).user?.displayName,
             snippetCount: extras?.snippetCount,
+            containsSnippet: extras?.containsSnippet,
             snippets: extras?.snippets,
         };
     }
 
-    static toDTOs(collections: Collections[], currentUserId?: string): CollectionDTO[] {
-        return collections.map((c) => this.toDTO(c, currentUserId));
+    static toDTOs(
+        collections: Collections[],
+        currentUserId?: string,
+        extrasById?: Map<string, { snippetCount?: number; containsSnippet?: boolean }>
+    ): CollectionDTO[] {
+        return collections.map((c) =>
+            this.toDTO(c, currentUserId, extrasById?.get(c.collectionId))
+        );
     }
 }
