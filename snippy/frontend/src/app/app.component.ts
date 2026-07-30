@@ -1,8 +1,8 @@
 import { Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { AuthStoreService } from './shared/services/store.services/authStore.service';
-import { FooterComponent } from './shared/components/footer/footer.component';
-import { PageHeaderComponent } from './shared/components/headers/page-header/page-header.component';
+import { AuthStoreService } from '@app/services/stores/auth.store.service';
+import { FooterComponent } from '@app/components/footer/footer.component';
+import { PageHeaderComponent } from '@app/components/headers/page-header/page-header.component';
 
 @Component({
   selector: 'app-root',

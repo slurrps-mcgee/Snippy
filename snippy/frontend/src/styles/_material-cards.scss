@@ -1,0 +1,43 @@
+/* Material cards → liquid glass */
+
+/* Material surfaces → liquid frosted glass */
+.mat-mdc-card {
+  --mdc-elevated-card-container-color: transparent !important;
+  --mdc-outlined-card-container-color: transparent !important;
+  --mdc-outlined-card-outline-color: var(--glass-border) !important;
+  position: relative;
+  overflow: hidden;
+  border-radius: 1.1rem !important;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--glass-white) !important;
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  box-shadow: var(--shadow-glass) !important;
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease,
+    transform 220ms ease;
+}
+
+.mat-mdc-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--reflection-top);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.mat-mdc-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.mat-mdc-card:hover {
+  --mdc-outlined-card-outline-color: var(--glass-border-bright) !important;
+  background: var(--glass-white-md) !important;
+  border-color: var(--glass-border-bright) !important;
+  box-shadow: var(--shadow-float) !important;
+}

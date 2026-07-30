@@ -1,0 +1,18 @@
+import { Component, Input } from '@angular/core';
+import { MatIconModule } from '@angular/material/icon';
+
+/** Placeholder shown inside a list grid when there are no results. */
+@Component({
+  selector: 'app-list-empty-state',
+  imports: [MatIconModule],
+  template: `
+    <div class="col-span-full flex flex-col items-center gap-2 p-12 text-slate-300">
+      <mat-icon>{{ icon }}</mat-icon>
+      <p>{{ message }}</p>
+    </div>
+  `,
+})
+export class ListEmptyStateComponent {
+  @Input() icon = 'inbox';
+  @Input() message = 'Nothing here yet';
+}

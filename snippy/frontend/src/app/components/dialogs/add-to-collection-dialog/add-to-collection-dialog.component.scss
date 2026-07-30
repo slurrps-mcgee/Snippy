@@ -1,0 +1,67 @@
+.dialog-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1.5rem;
+  color: var(--text-faint);
+  text-align: center;
+}
+
+.dialog-loading {
+  display: flex;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.collection-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.collection-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-white);
+  padding: 0.5rem;
+  box-shadow: inset 0 1px 0 var(--inset-highlight-sm);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+.collection-row__info {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.collection-row__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.collection-row__meta {
+  color: var(--text-faint);
+  font-size: 0.8125rem;
+}
+
+.collection-row__in {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-right: 0.5rem;
+  color: var(--text-dim);
+}
+
+.dialog-actions-split {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+}

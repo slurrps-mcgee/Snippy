@@ -25,6 +25,8 @@ export interface SnippetDTO {
     commentCount: number;
     favoriteCount: number;
     parentShortId: string | null;
+    parentName?: string | null;
+    parentUserName?: string | null;
     isOwner: boolean;
     isFavorited?: boolean;
     userName?: string;
@@ -46,6 +48,9 @@ export interface SnippetListDTO {
     commentCount: number;
     favoriteCount: number;
     viewCount: number;
+    parentShortId: string | null;
+    parentName: string | null;
+    parentUserName: string | null;
     isOwner: boolean;
     isFavorited?: boolean;
     isFollowing?: boolean;

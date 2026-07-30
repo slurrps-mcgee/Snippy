@@ -1,0 +1,86 @@
+/* Background orbs, grid mask, entry stagger */
+
+.atmosphere {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(65px);
+  opacity: 0.5;
+  animation: drift 16s ease-in-out infinite alternate;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.orb-cyan {
+  left: -9rem;
+  top: -6rem;
+  height: 20rem;
+  width: 20rem;
+  background: var(--orb-cyan);
+}
+
+.orb-violet {
+  right: -7rem;
+  top: 24%;
+  height: 19rem;
+  width: 19rem;
+  background: var(--orb-violet);
+  animation-delay: 1.2s;
+}
+
+.grid-mask {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+  pointer-events: none;
+}
+
+.content-stagger > * {
+  opacity: 0;
+  animation: fadeRise 650ms ease both;
+  animation-delay: var(--entry-delay, 0ms);
+}
+
+.content-stagger > *:nth-child(1) {
+  --entry-delay: 60ms;
+}
+
+.content-stagger > *:nth-child(2) {
+  --entry-delay: 140ms;
+}
+
+.content-stagger > *:nth-child(3) {
+  --entry-delay: 220ms;
+}
+
+.content-stagger > *:nth-child(4) {
+  --entry-delay: 300ms;
+}
+
+.content-stagger > *:nth-child(5) {
+  --entry-delay: 380ms;
+}
+
+.content-stagger > *:nth-child(6) {
+  --entry-delay: 460ms;
+}
+
+.content-stagger > *:nth-child(7) {
+  --entry-delay: 540ms;
+}
+
+.content-stagger > *:nth-child(8) {
+  --entry-delay: 620ms;
+}

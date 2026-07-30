@@ -1,0 +1,57 @@
+/* Snackbar glass + tone variants */
+
+.mat-mdc-snack-bar-container {
+  --mdc-snackbar-container-shape: 9999px;
+  --mdc-snackbar-supporting-text-color: var(--text-white);
+  --mat-snack-bar-button-color: var(--text-white);
+  border-radius: 9999px !important;
+  border: 1px solid var(--glass-border) !important;
+  background: var(--glass-dark-md) !important;
+  backdrop-filter: var(--blur-lg) !important;
+  -webkit-backdrop-filter: var(--blur-lg) !important;
+  box-shadow: var(--shadow-glass) !important;
+  overflow: hidden;
+
+  .mdc-snackbar__surface {
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: inherit !important;
+  }
+
+  .mdc-snackbar__label,
+  .mat-mdc-button .mdc-button__label {
+    color: var(--text-white) !important;
+  }
+}
+
+.success-snackbar {
+  --mdc-snackbar-container-color: transparent;
+  --mat-snack-bar-button-color: var(--text-white);
+  --mdc-snackbar-supporting-text-color: var(--text-white);
+  background: linear-gradient(110deg, var(--snackbar-success-from), var(--glass-dark-md)) !important;
+  border-color: var(--snackbar-success-border) !important;
+}
+
+.error-snackbar {
+  --mdc-snackbar-container-color: transparent;
+  --mat-snack-bar-button-color: var(--text-white);
+  --mdc-snackbar-supporting-text-color: var(--text-white);
+  background: linear-gradient(110deg, var(--snackbar-error-from), var(--glass-dark-md)) !important;
+  border-color: var(--snackbar-error-border) !important;
+}
+
+.info-snackbar {
+  --mdc-snackbar-container-color: transparent;
+  --mat-snack-bar-button-color: var(--text-white);
+  --mdc-snackbar-supporting-text-color: var(--text-white);
+  background: linear-gradient(110deg, var(--snackbar-info-from), var(--glass-dark-md)) !important;
+  border-color: var(--snackbar-info-border) !important;
+}
+
+.warning-snackbar {
+  --mdc-snackbar-container-color: transparent;
+  --mat-snack-bar-button-color: var(--text-white);
+  --mdc-snackbar-supporting-text-color: var(--text-white);
+  background: linear-gradient(110deg, var(--snackbar-warning-from), var(--glass-dark-md)) !important;
+  border-color: var(--snackbar-warning-border) !important;
+}

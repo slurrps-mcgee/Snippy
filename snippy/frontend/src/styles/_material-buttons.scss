@@ -1,0 +1,67 @@
+/* Buttons + warn / danger glass treatment */
+
+.mat-mdc-outlined-button,
+.mat-mdc-protected-button,
+.mat-tonal-button,
+.mat-mdc-button.mat-tonal {
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+.mat-mdc-outlined-button {
+  border-color: var(--glass-border) !important;
+  background: var(--glass-white) !important;
+}
+
+/* Primary filled/raised — brand violet so actions read as enabled */
+// .mat-mdc-raised-button.mat-primary,
+// .mat-mdc-unelevated-button.mat-primary,
+// .mat-mdc-button.mat-primary.mat-mdc-button-base[mat-flat-button],
+// button.mat-mdc-raised-button.mat-primary,
+// .mat-mdc-button.mat-primary {
+//   --mdc-protected-button-container-color: var(--brand-violet);
+//   --mdc-filled-button-container-color: var(--brand-violet);
+//   --mdc-protected-button-label-text-color: var(--text-white);
+//   --mdc-filled-button-label-text-color: var(--text-white);
+//   --mat-protected-button-container-color: var(--brand-violet);
+//   --mat-filled-button-container-color: var(--brand-violet);
+//   --mat-protected-button-label-text-color: var(--text-white);
+//   --mat-filled-button-label-text-color: var(--text-white);
+//   background-color: var(--brand-violet) !important;
+//   color: var(--text-white) !important;
+// }
+
+// .mat-mdc-raised-button.mat-primary .mdc-button__label,
+// .mat-mdc-unelevated-button.mat-primary .mdc-button__label,
+// .mat-mdc-button.mat-primary .mdc-button__label,
+// .mat-mdc-raised-button.mat-primary .mat-icon,
+// .mat-mdc-unelevated-button.mat-primary .mat-icon,
+// .mat-mdc-button.mat-primary .mat-icon {
+//   color: var(--text-white) !important;
+// }
+
+.mat-mdc-raised-button.mat-warn,
+.mat-mdc-unelevated-button.mat-warn,
+.mat-mdc-button.mat-warn.mat-mdc-button-base[mat-flat-button],
+button.mat-mdc-raised-button.mat-warn {
+  --mdc-protected-button-container-color: transparent;
+  --mdc-filled-button-container-color: transparent;
+  --mdc-protected-button-label-text-color: var(--text-white);
+  --mdc-filled-button-label-text-color: var(--text-white);
+  background: linear-gradient(135deg, var(--warn-fill-from), var(--warn-fill-to)) !important;
+  border: 1px solid var(--warn-border) !important;
+  color: var(--text-white) !important;
+  box-shadow: inset 0 1px 0 var(--inset-highlight-sm);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+.mat-mdc-outlined-button.mat-warn,
+.mat-mdc-button.mat-warn[mat-stroked-button] {
+  --mdc-outlined-button-outline-color: var(--warn-outline-color);
+  --mdc-outlined-button-label-text-color: var(--danger-label);
+  background: linear-gradient(135deg, var(--warn-outline-from), var(--warn-outline-to)) !important;
+  border-color: var(--warn-border) !important;
+  color: var(--danger-label) !important;
+  box-shadow: inset 0 1px 0 var(--inset-highlight-faint);
+}

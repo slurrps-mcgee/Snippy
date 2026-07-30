@@ -1,0 +1,17 @@
+:host {
+  display: block;
+}
+
+.mat-mdc-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0 0 0.75rem;
+}
+
+.mat-mdc-list-item {
+  height: auto !important;
+  --mdc-list-list-item-one-line-container-height: auto;
+  --mdc-list-list-item-container-height: auto;
+  padding: 0 !important;
+}

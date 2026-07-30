@@ -52,8 +52,22 @@ export function buildTextSearchCondition(q?: string | null, tableAlias: string =
     );
 }
 
-function userInclude() {
-    return [{ model: Users, attributes: ['userName', 'displayName'] }];
+/** Owner user + optional parent snippet (with parent owner) for list/detail DTO mapping. */
+export function snippetWithParentInclude() {
+    return [
+        { model: Users, attributes: ['userName', 'displayName'] },
+        {
+            model: Snippets,
+            as: 'parent',
+            attributes: ['shortId', 'name'],
+            required: false,
+            include: [{ model: Users, attributes: ['userName', 'displayName'] }],
+        },
+    ];
+}
+
+function listInclude() {
+    return snippetWithParentInclude();
 }
 
 // #region Snippet CREATE/UPDATE/DELETE
@@ -133,7 +147,7 @@ export async function findByShortId(
             where: { shortId },
             include: [
                 SnippetFiles,
-                { model: Users, attributes: ['userName', 'displayName'] }
+                ...snippetWithParentInclude(),
             ],
             transaction
         });
@@ -171,7 +185,7 @@ export async function searchSnippets(
 
     return await Snippets.findAndCountAll({
         where,
-        include: userInclude(),
+        include: listInclude(),
         order: resolveSnippetOrder(sort),
         offset,
         limit,
@@ -198,7 +212,7 @@ export async function getAllPublicSnippets(
 
     return await Snippets.findAndCountAll({
         where,
-        include: userInclude(),
+        include: listInclude(),
         order: resolveSnippetOrder(sort),
         offset,
         limit,
@@ -223,7 +237,7 @@ export async function getUserPublicSnippets(
 
     return await Snippets.findAndCountAll({
         where,
-        include: userInclude(),
+        include: listInclude(),
         order: [['created_at', 'DESC']],
         offset,
         limit,
@@ -247,7 +261,7 @@ export async function getMySnippets(
 
     return await Snippets.findAndCountAll({
         where,
-        include: userInclude(),
+        include: listInclude(),
         order: [['created_at', 'DESC']],
         offset,
         limit,
@@ -276,7 +290,7 @@ export async function getFeedSnippets(
             auth0Id: { [Op.in]: followedAuth0Ids },
             ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
         },
-        include: userInclude(),
+        include: listInclude(),
         order: resolveSnippetOrder(sort),
         offset,
         limit,

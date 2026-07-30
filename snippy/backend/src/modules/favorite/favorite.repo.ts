@@ -1,8 +1,7 @@
 import { Op, Transaction, WhereOptions } from "sequelize";
 import { Favorites } from "../../entities/favorite.entity";
 import { Snippets } from "../../entities/snippet.entity";
-import { Users } from "../../entities/user.entity";
-import { buildTextSearchCondition } from "../snippet/snippet.repo";
+import { buildTextSearchCondition, snippetWithParentInclude } from "../snippet/snippet.repo";
 
 // #region Favorite CREATE/DELETE
 // Create Favorite
@@ -45,7 +44,7 @@ export async function findFavoriteSnippetsByUser(
         where,
         include: [{
             model: Snippets,
-            include: [{ model: Users, attributes: ['userName', 'displayName'] }]
+            include: snippetWithParentInclude(),
         }],
         order: [['created_at', 'ASC']],
         offset,

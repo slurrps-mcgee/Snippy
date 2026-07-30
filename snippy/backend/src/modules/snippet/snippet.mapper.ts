@@ -7,6 +7,19 @@ import { SnippetFiles } from '../../entities/snippetFile.entity';
  * Mapper for transforming Snippet entities to DTOs
  */
 export class SnippetMapper {
+    private static parentFields(snippet: Snippets): {
+        parentShortId: string | null;
+        parentName: string | null;
+        parentUserName: string | null;
+    } {
+        const parent = (snippet as any).parent as Snippets | undefined;
+        return {
+            parentShortId: snippet.parentShortId ?? null,
+            parentName: parent?.name ?? null,
+            parentUserName: (parent as any)?.user?.userName ?? null,
+        };
+    }
+
     /**
      * Map full snippet entity to DTO
      */
@@ -26,7 +39,7 @@ export class SnippetMapper {
             viewCount: snippet.viewCount,
             commentCount: snippet.commentCount,
             favoriteCount: snippet.favoriteCount,
-            parentShortId: snippet.parentShortId ?? null,
+            ...this.parentFields(snippet),
             isOwner: currentUserId ? AuthorizationService.isOwner(snippet.auth0Id, currentUserId) : false,
             isFavorited,
             userName: (snippet as any).user?.userName,
@@ -59,6 +72,7 @@ export class SnippetMapper {
             commentCount: snippet.commentCount,
             favoriteCount: snippet.favoriteCount,
             viewCount: snippet.viewCount,
+            ...this.parentFields(snippet),
             isOwner,
             isFavorited: favoritedIds ? favoritedIds.has(snippet.snippetId) : undefined,
             isFollowing: followingAuth0Ids && !isOwner

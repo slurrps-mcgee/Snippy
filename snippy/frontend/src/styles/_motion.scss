@@ -1,0 +1,38 @@
+/* Keyframes and reduced-motion / mobile atmosphere tweaks */
+
+@keyframes drift {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(-22px) scale(1.08);
+  }
+}
+
+@keyframes fadeRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .orb {
+    opacity: 0.38;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-stagger > * {
+    opacity: 1;
+    animation: none;
+  }
+
+  .orb {
+    animation: none;
+  }
+}

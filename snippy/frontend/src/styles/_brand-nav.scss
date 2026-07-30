@@ -1,0 +1,32 @@
+/* Feed / header nav pills */
+
+.nav-pill {
+  display: inline-flex;
+  padding: 0.45rem 0.8rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms ease;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.nav-pill:hover {
+  background: var(--glass-white);
+  border-color: var(--glass-border-subtle);
+  color: var(--text-white);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+.nav-pill-active {
+  background: var(--glass-white-md);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-glass), inset 0 1px 0 var(--inset-highlight);
+  color: var(--text-white);
+  backdrop-filter: var(--blur-md);
+  -webkit-backdrop-filter: var(--blur-md);
+}

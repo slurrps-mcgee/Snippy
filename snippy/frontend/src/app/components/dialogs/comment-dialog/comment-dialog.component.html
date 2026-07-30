@@ -1,0 +1,96 @@
+<h2 mat-dialog-title>
+  Comments
+  <span class="font-normal text-slate-300">on "{{ data.snippetName }}"</span>
+</h2>
+
+<mat-dialog-content>
+
+  <div class="flex items-start gap-2 pb-3 pt-2">
+    <mat-form-field appearance="outline" class="flex-1">
+      <mat-label>Add a comment</mat-label>
+      <textarea matInput [(ngModel)]="newComment" rows="2" maxlength="2000"
+        [disabled]="posting()"
+        (keydown.enter)="$event.stopPropagation()"></textarea>
+    </mat-form-field>
+    <button mat-raised-button color="primary" class="mt-1" [disabled]="!newComment.trim() || posting()"
+      (click)="postComment()">
+      @if (posting()) {
+      <mat-spinner diameter="18"></mat-spinner>
+      } @else {
+      Post
+      }
+    </button>
+  </div>
+
+  <mat-divider></mat-divider>
+
+  <div class="pt-3">
+    @if (loading()) {
+    <div class="flex justify-center p-6">
+      <mat-spinner diameter="32"></mat-spinner>
+    </div>
+    } @else if (comments().length === 0) {
+    <div class="flex flex-col items-center gap-2 p-6 text-slate-400">
+      <mat-icon>chat_bubble_outline</mat-icon>
+      <p>No comments yet. Be the first to say something!</p>
+    </div>
+    } @else {
+    <div class="flex flex-col gap-3">
+      @for (comment of comments(); track comment.commentId; let isLast = $last) {
+      <div class="comment-item">
+        <div class="flex items-start justify-between">
+          <div>
+            <span class="font-semibold text-slate-100">{{ comment.displayName || comment.userName }}</span>
+            @if (comment.userName) {
+            <span class="pl-1 text-slate-400">&#64;{{ comment.userName }}</span>
+            }
+          </div>
+
+          <div class="flex gap-1">
+            @if (canEdit(comment) && editingCommentId() !== comment.commentId) {
+            <button mat-icon-button matTooltip="Edit comment" (click)="startEdit(comment)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            }
+            @if (canDelete(comment)) {
+            <button mat-icon-button class="icon-btn-danger" matTooltip="Delete comment"
+              (click)="deleteComment(comment)">
+              <mat-icon>delete</mat-icon>
+            </button>
+            }
+          </div>
+        </div>
+
+        @if (editingCommentId() === comment.commentId) {
+        <div class="flex items-start gap-2 pt-2">
+          <mat-form-field appearance="outline" class="flex-1">
+            <textarea matInput [(ngModel)]="editContent" rows="2" maxlength="2000"></textarea>
+          </mat-form-field>
+          <div class="mt-1 flex flex-col gap-1">
+            <button mat-icon-button color="primary" matTooltip="Save" [disabled]="!editContent.trim()"
+              (click)="saveEdit(comment)">
+              <mat-icon>check</mat-icon>
+            </button>
+            <button mat-icon-button matTooltip="Cancel" (click)="cancelEdit()">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+        } @else {
+        <p class="pt-1 text-slate-300">{{ comment.content }}</p>
+        }
+      </div>
+      @if (!isLast) {
+      <mat-divider></mat-divider>
+      }
+      }
+    </div>
+    }
+  </div>
+</mat-dialog-content>
+
+<mat-divider></mat-divider>
+
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Close</button>
+</mat-dialog-actions>

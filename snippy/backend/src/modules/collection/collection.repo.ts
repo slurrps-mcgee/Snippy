@@ -3,7 +3,7 @@ import { Collections } from '../../entities/collection.entity';
 import { CollectionSnippets } from '../../entities/collectionSnippet.entity';
 import { Snippets } from '../../entities/snippet.entity';
 import { Users } from '../../entities/user.entity';
-import { buildTextSearchCondition } from '../snippet/snippet.repo';
+import { buildTextSearchCondition, snippetWithParentInclude } from '../snippet/snippet.repo';
 import { buildLikeSearchCondition } from '../../common/utilities/searchCondition';
 
 /** Free-text search over a collection's own name/description (collections have no tags). */
@@ -124,7 +124,7 @@ export async function findCollectionSnippetsOrdered(
         },
         include: [{
             model: Snippets,
-            include: [{ model: Users, attributes: ['userName', 'displayName'] }],
+            include: snippetWithParentInclude(),
         }],
         order: [['position', 'ASC']],
         transaction,

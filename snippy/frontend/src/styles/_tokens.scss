@@ -1,0 +1,118 @@
+/* Design tokens — colors, glass, blur, shadows */
+
+:root {
+  /* Brand */
+  --brand-violet: #8b5cf6;
+  --brand-cyan: #22d3ee;
+  /* Solid focus ring — opaque so it stays visible on glass */
+  --brand-violet-focus: #8b5cf6;
+  --brand-violet-selection: rgba(139, 92, 246, 0.45);
+
+  /* Surfaces */
+  --page-bg: #0f172a;
+  --card-bg: #1e293b;
+  --fallback-solid: rgba(30, 41, 59, 0.92);
+  --fallback-solid-strong: rgba(30, 41, 59, 0.94);
+
+  /* Dialog surfaces — dark frosted glass (fields stay lighter on top) */
+  --dialog-surface: rgba(15, 23, 42, 0.58);
+  --dialog-border: rgba(255, 255, 255, 0.22);
+  --dialog-field-bg: rgba(255, 255, 255, 0.1);
+  --dialog-field-border: rgba(255, 255, 255, 0.28);
+  --dialog-form-label: #cbd5e1;
+  --dialog-form-label-focus: #c4b5fd;
+
+  /* Text */
+  --text-primary: #f1f5f9;
+  --text-bright: #f8fafc;
+  --text-white: #ffffff;
+  --text-muted: #e2e8f0;
+  --text-soft: #cbd5e1;
+  --text-dim: #a8b6c8;
+  --text-faint: #94a3b8;
+  /* High-luminance accents — readable on dark glass */
+  --text-link: #7dd3fc;
+  --text-link-accent: #c4b5fd;
+  --form-label: #94a3b8;
+  --form-label-focus: #c4b5fd;
+  --text-accent: #7dd3fc;
+  --text-accent-bright: #67e8f9;
+  --text-success: #86efac;
+  --text-warning: #fdba74;
+  --text-info: #7dd3fc;
+
+  /* Liquid glass (inspired by CodePen NPRPBjd — frosted surface) */
+  --glass-white-xs: rgba(255, 255, 255, 0.05);
+  --glass-white: rgba(255, 255, 255, 0.1);
+  --glass-white-md: rgba(255, 255, 255, 0.16);
+  --glass-white-lg: rgba(255, 255, 255, 0.22);
+  --glass-dark: rgba(15, 23, 42, 0.35);
+  --glass-dark-md: rgba(15, 23, 42, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-border-subtle: rgba(255, 255, 255, 0.12);
+  --glass-border-mid: rgba(255, 255, 255, 0.15);
+  --glass-border-bright: rgba(255, 255, 255, 0.38);
+
+  /* Inset highlights */
+  --inset-highlight: rgba(255, 255, 255, 0.28);
+  --inset-highlight-md: rgba(255, 255, 255, 0.25);
+  --inset-highlight-sm: rgba(255, 255, 255, 0.2);
+  --inset-highlight-xs: rgba(255, 255, 255, 0.15);
+  --inset-highlight-faint: rgba(255, 255, 255, 0.12);
+  --inset-highlight-hairline: rgba(255, 255, 255, 0.06);
+
+  /* Danger / warn */
+  --danger-soft: #fca5a5;
+  --danger-label: #fecaca;
+  --danger-hover-bg: rgba(248, 113, 113, 0.16);
+  --danger-zone-border: rgba(248, 113, 113, 0.35);
+  --danger-zone-bg: rgba(239, 68, 68, 0.1);
+  --warn-fill-from: rgba(248, 113, 113, 0.42);
+  --warn-fill-to: rgba(127, 29, 29, 0.35);
+  --warn-outline-from: rgba(248, 113, 113, 0.18);
+  --warn-outline-to: rgba(127, 29, 29, 0.12);
+  --warn-border: rgba(248, 113, 113, 0.45);
+  --warn-outline-color: rgba(248, 113, 113, 0.5);
+
+  /* Atmosphere */
+  --orb-cyan: radial-gradient(circle at center, rgba(6, 182, 212, 0.7) 0%, rgba(8, 47, 73, 0.1) 70%);
+  --orb-violet: radial-gradient(circle at center, rgba(124, 58, 237, 0.75) 0%, rgba(30, 27, 75, 0.08) 68%);
+  --grid-line: rgba(255, 255, 255, 0.03);
+
+  /* Snackbar tones */
+  --snackbar-success-from: rgba(34, 197, 94, 0.28);
+  --snackbar-success-border: rgba(134, 239, 172, 0.35);
+  --snackbar-error-from: rgba(239, 68, 68, 0.32);
+  --snackbar-error-border: rgba(252, 165, 165, 0.4);
+  --snackbar-info-from: rgba(14, 165, 233, 0.3);
+  --snackbar-info-border: rgba(125, 211, 252, 0.4);
+  --snackbar-warning-from: rgba(249, 115, 22, 0.3);
+  --snackbar-warning-border: rgba(253, 186, 116, 0.4);
+
+  /* Scrollbars */
+  --scrollbar-size: 8px;
+  --scrollbar-thumb: var(--brand-violet);
+  --scrollbar-thumb-hover: #a78bfa;
+  --scrollbar-track: transparent;
+
+  /* Effects */
+  --blur-sm: blur(8px);
+  --blur-md: blur(18px);
+  --blur-lg: blur(32px);
+  --shadow-glass:
+    0 8px 32px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 var(--inset-highlight);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.18);
+  --reflection-top: linear-gradient(
+    135deg,
+    var(--inset-highlight) 0%,
+    rgba(255, 255, 255, 0) 48%
+  );
+
+  /* Compat aliases used by Material overrides */
+  --card-bg-glass: var(--glass-white);
+  --card-border: var(--glass-border);
+  --header-bg: var(--glass-dark-md);
+
+  color-scheme: dark;
+}

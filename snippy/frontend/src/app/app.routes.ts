@@ -1,9 +1,9 @@
 import { Routes } from '@angular/router';
 import { AuthGuard } from '@auth0/auth0-angular';
-import { HomePageComponent } from './core/pages/home-page/home-page.component';
-import { unsavedChangesGuard } from './shared/guards/unsaved-changes.guard';
-
-export type HeaderMode = 'landing' | 'feed' | 'editor' | 'minimal';
+import { HomePageComponent } from '@app/pages/home-page/home-page.component';
+import { unsavedChangesGuard } from '@app/guards/unsaved-changes.guard';
+import type { SnippetFeed } from '@app/pages/snippet-feed-page/snippet-feed-page.component';
+import type { HeaderMode } from '@app/interfaces/header-mode';
 
 export const routes: Routes = [
   { path: '', component: HomePageComponent, data: { header: 'landing' satisfies HeaderMode } },
@@ -11,35 +11,39 @@ export const routes: Routes = [
   {
     path: 'home',
     loadComponent: () =>
-      import('./core/pages/user-home-page/user-home-page.component').then(m => m.UserHomePageComponent),
+      import('./pages/user-home-page/user-home-page.component').then(m => m.UserHomePageComponent),
     canActivate: [AuthGuard],
     data: { header: 'feed' satisfies HeaderMode },
   },
   {
     path: 'following',
     loadComponent: () =>
-      import('./core/pages/following-page/following-page.component').then(m => m.FollowingPageComponent),
+      import('./pages/snippet-feed-page/snippet-feed-page.component').then(
+        m => m.SnippetFeedPageComponent
+      ),
     canActivate: [AuthGuard],
-    data: { header: 'feed' satisfies HeaderMode },
+    data: { header: 'feed' satisfies HeaderMode, feed: 'following' satisfies SnippetFeed },
   },
   {
     path: 'public',
     loadComponent: () =>
-      import('./core/pages/public-page/public-page.component').then(m => m.PublicPageComponent),
+      import('./pages/snippet-feed-page/snippet-feed-page.component').then(
+        m => m.SnippetFeedPageComponent
+      ),
     canActivate: [AuthGuard],
-    data: { header: 'feed' satisfies HeaderMode },
+    data: { header: 'feed' satisfies HeaderMode, feed: 'public' satisfies SnippetFeed },
   },
   {
     path: 'settings',
     loadComponent: () =>
-      import('./core/pages/settings-page/settings-page.component').then(m => m.SettingsPageComponent),
+      import('./pages/settings-page/settings-page.component').then(m => m.SettingsPageComponent),
     canActivate: [AuthGuard],
     data: { header: 'feed' satisfies HeaderMode },
   },
   {
     path: 'collections/:shortId',
     loadComponent: () =>
-      import('./core/pages/collection-detail-page/collection-detail-page.component').then(
+      import('./pages/collection-detail-page/collection-detail-page.component').then(
         m => m.CollectionDetailPageComponent
       ),
     canActivate: [AuthGuard],
@@ -48,7 +52,7 @@ export const routes: Routes = [
   {
     path: 'snippet',
     loadComponent: () =>
-      import('./shared/components/views/snippet-web-view/snippet-web-view.component').then(
+      import('./pages/snippet-web-view/snippet-web-view.component').then(
         m => m.SnippetWebViewComponent
       ),
     canActivate: [AuthGuard],
@@ -58,7 +62,7 @@ export const routes: Routes = [
   {
     path: ':username/snippet/:id',
     loadComponent: () =>
-      import('./shared/components/views/snippet-web-view/snippet-web-view.component').then(
+      import('./pages/snippet-web-view/snippet-web-view.component').then(
         m => m.SnippetWebViewComponent
       ),
     canActivate: [AuthGuard],
@@ -68,7 +72,7 @@ export const routes: Routes = [
   {
     path: ':username/fullpage/:id',
     loadComponent: () =>
-      import('./shared/components/views/fullpage-view/fullpage-view.component').then(
+      import('./pages/fullpage-view/fullpage-view.component').then(
         m => m.FullpageViewComponent
       ),
     canActivate: [AuthGuard],
@@ -77,7 +81,7 @@ export const routes: Routes = [
   {
     path: ':username',
     loadComponent: () =>
-      import('./core/pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent),
+      import('./pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent),
     canActivate: [AuthGuard],
     data: { header: 'feed' satisfies HeaderMode },
   },

@@ -4,8 +4,8 @@ import { routes } from './app.routes';
 import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AuthHttpInterceptor, provideAuth0 } from '@auth0/auth0-angular';
-import { assertAuth0Env, getRuntimeEnv } from './core/config/runtime-env';
-import { provideDialogDefaults } from './shared/services/component.services/dialog.service';
+import { assertAuth0Env, getRuntimeEnv } from '@app/config/runtime-env';
+import { provideDialogDefaults } from '@app/services/ui/dialog.service';
 
 const env = getRuntimeEnv();
 assertAuth0Env(env);
