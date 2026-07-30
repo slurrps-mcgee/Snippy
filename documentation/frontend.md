@@ -22,11 +22,16 @@ The Snippy frontend is an Angular 20+ single-page application (SPA) built with s
 
 **Key Technologies:**
 - Angular 20+ (standalone components, signals)
+- Tailwind CSS v4 (layout + Quantum-inspired design tokens)
+- Angular Material (interactive controls; dark violet/cyan M3 theme)
 - CodeMirror (code editor)
 - RxJS (observables, async operations)
 - Auth0 (authentication)
-- Material Design (UI components)
 - Angular Split (resizable panels)
+
+### Visual system
+
+Inspired by [Quantum Code Devs](https://quantumcode.dev/): always-dark `slate-950` surfaces, brand violet `#7c3aed` + cyan `#06b6d4`, Space Grotesk headings, IBM Plex Sans body, glass cards, ambient orbs/grid. Tokens and utilities live in [`src/styles.css`](../snippy/frontend/src/styles.css); Material theme in [`src/styles.scss`](../snippy/frontend/src/styles.scss). Bootstrap is not used.
 
 ### Runtime configuration (`/env.js`)
 
@@ -44,8 +49,10 @@ Do not use build-time `environment.ts` for Auth0 — the same image must run und
 
 | Context | `/api` | `/content` |
 |---------|--------|------------|
-| Dev (`proxy.conf.json`) | → `api:3000` | → `minio:9000` |
-| Prod nginx | → `api:3000` | → `minio:9000` when `ENABLE_MINIO` + healthy |
+| Dev (`proxy.conf.json` + `ng serve`) | → `api:3000` | → `minio:9000` |
+| Prod (`nginx.nominio.conf` / `nginx.minio.conf` via `entrypoint.sh`) | → `api:3000` | → `minio:9000` when `ENABLE_MINIO` + healthy |
+
+`proxy.conf.json` is **not** used by the production image. Public traffic (Cloudflare tunnel / NPM) must hit **frontend:80** only; the browser uses same-origin `api_base` (`/api/v1` by default) and nginx proxies to the compose service name `api`.
 
 ---
 

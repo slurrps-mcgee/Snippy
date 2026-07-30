@@ -1,12 +1,1 @@
-.hover-shadow-lg {
-  transition: box-shadow 0.3s ease, transform 0.3s ease;
-
-  &:hover {
-    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15) !important;
-    transform: translateY(-2px);
-  }
-}
-
-.transition {
-  transition: all 0.3s ease;
-}
+/* Landing uses global Quantum utilities (.glass-card, .eyebrow, etc.) */

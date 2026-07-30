@@ -1,60 +1,58 @@
-@if(user()) {
-<div class="d-flex flex-column h-100">
-  <div class="container p-5">
-    <div class="d-flex align-items-center gap-3 pb-3">
-      <img [src]="user()?.pictureUrl" alt="User Picture" class="rounded-circle" width="80" height="80" />
-      <div class="fw-bold">
-        <h1>{{ user()?.displayName }}</h1>
-        <p class="opacity-50">@{{ user()?.userName }}</p>
+@if (user()) {
+<div class="flex h-full flex-col overflow-auto">
+  <div class="page-shell">
+    <div class="mb-6 flex items-center gap-4">
+      <img [src]="user()?.pictureUrl" alt="User Picture" class="h-20 w-20 rounded-full object-cover ring-1 ring-white/15" />
+      <div>
+        <h1 class="text-3xl font-semibold text-white">{{ user()?.displayName }}</h1>
+        <p class="text-slate-400">@{{ user()?.userName }}</p>
       </div>
     </div>
 
-    <div class="flex-grow-1 overflow-auto">
-      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
-        <mat-tab label="Snippets">
-          @if (isLoading) {
-          <div class="text-center p-4">Loading snippets...</div>
-          } @else {
-          <app-snippet-list-component class="d-block pt-3" [snippets]="snippets" [total]="total"
-            [pageSize]="pageSize" [pageIndex]="pageIndex" (searchChange)="handleSearch($event)"
-            (pageChange)="handlePageChange($event)">
-          </app-snippet-list-component>
-          }
-        </mat-tab>
+    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+      <mat-tab label="Snippets">
+        @if (isLoading) {
+        <div class="p-6 text-center text-slate-400">Loading snippets...</div>
+        } @else {
+        <app-snippet-list-component class="mt-4 block" [snippets]="snippets" [total]="total"
+          [pageSize]="pageSize" [pageIndex]="pageIndex" (searchChange)="handleSearch($event)"
+          (pageChange)="handlePageChange($event)">
+        </app-snippet-list-component>
+        }
+      </mat-tab>
 
-        <mat-tab label="Collections">
-          @if (collectionsLoading) {
-          <div class="text-center p-4">Loading collections...</div>
-          } @else {
-          <app-collection-list class="d-block pt-3" [collections]="collections" [total]="collectionsTotal"
-            [pageSize]="collectionPageSize" [pageIndex]="collectionPageIndex" [showNewButton]="true"
-            [showDelete]="true" (searchChange)="handleCollectionSearch($event)"
-            (pageChange)="handleCollectionPageChange($event)" (createNew)="openCreateCollection()"
-            (openCollection)="openCollection($event)" (deleteCollection)="deleteCollection($event)">
-          </app-collection-list>
-          }
-        </mat-tab>
+      <mat-tab label="Collections">
+        @if (collectionsLoading) {
+        <div class="p-6 text-center text-slate-400">Loading collections...</div>
+        } @else {
+        <app-collection-list class="mt-4 block" [collections]="collections" [total]="collectionsTotal"
+          [pageSize]="collectionPageSize" [pageIndex]="collectionPageIndex" [showNewButton]="true"
+          [showDelete]="true" (searchChange)="handleCollectionSearch($event)"
+          (pageChange)="handleCollectionPageChange($event)" (createNew)="openCreateCollection()"
+          (openCollection)="openCollection($event)" (deleteCollection)="deleteCollection($event)">
+        </app-collection-list>
+        }
+      </mat-tab>
 
-        <mat-tab label="Favorites">
-          @if (favoritesLoading) {
-          <div class="text-center p-4">Loading favorites...</div>
-          } @else {
-          <app-snippet-list-component class="d-block pt-3" [snippets]="favorites" [total]="favoritesTotal"
-            [pageSize]="favoritesPageSize" [pageIndex]="favoritesPageIndex" [showNewButton]="false"
-            (searchChange)="handleFavoritesSearch($event)" (pageChange)="handleFavoritesPageChange($event)">
-          </app-snippet-list-component>
-          }
-        </mat-tab>
+      <mat-tab label="Favorites">
+        @if (favoritesLoading) {
+        <div class="p-6 text-center text-slate-400">Loading favorites...</div>
+        } @else {
+        <app-snippet-list-component class="mt-4 block" [snippets]="favorites" [total]="favoritesTotal"
+          [pageSize]="favoritesPageSize" [pageIndex]="favoritesPageIndex" [showNewButton]="false"
+          (searchChange)="handleFavoritesSearch($event)" (pageChange)="handleFavoritesPageChange($event)">
+        </app-snippet-list-component>
+        }
+      </mat-tab>
 
-        <mat-tab label="Projects">
-          <div class="text-center p-5">
-            <p>Projects feature coming soon!</p>
-          </div>
-        </mat-tab>
-      </mat-tab-group>
-    </div>
+      <mat-tab label="Projects">
+        <div class="glass-card mt-4 text-center text-slate-400">
+          <p>Projects feature coming soon!</p>
+        </div>
+      </mat-tab>
+    </mat-tab-group>
   </div>
 </div>
 } @else {
-<div class="loading">Loading user data...</div>
+<div class="flex h-full items-center justify-center text-slate-400">Loading user data...</div>
 }

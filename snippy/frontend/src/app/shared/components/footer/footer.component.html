@@ -1,22 +1,24 @@
-<section class="container-fluid">
-  @if (snippetStoreService.snippet()?.snippetId) {
-  <div class="d-flex align-items-center justify-content-center gap-2 py-2 flex-wrap">
-    <button mat-stroked-button (click)="forkSnippet()" matTooltip="Fork this snippet">
-      <mat-icon>fork_right</mat-icon>
-      Fork
-    </button>
-    <button mat-stroked-button (click)="exportZip()" matTooltip="Download HTML/CSS/JS as ZIP">
-      <mat-icon>download</mat-icon>
-      Export
-    </button>
-    <button mat-stroked-button (click)="openAssets()" matTooltip="Manage assets">
-      <mat-icon>perm_media</mat-icon>
-      Assets
-    </button>
+<footer class="border-t border-white/10 bg-slate-900/85 text-slate-400 backdrop-blur-sm">
+  <div class="page-container py-3">
+    @if (snippetStoreService.snippet()?.snippetId) {
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      <button mat-stroked-button (click)="forkSnippet()" matTooltip="Fork this snippet">
+        <mat-icon>fork_right</mat-icon>
+        Fork
+      </button>
+      <button mat-stroked-button (click)="exportZip()" matTooltip="Download HTML/CSS/JS as ZIP">
+        <mat-icon>download</mat-icon>
+        Export
+      </button>
+      <button mat-stroked-button (click)="openAssets()" matTooltip="Manage assets">
+        <mat-icon>perm_media</mat-icon>
+        Assets
+      </button>
+    </div>
+    } @else {
+    <div class="text-center text-sm">
+      <span>© 2026 Snippy. All rights reserved.</span>
+    </div>
+    }
   </div>
-  } @else {
-  <div class="text-center py-3">
-    <span>© 2025 Snippy. All rights reserved.</span>
-  </div>
-  }
-</section>
+</footer>

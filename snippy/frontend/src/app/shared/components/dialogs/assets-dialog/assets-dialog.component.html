@@ -2,20 +2,20 @@
 
 <mat-dialog-content>
   @if (!minioEnabled) {
-  <div class="d-flex flex-column align-items-center p-4 opacity-50">
+  <div class="flex flex-col items-center gap-2 p-6 text-slate-500">
     <mat-icon>cloud_off</mat-icon>
-    <p class="mb-0">Asset uploads are currently unavailable.</p>
+    <p>Asset uploads are currently unavailable.</p>
   </div>
   } @else {
   <input #fileInput type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
     (change)="onFileSelected($event)">
 
-  <div class="d-flex justify-content-end pb-3">
+  <div class="mb-4 flex justify-end">
     <button mat-raised-button color="primary" [disabled]="uploading()" (click)="triggerUpload()">
       @if (uploading()) {
       <mat-spinner diameter="18"></mat-spinner>
       } @else {
-      <span class="d-flex align-items-center gap-1">
+      <span class="inline-flex items-center gap-1">
         <mat-icon>upload</mat-icon>
         Upload
       </span>
@@ -24,41 +24,39 @@
   </div>
 
   @if (loading()) {
-  <div class="d-flex justify-content-center p-4">
+  <div class="flex justify-center p-6">
     <mat-spinner diameter="32"></mat-spinner>
   </div>
   } @else if (assets().length === 0) {
-  <div class="d-flex flex-column align-items-center p-4 opacity-50">
+  <div class="flex flex-col items-center gap-2 p-6 text-slate-500">
     <mat-icon>image_not_supported</mat-icon>
-    <p class="mb-0">No assets uploaded yet.</p>
+    <p>No assets uploaded yet.</p>
   </div>
   } @else {
-  <div class="row g-3">
+  <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
     @for (asset of assets(); track asset.assetId) {
-    <div class="col-6 col-md-4">
-      <div class="asset-card d-flex flex-column">
-        <div class="asset-thumb d-flex align-items-center justify-content-center">
-          @if (isImage(asset)) {
-          <img [src]="asset.url" [alt]="asset.fileName">
-          } @else {
-          <mat-icon>insert_drive_file</mat-icon>
-          }
-        </div>
-        <div class="p-2 d-flex flex-column gap-2">
-          <span class="text-truncate small" [matTooltip]="asset.fileName">{{ asset.fileName }}</span>
-          <div class="d-flex justify-content-between">
-            <button mat-icon-button matTooltip="Copy URL" (click)="copyUrl(asset)">
-              <mat-icon>content_copy</mat-icon>
-            </button>
-            <button mat-icon-button matTooltip="Delete" [disabled]="deletingId() === asset.assetId"
-              (click)="deleteAsset(asset)">
-              @if (deletingId() === asset.assetId) {
-              <mat-spinner diameter="16"></mat-spinner>
-              } @else {
-              <mat-icon>delete</mat-icon>
-              }
-            </button>
-          </div>
+    <div class="asset-card flex flex-col overflow-hidden rounded-xl border border-slate-800 bg-slate-900/60">
+      <div class="asset-thumb flex items-center justify-center bg-slate-950">
+        @if (isImage(asset)) {
+        <img [src]="asset.url" [alt]="asset.fileName">
+        } @else {
+        <mat-icon>insert_drive_file</mat-icon>
+        }
+      </div>
+      <div class="flex flex-col gap-2 p-2">
+        <span class="truncate text-xs text-slate-300" [matTooltip]="asset.fileName">{{ asset.fileName }}</span>
+        <div class="flex justify-between">
+          <button mat-icon-button matTooltip="Copy URL" (click)="copyUrl(asset)">
+            <mat-icon>content_copy</mat-icon>
+          </button>
+          <button mat-icon-button matTooltip="Delete" [disabled]="deletingId() === asset.assetId"
+            (click)="deleteAsset(asset)">
+            @if (deletingId() === asset.assetId) {
+            <mat-spinner diameter="16"></mat-spinner>
+            } @else {
+            <mat-icon>delete</mat-icon>
+            }
+          </button>
         </div>
       </div>
     </div>

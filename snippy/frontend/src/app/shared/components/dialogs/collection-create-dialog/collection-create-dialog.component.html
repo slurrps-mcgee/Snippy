@@ -1,23 +1,23 @@
 <h2 mat-dialog-title>New Collection</h2>
 
 <mat-dialog-content>
-  <div class="d-flex flex-column gap-3 pt-1">
-    <mat-form-field appearance="outline" class="w-100">
+  <div class="flex flex-col gap-4 pt-1">
+    <mat-form-field appearance="outline" class="w-full">
       <mat-label>Name</mat-label>
       <input matInput [(ngModel)]="name" maxlength="120" placeholder="My favorite snippets" required>
     </mat-form-field>
 
-    <mat-form-field appearance="outline" class="w-100">
+    <mat-form-field appearance="outline" class="w-full">
       <mat-label>Description</mat-label>
       <textarea matInput [(ngModel)]="description" rows="4" [maxlength]="descriptionMaxLength"
         placeholder="What's this collection about?"></textarea>
       <mat-hint align="end">{{ description.length }}/{{ descriptionMaxLength }}</mat-hint>
     </mat-form-field>
 
-    <div class="d-flex align-items-center justify-content-between">
+    <div class="flex items-center justify-between gap-4">
       <div>
-        <div class="fw-bold">{{ isPrivate ? 'Private' : 'Public' }}</div>
-        <small class="opacity-50">
+        <div class="font-semibold text-slate-100">{{ isPrivate ? 'Private' : 'Public' }}</div>
+        <small class="text-slate-500">
           {{ isPrivate ? 'Only you can view this collection' : 'Anyone can view this collection' }}
         </small>
       </div>

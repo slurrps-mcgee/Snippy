@@ -1,7 +1,6 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -30,7 +29,6 @@ import { SnackbarService } from '../../../services/component.services/snackbar.s
     CommonModule,
     FormsModule,
     RouterModule,
-    MatTabsModule,
     MatButtonModule,
     MatIconModule,
     MatFormFieldModule,
@@ -57,8 +55,6 @@ export class PageHeaderComponent implements OnInit {
   editorUi = inject(EditorUiService);
 
   mode: HeaderMode = 'landing';
-  /** -1 means no feed tab is active (profile / settings / collection). */
-  selectedPageIndex = -1;
 
   get user() {
     return this.authStore.user;
@@ -86,7 +82,6 @@ export class PageHeaderComponent implements OnInit {
 
   private syncFromRouter() {
     this.mode = this.resolveHeaderMode();
-    this.updateTabFromRoute(this.router.url);
   }
 
   private resolveHeaderMode(): HeaderMode {
@@ -102,28 +97,6 @@ export class PageHeaderComponent implements OnInit {
     if (url === '/snippet' || /\/snippet\//.test(url)) return 'editor';
     if (/\/fullpage\//.test(url)) return 'minimal';
     return 'feed';
-  }
-
-  private updateTabFromRoute(url: string) {
-    if (url.startsWith('/home')) {
-      this.selectedPageIndex = 0;
-    } else if (url.startsWith('/following')) {
-      this.selectedPageIndex = 1;
-    } else if (url.startsWith('/public')) {
-      this.selectedPageIndex = 2;
-    } else {
-      this.selectedPageIndex = -1;
-    }
-  }
-
-  onPageTabChange(index: number) {
-    if (index === 0) {
-      this.router.navigate(['/home']);
-    } else if (index === 1) {
-      this.router.navigate(['/following']);
-    } else if (index === 2) {
-      this.router.navigate(['/public']);
-    }
   }
 
   login() {

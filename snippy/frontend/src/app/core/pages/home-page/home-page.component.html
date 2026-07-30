@@ -1,110 +1,112 @@
-<div class="d-flex flex-column h-100">
-    <main class="flex-grow-1 overflow-auto">
-        <!-- Hero Section -->
-        <section class="bg-dark text-light py-5" style="min-height: 90vh;">
-            <div class="container h-100 d-flex align-items-center">
-                <div class="row align-items-center w-100">
-                    <div class="col-lg-6 mb-4 mb-lg-0">
-                        <h1 class="display-4 fw-bold mb-3">Code. Create. Share.</h1>
-                        <p class="lead mb-4">Build and showcase your HTML, CSS, and JavaScript snippets in a beautiful WYSIWYG editor. Share your work with the world, get feedback, and discover amazing creations from other developers.</p>
-                        <button mat-raised-button color="accent" size="large" (click)="login()" class="btn-lg">
-                            Get Started for Free
-                        </button>
-                    </div>
-                    <div class="col-lg-6">
-                        <div class="card bg-secondary border-0 shadow-lg overflow-hidden">
-                            <div class="card-body p-2">
-                                <img src="/images/example-snippet.png" alt="Snippet Preview" class="card-img w-100" style="object-fit: cover;">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
+<div class="relative z-10 flex h-full flex-col overflow-auto">
+  <main class="page-shell content-stagger flex-1 !py-10 md:!py-14">
+    <!-- Hero -->
+    <section class="grid items-center gap-10 lg:grid-cols-[1.25fr_0.75fr]">
+      <div>
+        <span class="eyebrow mb-4">Code · Create · Share</span>
+        <h1 class="mt-4 text-4xl font-semibold text-white md:text-6xl">
+          Build and share snippets that look as good as they run.
+        </h1>
+        <p class="mt-5 max-w-xl text-lg text-slate-300">
+          Write HTML, CSS, and JavaScript in a live editor, preview instantly, and publish with privacy controls, favorites, and community feedback.
+        </p>
+        <div class="mt-8 flex flex-wrap gap-3">
+          <button mat-raised-button color="primary" (click)="login()" class="!px-6 !py-2 text-sm font-semibold">
+            Get Started for Free
+          </button>
+          <a href="#features" class="btn-secondary inline-flex items-center no-underline">Explore Features</a>
+        </div>
+      </div>
 
-        <!-- Features Grid -->
-        <section class="py-5" style="min-height: 80vh;">
-            <div class="container d-flex flex-column justify-content-center h-100">
-                <h2 class="text-center mb-5 fw-bold display-5">Powerful Features</h2>
-                <div class="row g-4">
-                    <!-- Feature 1 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
-                            <div class="card-body text-center">
-                                <mat-icon class="fs-1 text-primary mb-3">code</mat-icon>
-                                <h5 class="card-title fw-bold">WYSIWYG Editor</h5>
-                                <p class="card-text text-muted">Write HTML, CSS, and JavaScript with real-time preview. No compilation needed.</p>
-                            </div>
-                        </div>
-                    </div>
+      <aside class="glass-card">
+        <h2 class="text-lg font-semibold text-white">Product Snapshot</h2>
+        <ul class="mt-4 space-y-3 text-sm text-slate-300">
+          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"></span>Live WYSIWYG editor with split layouts</li>
+          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-300"></span>Public feeds, follows, and favorites</li>
+          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"></span>Collections, comments, and forking</li>
+          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-300"></span>Asset uploads and ZIP export</li>
+        </ul>
+        <div class="mt-5 overflow-hidden rounded-lg border border-slate-800">
+          <img src="/images/example-snippet.png" alt="Snippet Preview" class="h-auto w-full object-cover" />
+        </div>
+      </aside>
+    </section>
 
-                    <!-- Feature 2 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
-                            <div class="card-body text-center">
-                                <mat-icon class="fs-1 text-success mb-3">share</mat-icon>
-                                <h5 class="card-title fw-bold">Easy Sharing</h5>
-                                <p class="card-text text-muted">Share your snippets with a link. Control privacy with public or private settings.</p>
-                            </div>
-                        </div>
-                    </div>
+    <!-- Features -->
+    <section id="features" class="mt-16 md:mt-20">
+      <p class="text-xs font-medium uppercase tracking-[0.2em] text-violet-300">Capabilities</p>
+      <h2 class="section-title mt-3">Powerful features for everyday shipping</h2>
+      <p class="section-subtitle mt-3 max-w-2xl">Everything you need to draft, polish, and share front-end experiments.</p>
 
-                    <!-- Feature 3 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
-                            <div class="card-body text-center">
-                                <mat-icon class="fs-1 text-danger mb-3">favorite</mat-icon>
-                                <h5 class="card-title fw-bold">Favorites & Comments</h5>
-                                <p class="card-text text-muted">Like snippets you love and leave constructive feedback for creators.</p>
-                            </div>
-                        </div>
-                    </div>
+      <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <article class="glass-card text-center">
+          <mat-icon class="mb-3 text-4xl text-cyan-300">code</mat-icon>
+          <h3 class="text-xl font-semibold text-white">WYSIWYG Editor</h3>
+          <p class="mt-2 text-sm text-slate-400">Write HTML, CSS, and JavaScript with real-time preview. No compilation needed.</p>
+        </article>
+        <article class="glass-card text-center">
+          <mat-icon class="mb-3 text-4xl text-violet-300">share</mat-icon>
+          <h3 class="text-xl font-semibold text-white">Easy Sharing</h3>
+          <p class="mt-2 text-sm text-slate-400">Share snippets with a link. Control privacy with public or private settings.</p>
+        </article>
+        <article class="glass-card text-center">
+          <mat-icon class="mb-3 text-4xl text-cyan-300">favorite</mat-icon>
+          <h3 class="text-xl font-semibold text-white">Favorites & Comments</h3>
+          <p class="mt-2 text-sm text-slate-400">Like snippets you love and leave constructive feedback for creators.</p>
+        </article>
+        <article class="glass-card text-center">
+          <mat-icon class="mb-3 text-4xl text-violet-300">people</mat-icon>
+          <h3 class="text-xl font-semibold text-white">Follow Profiles</h3>
+          <p class="mt-2 text-sm text-slate-400">Discover talented developers and stay updated with their latest creations.</p>
+        </article>
+        <article class="glass-card text-center">
+          <mat-icon class="mb-3 text-4xl text-cyan-300">upload_file</mat-icon>
+          <h3 class="text-xl font-semibold text-white">Upload Assets</h3>
+          <p class="mt-2 text-sm text-slate-400">Add custom images, fonts, and files to enhance your snippets.</p>
+        </article>
+        <article class="glass-card text-center">
+          <mat-icon class="mb-3 text-4xl text-violet-300">lock</mat-icon>
+          <h3 class="text-xl font-semibold text-white">Privacy Control</h3>
+          <p class="mt-2 text-sm text-slate-400">Keep your work private or share it with the community. Your choice.</p>
+        </article>
+      </div>
+    </section>
 
-                    <!-- Feature 4 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
-                            <div class="card-body text-center">
-                                <mat-icon class="fs-1 text-info mb-3">people</mat-icon>
-                                <h5 class="card-title fw-bold">Follow Profiles</h5>
-                                <p class="card-text text-muted">Discover talented developers and stay updated with their latest creations.</p>
-                            </div>
-                        </div>
-                    </div>
+    <!-- How it works -->
+    <section class="mt-16 md:mt-20">
+      <p class="text-xs font-medium uppercase tracking-[0.2em] text-cyan-300">How it works</p>
+      <h2 class="section-title mt-3">A practical flow for shipping snippets</h2>
+      <div class="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <article class="glass-card">
+          <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">01 Create</p>
+          <h3 class="mt-2 text-xl font-semibold text-white">Open the editor</h3>
+          <p class="mt-2 text-sm text-slate-400">Start a new snippet and write HTML, CSS, and JS side by side.</p>
+        </article>
+        <article class="glass-card">
+          <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">02 Preview</p>
+          <h3 class="mt-2 text-xl font-semibold text-white">See it live</h3>
+          <p class="mt-2 text-sm text-slate-400">Instant preview updates as you type — flip layouts to match your workflow.</p>
+        </article>
+        <article class="glass-card">
+          <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">03 Share</p>
+          <h3 class="mt-2 text-xl font-semibold text-white">Publish your way</h3>
+          <p class="mt-2 text-sm text-slate-400">Go public, keep it private, or organize work into collections.</p>
+        </article>
+        <article class="glass-card">
+          <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">04 Grow</p>
+          <h3 class="mt-2 text-xl font-semibold text-white">Engage</h3>
+          <p class="mt-2 text-sm text-slate-400">Follow creators, favorite work, comment, and fork ideas into your own.</p>
+        </article>
+      </div>
+    </section>
 
-                    <!-- Feature 5 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
-                            <div class="card-body text-center">
-                                <mat-icon class="fs-1 text-warning mb-3">upload_file</mat-icon>
-                                <h5 class="card-title fw-bold">Upload Assets</h5>
-                                <p class="card-text text-muted">Add custom images, fonts, and files to enhance your snippets.</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Feature 6 -->
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card h-100 border-0 shadow-sm hover-shadow-lg transition">
-                            <div class="card-body text-center">
-                                <mat-icon class="fs-1 text-secondary mb-3">lock</mat-icon>
-                                <h5 class="card-title fw-bold">Privacy Control</h5>
-                                <p class="card-text text-muted">Keep your work private or share it with the community. Your choice.</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- CTA Section -->
-        <section class="bg-light py-5 border-top" style="min-height: 50vh;">
-            <div class="container h-100 d-flex flex-column align-items-center justify-content-center text-center">
-                <h2 class="mb-3 fw-bold display-5">Ready to start coding?</h2>
-                <p class="lead mb-4 text-muted">Join thousands of developers sharing and learning together on Snippy.</p>
-                <button mat-raised-button color="primary" size="large" (click)="login()" class="btn-lg">
-                    Create Your First Snippet
-                </button>
-            </div>
-        </section>
-    </main>
+    <!-- CTA -->
+    <section class="mt-16 mb-8 rounded-2xl border border-cyan-300/20 bg-cyan-300/5 px-6 py-12 text-center md:mt-20">
+      <h2 class="text-3xl font-semibold text-white md:text-4xl">Ready to start coding?</h2>
+      <p class="mx-auto mt-3 max-w-xl text-slate-300">Join developers sharing and learning together on Snippy.</p>
+      <button mat-raised-button color="primary" (click)="login()" class="mt-6 !px-6 !py-2 text-sm font-semibold">
+        Create Your First Snippet
+      </button>
+    </section>
+  </main>
 </div>

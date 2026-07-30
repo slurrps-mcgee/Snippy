@@ -9,6 +9,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
 import { Collection } from '../../../shared/interfaces/collection.interface';
+import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
   selector: 'app-collection-list',
@@ -22,6 +23,7 @@ import { Collection } from '../../../shared/interfaces/collection.interface';
     MatIconModule,
     MatButtonModule,
     MatMenuModule,
+    MatDividerModule,
   ],
   templateUrl: './collection-list.component.html',
   styleUrl: './collection-list.component.scss',

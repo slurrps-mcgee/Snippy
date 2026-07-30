@@ -1,16 +1,15 @@
 <h2 mat-dialog-title>
   Comments
-  <span class="opacity-50 fw-normal">on "{{ data.snippetName }}"</span>
+  <span class="font-normal text-slate-400">on "{{ data.snippetName }}"</span>
 </h2>
 
 <mat-dialog-content>
   @if (data.snippetDescription) {
-  <p class="opacity-50 mb-3">{{ data.snippetDescription }}</p>
+  <p class="mb-3 text-slate-500">{{ data.snippetDescription }}</p>
   }
 
-  <!-- Composer -->
-  <div class="d-flex py-2 gap-2 align-items-start pb-3">
-    <mat-form-field appearance="outline" class="flex-grow-1">
+  <div class="flex items-start gap-2 pb-3 pt-2">
+    <mat-form-field appearance="outline" class="flex-1">
       <mat-label>Add a comment</mat-label>
       <textarea matInput [(ngModel)]="newComment" rows="2" maxlength="2000"
         placeholder="Share your thoughts..." [disabled]="posting()"
@@ -28,30 +27,29 @@
 
   <mat-divider></mat-divider>
 
-  <!-- Comment List -->
   <div class="pt-3">
     @if (loading()) {
-    <div class="d-flex justify-content-center p-4">
+    <div class="flex justify-center p-6">
       <mat-spinner diameter="32"></mat-spinner>
     </div>
     } @else if (comments().length === 0) {
-    <div class="d-flex flex-column align-items-center p-4 opacity-50">
+    <div class="flex flex-col items-center gap-2 p-6 text-slate-500">
       <mat-icon>chat_bubble_outline</mat-icon>
-      <p class="mb-0">No comments yet. Be the first to say something!</p>
+      <p>No comments yet. Be the first to say something!</p>
     </div>
     } @else {
-    <div class="d-flex flex-column gap-3">
+    <div class="flex flex-col gap-3">
       @for (comment of comments(); track comment.commentId; let isLast = $last) {
       <div class="comment-item">
-        <div class="d-flex justify-content-between align-items-start">
+        <div class="flex items-start justify-between">
           <div>
-            <span class="fw-bold">{{ comment.displayName || comment.userName }}</span>
+            <span class="font-semibold text-slate-100">{{ comment.displayName || comment.userName }}</span>
             @if (comment.userName) {
-            <span class="opacity-50 ps-1">&#64;{{ comment.userName }}</span>
+            <span class="pl-1 text-slate-500">&#64;{{ comment.userName }}</span>
             }
           </div>
 
-          <div class="d-flex gap-1">
+          <div class="flex gap-1">
             @if (canEdit(comment) && editingCommentId() !== comment.commentId) {
             <button mat-icon-button matTooltip="Edit comment" (click)="startEdit(comment)">
               <mat-icon>edit</mat-icon>
@@ -66,11 +64,11 @@
         </div>
 
         @if (editingCommentId() === comment.commentId) {
-        <div class="d-flex gap-2 align-items-start pt-2">
-          <mat-form-field appearance="outline" class="flex-grow-1">
+        <div class="flex items-start gap-2 pt-2">
+          <mat-form-field appearance="outline" class="flex-1">
             <textarea matInput [(ngModel)]="editContent" rows="2" maxlength="2000"></textarea>
           </mat-form-field>
-          <div class="d-flex flex-column gap-1 mt-1">
+          <div class="mt-1 flex flex-col gap-1">
             <button mat-icon-button color="primary" matTooltip="Save" [disabled]="!editContent.trim()"
               (click)="saveEdit(comment)">
               <mat-icon>check</mat-icon>
@@ -81,7 +79,7 @@
           </div>
         </div>
         } @else {
-        <p class="mb-0 pt-1">{{ comment.content }}</p>
+        <p class="pt-1 text-slate-300">{{ comment.content }}</p>
         }
       </div>
       @if (!isLast) {

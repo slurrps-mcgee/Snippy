@@ -1,9 +1,9 @@
-<div class="d-flex flex-column h-100">
-  <div class="container p-5 flex-grow-1 overflow-auto">
-    <div class="d-flex align-items-center justify-content-between pb-3">
-      <h1 class="mb-0">Following</h1>
+<div class="flex h-full flex-col overflow-auto">
+  <div class="page-shell">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+      <h1 class="text-3xl font-semibold text-white">Following</h1>
 
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="sort-field">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="min-w-[10rem]">
         <mat-label>Sort by</mat-label>
         <mat-select [value]="sort" (selectionChange)="handleSortChange($event.value)">
           @for (option of sortOptions; track option.value) {
@@ -14,7 +14,7 @@
     </div>
 
     @if (isLoading) {
-    <div class="text-center">Loading snippets...</div>
+    <div class="text-center text-slate-400">Loading snippets...</div>
     } @else {
     <app-snippet-list-component [snippets]="snippets" [total]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
       [showNewButton]="false"

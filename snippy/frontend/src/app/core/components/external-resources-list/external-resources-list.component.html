@@ -1,20 +1,20 @@
 <mat-list cdkDropList (cdkDropListDropped)="drop($event)">
     <mat-list-item *ngFor="let resource of resources; let i = index" cdkDrag>
-        <div class="d-flex align-items-center w-100 gap-2">
-            <span cdkDragHandle class="drag-handle me-2" title="Drag to reorder">
+        <div class="flex w-full items-center gap-2">
+            <span cdkDragHandle class="drag-handle cursor-grab text-slate-500" title="Drag to reorder">
                 <mat-icon>drag_indicator</mat-icon>
             </span>
-            <mat-form-field appearance="outline" class="flex-grow-1">
-              <input matInput 
-                [(ngModel)]="resource.url" 
+            <mat-form-field appearance="outline" class="flex-1">
+              <input matInput
+                [(ngModel)]="resource.url"
                 (ngModelChange)="resourcesChange.emit(resources)"
                 [placeholder]="`https://yourwebsite.com/script.${resourceType}`"/>
             </mat-form-field>
-            <button mat-button class="ms-2" (click)="removeResource(i)" title="Remove">
+            <button mat-button (click)="removeResource(i)" title="Remove">
                 <mat-icon>close</mat-icon>
             </button>
         </div>
     </mat-list-item>
 </mat-list>
 
-<button mat-raised-button color="primary" class="w-100" (click)="addResource()">+ add another resource</button>
+<button mat-raised-button color="primary" class="w-full" (click)="addResource()">+ add another resource</button>

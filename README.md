@@ -27,7 +27,7 @@ Docker Compose is used to run services together and wire environment variables f
 | Compose file | [`docker-compose.yml`](docker-compose.yml) | [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) |
 | Images | Built locally from `Dockerfile.dev` | Pulled from Docker Hub (`kennyl777/snippy-*`) |
 | CI | Not used | [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) |
-| Frontend | `ng serve` on port 4200 (hot reload) | nginx on port 80 |
+| Frontend | `ng serve` on port 4200 (hot reload), Tailwind + Material | nginx on port 80 |
 
 ## Prerequisites
 

@@ -1,14 +1,14 @@
-<div class="d-flex flex-column h-100">
+<div class="flex h-full flex-col">
   @if (snippetStoreService.loading()) {
-  <div class="d-flex align-items-center justify-content-center h-100">Loading snippet...</div>
+  <div class="flex h-full items-center justify-center text-slate-400">Loading snippet...</div>
   } @else if (error) {
-  <div class="d-flex align-items-center justify-content-center h-100">{{ error }}</div>
+  <div class="flex h-full items-center justify-center text-slate-400">{{ error }}</div>
   } @else if (snippetStoreService.snippet()) {
-  <div class="d-flex flex-column flex-grow-1 h-100 overflow-hidden">
+  <div class="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
     @if (selectedLayout === 'top') {
-    <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+    <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-full">
       <as-split-area size="50" [minSize]="0">
-        <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+        <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-full">
           <as-split-area size="33" [minSize]="0">
             <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
           </as-split-area>
@@ -25,12 +25,12 @@
       </as-split-area>
     </as-split>
     } @else if (selectedLayout === 'bottom') {
-    <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+    <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-full">
       <as-split-area size="50" [minSize]="0">
         <app-snippet-preview></app-snippet-preview>
       </as-split-area>
       <as-split-area size="50" [minSize]="0">
-        <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+        <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-full">
           <as-split-area size="33" [minSize]="0">
             <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
           </as-split-area>
@@ -44,9 +44,9 @@
       </as-split-area>
     </as-split>
     } @else if (selectedLayout === 'left') {
-    <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+    <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-full">
       <as-split-area size="50" [minSize]="0">
-        <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+        <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-full">
           <as-split-area size="33" [minSize]="0">
             <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
           </as-split-area>
@@ -63,12 +63,12 @@
       </as-split-area>
     </as-split>
     } @else if (selectedLayout === 'right') {
-    <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-100">
+    <as-split direction="horizontal" unit="percent" [gutterSize]="16" class="h-full">
       <as-split-area size="50" [minSize]="0">
         <app-snippet-preview></app-snippet-preview>
       </as-split-area>
       <as-split-area size="50" [minSize]="0">
-        <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-100">
+        <as-split direction="vertical" unit="percent" [gutterSize]="16" class="h-full">
           <as-split-area size="33" [minSize]="0">
             <app-snippet-editor [editorType]="'html'"></app-snippet-editor>
           </as-split-area>
