@@ -1,16 +1,18 @@
-<footer class="border-t border-white/10 bg-slate-900/85 text-slate-400 backdrop-blur-sm">
-  <div class="page-container py-3">
+<footer
+  class="border-t border-white/15 bg-white/10 text-slate-300 backdrop-blur-[18px]"
+  [class.editor-footer]="!!snippetStoreService.snippet()?.snippetId">
+  <div class="page-container" [class.py-1]="!!snippetStoreService.snippet()?.snippetId" [class.py-3]="!snippetStoreService.snippet()?.snippetId">
     @if (snippetStoreService.snippet()?.snippetId) {
-    <div class="flex flex-wrap items-center justify-center gap-2">
-      <button mat-stroked-button (click)="forkSnippet()" matTooltip="Fork this snippet">
+    <div class="flex flex-wrap items-center justify-center gap-0.5">
+      <button mat-button (click)="forkSnippet()" matTooltip="Fork this snippet">
         <mat-icon>fork_right</mat-icon>
         Fork
       </button>
-      <button mat-stroked-button (click)="exportZip()" matTooltip="Download HTML/CSS/JS as ZIP">
+      <button mat-button (click)="exportZip()" matTooltip="Download HTML/CSS/JS as ZIP">
         <mat-icon>download</mat-icon>
         Export
       </button>
-      <button mat-stroked-button (click)="openAssets()" matTooltip="Manage assets">
+      <button mat-button (click)="openAssets()" matTooltip="Manage assets">
         <mat-icon>perm_media</mat-icon>
         Assets
       </button>

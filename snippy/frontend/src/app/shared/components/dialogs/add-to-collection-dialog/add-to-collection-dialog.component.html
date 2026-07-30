@@ -13,7 +13,7 @@
   } @else {
   <div class="flex flex-col gap-2">
     @for (collection of collections; track collection.collectionId) {
-    <div class="collection-row flex items-center justify-between rounded-lg border border-slate-800 p-2">
+    <div class="collection-row flex items-center justify-between rounded-lg border border-white/20 bg-white/10 p-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)] backdrop-blur-md">
       <div class="min-w-0 overflow-hidden">
         <div class="truncate font-semibold text-slate-100">{{ collection.name }}</div>
         <small class="text-slate-500">{{ collection.snippetCount ?? 0 }} snippet(s)</small>

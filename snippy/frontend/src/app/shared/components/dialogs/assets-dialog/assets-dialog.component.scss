@@ -1,24 +1,5 @@
-::ng-deep {
-  .mat-mdc-dialog-container {
-    --mdc-theme-surface: var(--mat-sys-primary-container) !important;
-  }
-
-  .mdc-dialog__surface {
-    background-color: var(--mat-sys-primary-container) !important;
-    border-radius: var(--mdc-shape-large, 28px) !important;
-  }
-}
-
-.asset-card {
-  border-radius: 8px;
-  overflow: hidden;
-  background-color: var(--mat-sys-surface-container-high);
-  height: 100%;
-}
-
 .asset-thumb {
   height: 100px;
-  background-color: var(--mat-sys-surface-container-low);
 
   img {
     max-width: 100%;

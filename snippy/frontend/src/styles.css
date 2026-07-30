@@ -5,9 +5,33 @@
   --brand-cyan: #22d3ee;
   --page-bg: #0f172a;
   --card-bg: #1e293b;
-  --card-bg-glass: rgba(30, 41, 59, 0.88);
-  --card-border: #334155;
-  --header-bg: rgba(30, 41, 59, 0.82);
+
+  /* Liquid glass (inspired by CodePen NPRPBjd — frosted surface) */
+  --glass-white: rgba(255, 255, 255, 0.1);
+  --glass-white-md: rgba(255, 255, 255, 0.16);
+  --glass-white-lg: rgba(255, 255, 255, 0.22);
+  --glass-dark: rgba(15, 23, 42, 0.35);
+  --glass-dark-md: rgba(15, 23, 42, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-border-subtle: rgba(255, 255, 255, 0.12);
+  --glass-border-bright: rgba(255, 255, 255, 0.38);
+  --blur-sm: blur(8px);
+  --blur-md: blur(18px);
+  --blur-lg: blur(32px);
+  --shadow-glass:
+    0 8px 32px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.18);
+  --reflection-top: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0) 48%
+  );
+
+  /* Compat aliases used by Material overrides */
+  --card-bg-glass: var(--glass-white);
+  --card-border: var(--glass-border);
+  --header-bg: var(--glass-dark-md);
   color-scheme: dark;
 }
 
@@ -82,42 +106,84 @@ h3,
   transition: all 200ms ease;
   cursor: pointer;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
 }
 
 .nav-pill:hover {
-  background: rgba(255, 255, 255, 0.12);
+  background: var(--glass-white);
+  border-color: var(--glass-border-subtle);
   color: #ffffff;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
 }
 
 .nav-pill-active {
-  background: linear-gradient(110deg, rgba(139, 92, 246, 0.4), rgba(34, 211, 238, 0.32));
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.28);
+  background: linear-gradient(
+    110deg,
+    rgba(139, 92, 246, 0.35),
+    rgba(34, 211, 238, 0.28)
+  );
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
   color: #fff;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+/* Shared frosted / liquid glass surface */
+.glass,
+.glass-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.1rem;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease,
+    transform 220ms ease;
+}
+
+.glass::before,
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--reflection-top);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.glass > *,
+.glass-card > * {
+  position: relative;
+  z-index: 1;
 }
 
 .glass-card {
-  background: var(--card-bg-glass);
-  border: 1px solid var(--card-border);
-  border-radius: 0.9rem;
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.28);
   padding: 1.25rem;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  transition: border-color 220ms ease, box-shadow 220ms ease;
 }
 
 .glass-card:hover {
-  border-color: rgba(139, 92, 246, 0.85);
-  box-shadow: 0 14px 40px rgba(139, 92, 246, 0.14);
+  background: var(--glass-white-md);
+  border-color: var(--glass-border-bright);
+  box-shadow: var(--shadow-float);
 }
 
 .eyebrow {
   display: inline-flex;
   align-items: center;
   border-radius: 9999px;
-  border: 1px solid rgba(165, 243, 252, 0.3);
-  background: rgba(165, 243, 252, 0.1);
+  border: 1px solid var(--glass-border);
+  background: var(--glass-white);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
   padding: 0.35rem 0.75rem;
   font-size: 0.75rem;
   font-weight: 500;
@@ -128,9 +194,21 @@ h3,
 
 .site-header {
   background: var(--header-bg);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  border-bottom: 1px solid var(--glass-border-subtle);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
   color: #f1f5f9;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-card,
+  .site-header,
+  .eyebrow,
+  .nav-pill-active {
+    background: rgba(30, 41, 59, 0.92);
+  }
 }
 
 .atmosphere {
@@ -224,7 +302,7 @@ h3,
   }
 
   .btn-secondary {
-    @apply rounded-lg border border-slate-700 bg-slate-900 px-5 py-3 text-sm font-semibold text-slate-100 transition-colors duration-200 hover:border-violet-500 hover:text-white;
+    @apply rounded-lg border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-200 hover:border-white/40 hover:bg-white/15 hover:text-white;
   }
 
   .section-title {
