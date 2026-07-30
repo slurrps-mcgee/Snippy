@@ -1,7 +1,8 @@
-import { Op, Transaction } from "sequelize";
+import { Op, Transaction, WhereOptions } from "sequelize";
 import { Favorites } from "../../entities/favorite.entity";
 import { Snippets } from "../../entities/snippet.entity";
 import { Users } from "../../entities/user.entity";
+import { buildTextSearchCondition } from "../snippet/snippet.repo";
 
 // #region Favorite CREATE/DELETE
 // Create Favorite
@@ -29,10 +30,19 @@ export async function findFavoriteSnippetsByUser(
     auth0Id: string,
     offset?: number,
     limit?: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    q?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
+    // Snippets is joined via the `snippet` association (see Favorites.snippet), so the
+    // shared search condition is qualified with that alias instead of the default 'Snippets'.
+    const searchCondition = buildTextSearchCondition(q, 'snippet');
+    const where: WhereOptions = {
+        auth0Id,
+        ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
+    };
+
     const { rows, count } = await Favorites.findAndCountAll({
-        where: { auth0Id },
+        where,
         include: [{
             model: Snippets,
             include: [{ model: Users, attributes: ['userName', 'displayName'] }]

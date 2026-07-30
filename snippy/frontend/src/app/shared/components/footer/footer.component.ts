@@ -2,7 +2,6 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { MatDialog } from '@angular/material/dialog';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import JSZip from 'jszip';
@@ -10,6 +9,7 @@ import { SnippetStoreService } from '../../services/store.services/snippet.store
 import { AuthStoreService } from '../../services/store.services/authStore.service';
 import { AssetsDialogComponent } from '../dialogs/assets-dialog/assets-dialog.component';
 import { SnackbarService } from '../../services/component.services/snackbar.service';
+import { DialogService } from '../../services/component.services/dialog.service';
 
 @Component({
   selector: 'app-footer',
@@ -20,12 +20,12 @@ import { SnackbarService } from '../../services/component.services/snackbar.serv
 export class FooterComponent {
   snippetStoreService = inject(SnippetStoreService);
   private authStore = inject(AuthStoreService);
-  private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
   private router = inject(Router);
   private snackbar = inject(SnackbarService);
 
   openAssets() {
-    this.dialog.open(AssetsDialogComponent, { width: '640px', maxHeight: '85vh' });
+    this.dialogService.open(AssetsDialogComponent, 'lg');
   }
 
   async forkSnippet() {

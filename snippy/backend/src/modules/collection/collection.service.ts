@@ -140,7 +140,7 @@ export async function deleteCollectionHandler(
 }
 
 export async function getMyCollectionsHandler(
-    payload: ServicePayload<unknown, unknown, PaginationQuery & { snippetId?: string }>
+    payload: ServicePayload<unknown, unknown, PaginationQuery & { snippetId?: string; q?: string }>
 ): Promise<ServiceResponse<CollectionDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
@@ -148,9 +148,10 @@ export async function getMyCollectionsHandler(
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
         const snippetId = payload.query?.snippetId;
+        const q = payload.query?.q;
 
         return await executeInTransaction(async (t) => {
-            const result = await findMyCollections(auth0Id, offset, limit, t);
+            const result = await findMyCollections(auth0Id, offset, limit, t, q);
             return {
                 collections: await mapCollectionsWithExtras(result.rows, auth0Id, snippetId, t),
                 totalCount: result.count,
@@ -162,7 +163,7 @@ export async function getMyCollectionsHandler(
 }
 
 export async function getUserCollectionsHandler(
-    payload: ServicePayload<unknown, { userName: string }, PaginationQuery>
+    payload: ServicePayload<unknown, { userName: string }, PaginationQuery & { q?: string }>
 ): Promise<ServiceResponse<CollectionDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
@@ -170,6 +171,7 @@ export async function getUserCollectionsHandler(
         if (!userName) throw new CustomError('Username required', 400);
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const q = payload.query?.q;
 
         return await executeInTransaction(async (t) => {
             const user = await findByUsername(userName, t);
@@ -180,8 +182,8 @@ export async function getUserCollectionsHandler(
             }
 
             const result = user.auth0Id === auth0Id
-                ? await findMyCollections(user.auth0Id, offset, limit, t)
-                : await findUserPublicCollections(user.auth0Id, offset, limit, t);
+                ? await findMyCollections(user.auth0Id, offset, limit, t, q)
+                : await findUserPublicCollections(user.auth0Id, offset, limit, t, q);
 
             return {
                 collections: await mapCollectionsWithExtras(result.rows, auth0Id, undefined, t),
@@ -194,11 +196,12 @@ export async function getUserCollectionsHandler(
 }
 
 export async function getCollectionByShortIdHandler(
-    payload: ServicePayload<unknown, { shortId: string }>
+    payload: ServicePayload<unknown, { shortId: string }, { q?: string }>
 ): Promise<ServiceResponse<CollectionDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         const shortId = payload.params?.shortId;
+        const q = payload.query?.q;
         if (!shortId) throw new CustomError('Short ID required', 400);
 
         return await executeInTransaction(async (t) => {
@@ -209,7 +212,7 @@ export async function getCollectionByShortIdHandler(
                 throw new CustomError('Forbidden: private collection', 403);
             }
 
-            const memberships = await findCollectionSnippetsOrdered(collection.collectionId, t);
+            const memberships = await findCollectionSnippetsOrdered(collection.collectionId, t, q);
             const snippets = memberships
                 .map((m) => m.snippet)
                 .filter((s): s is NonNullable<typeof s> => !!s)

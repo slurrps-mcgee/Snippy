@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnInit, effect, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -10,11 +10,10 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
-import { MatDialog } from '@angular/material/dialog';
 import { AuthStoreService } from '../../../shared/services/store.services/authStore.service';
 import { UserApiService } from '../../../shared/services/api.services/user.api.service';
 import { SnackbarService } from '../../../shared/services/component.services/snackbar.service';
-import { ConfirmDialogComponent } from '../../../shared/components/dialogs/confirm-dialog/confirm-dialog.component';
+import { DialogService } from '../../../shared/services/component.services/dialog.service';
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'current';
 
@@ -38,7 +37,7 @@ export class SettingsPageComponent implements OnInit {
   private authStore = inject(AuthStoreService);
   private userApi = inject(UserApiService);
   private snackbar = inject(SnackbarService);
-  private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
   private destroyRef = inject(DestroyRef);
 
   get user() {
@@ -57,6 +56,20 @@ export class SettingsPageComponent implements OnInit {
   deleting = signal(false);
 
   private usernameCheck$ = new Subject<string>();
+  private hydratedUserName: string | null = null;
+
+  constructor() {
+    effect(() => {
+      const u = this.user();
+      if (!u) {
+        this.hydratedUserName = null;
+        return;
+      }
+      if (this.hydratedUserName === u.userName) return;
+      if (this.isProfileDirty() || this.isUsernameDirty()) return;
+      this.hydrateFromUser();
+    });
+  }
 
   isProfileDirty(): boolean {
     const u = this.user();
@@ -115,6 +128,7 @@ export class SettingsPageComponent implements OnInit {
     this.bio = u.bio ?? '';
     this.userName = u.userName ?? '';
     this.usernameStatus.set('current');
+    this.hydratedUserName = u.userName;
   }
 
   onUsernameInput(value: string) {
@@ -163,31 +177,23 @@ export class SettingsPageComponent implements OnInit {
     }
   }
 
-  confirmDeleteAccount() {
-    const ref = this.dialog.open(ConfirmDialogComponent, {
-      width: '440px',
-      data: {
-        title: 'Delete account',
-        message:
-          'This permanently deletes your account, snippets, collections, and assets. This cannot be undone.',
-        confirmText: 'Delete account',
-        cancelText: 'Cancel',
-      },
+  async confirmDeleteAccount() {
+    const ok = await this.dialogService.confirm({
+      title: 'Delete account',
+      message:
+        'This permanently deletes your account, snippets, collections, and assets. This cannot be undone.',
+      confirmText: 'Delete account',
+      cancelText: 'Cancel',
     });
-
-    ref.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(async ok => {
-        if (!ok) return;
-        this.deleting.set(true);
-        try {
-          await firstValueFrom(this.userApi.deleteAccount());
-          this.snackbar.success('Account deleted');
-          this.authStore.logout();
-        } catch {
-          this.snackbar.error('Failed to delete account');
-          this.deleting.set(false);
-        }
-      });
+    if (!ok) return;
+    this.deleting.set(true);
+    try {
+      await firstValueFrom(this.userApi.deleteAccount());
+      this.snackbar.success('Account deleted');
+      this.authStore.logout();
+    } catch {
+      this.snackbar.error('Failed to delete account');
+      this.deleting.set(false);
+    }
   }
 }

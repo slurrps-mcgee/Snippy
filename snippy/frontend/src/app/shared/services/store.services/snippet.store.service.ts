@@ -39,16 +39,22 @@ export class SnippetStoreService {
     const gen = ++this.detailGeneration;
     this.loading.set(true);
     this.error.set(null);
+    this.snippet.set(null);
+    this.originalSnippet.set(null);
     try {
       const res = await firstValueFrom(this.snippetService.getSnippet(snippetId));
       if (gen !== this.detailGeneration) return;
       if (res?.snippet) {
         this.setSnippet(res.snippet, true);
+      } else {
+        this.error.set('Snippet not found');
       }
       this.loading.set(false);
     } catch {
       if (gen !== this.detailGeneration) return;
       this.error.set('Failed to load snippet');
+      this.snippet.set(null);
+      this.originalSnippet.set(null);
       this.loading.set(false);
     }
   }
@@ -75,40 +81,40 @@ export class SnippetStoreService {
     }
   }
 
-  async loadUserSnippets(page: number, limit: number) {
+  async loadUserSnippets(page: number, limit: number, q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getUserSnippets(page, limit)),
+      () => firstValueFrom(this.snippetService.getUserSnippets(page, limit, q)),
       'Failed to load user snippets'
     );
   }
 
-  async loadPublicSnippets(page: number, limit: number, sort: SnippetSort = 'newest') {
+  async loadPublicSnippets(page: number, limit: number, sort: SnippetSort = 'newest', q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getPublicSnippets(page, limit, sort)),
+      () => firstValueFrom(this.snippetService.getPublicSnippets(page, limit, sort, undefined, q)),
       'Failed to load public snippets'
     );
   }
 
-  async loadFeedSnippets(page: number, limit: number, sort: SnippetSort = 'newest') {
+  async loadFeedSnippets(page: number, limit: number, sort: SnippetSort = 'newest', q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getFeedSnippets(page, limit, sort)),
+      () => firstValueFrom(this.snippetService.getFeedSnippets(page, limit, sort, q)),
       'Failed to load feed'
     );
   }
 
-  async loadUserPublicSnippets(userName: string, page: number, limit: number) {
+  async loadUserPublicSnippets(userName: string, page: number, limit: number, q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getUserPublicSnippets(userName, page, limit)),
+      () => firstValueFrom(this.snippetService.getUserPublicSnippets(userName, page, limit, q)),
       'Failed to load user snippets'
     );
   }
 
-  async loadFavorites(page: number, limit: number) {
+  async loadFavorites(page: number, limit: number, q?: string) {
     const gen = ++this.favoritesGeneration;
     this.favoritesLoading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.favoriteService.getFavorites(page, limit));
+      const res = await firstValueFrom(this.favoriteService.getFavorites(page, limit, q));
       if (gen !== this.favoritesGeneration) return res ?? null;
       this.favoritesList.set(res ?? null);
       this.favoritesLoading.set(false);
@@ -294,7 +300,7 @@ export class SnippetStoreService {
         ? { ...s, commentCount: apply(s.commentCount ?? 0) }
         : s
     );
-    this.snippetList.update(list => {
+    const patchList = (list: SnippetListResponse | null) => {
       if (!list) return list;
       return {
         ...list,
@@ -304,7 +310,9 @@ export class SnippetStoreService {
             : item
         ),
       };
-    });
+    };
+    this.snippetList.update(patchList);
+    this.favoritesList.update(patchList);
   }
   //#endregion API Methods
 
@@ -420,6 +428,16 @@ export class SnippetStoreService {
     });
 
     this.snippetList.update(list => {
+      if (!list) return list;
+      return {
+        ...list,
+        snippets: list.snippets.map(item =>
+          item.snippetId === snippetId ? this.applyListPatch(item, patch) : item
+        ),
+      };
+    });
+
+    this.favoritesList.update(list => {
       if (!list) return list;
       return {
         ...list,

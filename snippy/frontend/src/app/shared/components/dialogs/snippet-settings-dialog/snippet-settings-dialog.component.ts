@@ -12,8 +12,7 @@ import { MatTabsModule } from '@angular/material/tabs';
 import { ExternalResourcesListComponent } from '../../../../core/components/external-resources-list/external-resources-list.component';
 import { ExternalResource } from '../../../interfaces/externalResource.interface';
 import { Snippet } from '../../../interfaces/snippet.interface';
-import { MatDialog } from '@angular/material/dialog';
-import { AlertDialogComponent } from '../alert-dialog/alert-dialog.component';
+import { DialogService } from '../../../services/component.services/dialog.service';
 
 @Component({
   selector: 'app-snippet-settings-dialog',
@@ -36,7 +35,7 @@ import { AlertDialogComponent } from '../alert-dialog/alert-dialog.component';
 export class SnippetSettingsDialogComponent {
   dialogRef = inject(MatDialogRef<SnippetSettingsDialogComponent>);
   data = inject<Snippet>(MAT_DIALOG_DATA);
-  dialog = inject(MatDialog);
+  dialogService = inject(DialogService);
 
   description: string;
   isPrivate: boolean;
@@ -80,13 +79,10 @@ export class SnippetSettingsDialogComponent {
     // Validate all resource URLs
     const invalidUrls = externalResources.filter(r => !this.isValidUrl(r.url));
     if (invalidUrls.length > 0) {
-      this.dialog.open(AlertDialogComponent, {
-        data: {
-          title: 'Invalid URL',
-          message: `One or more external resource URLs are invalid. Please enter valid URLs.`,
-          type: 'error'
-        }
-      });
+      this.dialogService.error(
+        'Invalid URL',
+        'One or more external resource URLs are invalid. Please enter valid URLs.'
+      );
       return;
     }
 

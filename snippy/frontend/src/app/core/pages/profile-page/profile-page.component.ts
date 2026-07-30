@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, inject, signal, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -18,6 +18,9 @@ import { CollectionStoreService } from '../../../shared/services/store.services/
 import { SnackbarService } from '../../../shared/services/component.services/snackbar.service';
 import { SnippetListComponentComponent } from '../../components/snippet-list-component/snippet-list-component.component';
 import { CollectionListComponent } from '../../components/collection-list/collection-list.component';
+import { Debouncer } from '../../../shared/utils/debounce';
+import { UserIdentityHeaderComponent } from '../../../shared/components/modules/user-identity-header/user-identity-header.component';
+import { AsyncStateComponent } from '../../../shared/components/async-state/async-state.component';
 
 @Component({
   selector: 'app-profile-page',
@@ -29,11 +32,13 @@ import { CollectionListComponent } from '../../components/collection-list/collec
     MatProgressSpinnerModule,
     SnippetListComponentComponent,
     CollectionListComponent,
+    UserIdentityHeaderComponent,
+    AsyncStateComponent,
   ],
   templateUrl: './profile-page.component.html',
   styleUrl: './profile-page.component.scss',
 })
-export class ProfilePageComponent implements OnInit {
+export class ProfilePageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
@@ -59,21 +64,13 @@ export class ProfilePageComponent implements OnInit {
   pageSize = 6;
   pageIndex = 0;
   penSearchQuery = '';
+  private penSearchDebouncer = new Debouncer();
 
-  get allSnippets() {
+  get snippets() {
     return this.snippetStoreService.snippetList()?.snippets ?? [];
   }
 
-  get snippets() {
-    const q = this.penSearchQuery.trim().toLowerCase();
-    if (!q) return this.allSnippets;
-    return this.allSnippets.filter(s =>
-      s.name?.toLowerCase().includes(q) || s.description?.toLowerCase().includes(q)
-    );
-  }
-
   get total() {
-    if (this.penSearchQuery.trim()) return this.snippets.length;
     return this.snippetStoreService.snippetList()?.totalCount ?? 0;
   }
 
@@ -82,16 +79,10 @@ export class ProfilePageComponent implements OnInit {
   }
 
   get collections(): Collection[] {
-    const q = this.collectionSearchQuery.trim().toLowerCase();
-    const all = this.collectionStoreService.collections();
-    if (!q) return all;
-    return all.filter(c =>
-      c.name?.toLowerCase().includes(q) || c.description?.toLowerCase().includes(q)
-    );
+    return this.collectionStoreService.collections();
   }
 
   get collectionsTotal() {
-    if (this.collectionSearchQuery.trim()) return this.collections.length;
     return this.collectionStoreService.totalCount();
   }
 
@@ -102,6 +93,7 @@ export class ProfilePageComponent implements OnInit {
   collectionSearchQuery = '';
   collectionPageSize = 6;
   collectionPageIndex = 0;
+  private collectionSearchDebouncer = new Debouncer();
 
   ngOnInit(): void {
     this.route.paramMap
@@ -139,23 +131,39 @@ export class ProfilePageComponent implements OnInit {
 
   async loadPens(page = 1, limit = this.pageSize) {
     try {
-      await this.snippetStoreService.loadUserPublicSnippets(this.username, page, limit);
+      await this.snippetStoreService.loadUserPublicSnippets(
+        this.username,
+        page,
+        limit,
+        this.penSearchQuery.trim() || undefined
+      );
     } catch (error) {
       console.error('Error loading user snippets:', error);
     }
   }
 
-  async loadCollections() {
+  async loadCollections(page = 1, limit = this.collectionPageSize) {
     try {
-      await this.collectionStoreService.loadUser(this.username);
+      await this.collectionStoreService.loadUser(
+        this.username,
+        page,
+        limit,
+        this.collectionSearchQuery.trim() || undefined
+      );
     } catch (error) {
       console.error('Error loading user collections:', error);
     }
   }
 
+  ngOnDestroy() {
+    this.penSearchDebouncer.clear();
+    this.collectionSearchDebouncer.clear();
+  }
+
   handlePenSearch(searchQuery: string) {
     this.penSearchQuery = searchQuery;
     this.pageIndex = 0;
+    this.penSearchDebouncer.run(() => this.loadPens(this.pageIndex + 1, this.pageSize));
   }
 
   handlePenPageChange(event: PageEvent) {
@@ -167,13 +175,15 @@ export class ProfilePageComponent implements OnInit {
   handleCollectionSearch(searchQuery: string) {
     this.collectionSearchQuery = searchQuery;
     this.collectionPageIndex = 0;
+    this.collectionSearchDebouncer.run(() =>
+      this.loadCollections(this.collectionPageIndex + 1, this.collectionPageSize)
+    );
   }
 
   handleCollectionPageChange(event: PageEvent) {
     this.collectionPageIndex = event.pageIndex;
     this.collectionPageSize = event.pageSize;
-    this.collectionSearchQuery = '';
-    void this.collectionStoreService.loadUser(this.username, event.pageIndex + 1, event.pageSize);
+    void this.loadCollections(event.pageIndex + 1, event.pageSize);
   }
 
   async toggleFollow() {

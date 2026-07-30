@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,12 +7,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
-import { MatDialog } from '@angular/material/dialog';
 import { CollectionStoreService } from '../../../shared/services/store.services/collection.store.service';
 import { SnackbarService } from '../../../shared/services/component.services/snackbar.service';
 import { SnippetList } from '../../../shared/interfaces/snippetList.interface';
 import { SnippetListComponentComponent } from '../../components/snippet-list-component/snippet-list-component.component';
-import { ConfirmDialogComponent } from '../../../shared/components/dialogs/confirm-dialog/confirm-dialog.component';
+import { DialogService } from '../../../shared/services/component.services/dialog.service';
+import { Debouncer } from '../../../shared/utils/debounce';
+import { AsyncStateComponent } from '../../../shared/components/async-state/async-state.component';
 
 @Component({
   selector: 'app-collection-detail-page',
@@ -23,22 +24,25 @@ import { ConfirmDialogComponent } from '../../../shared/components/dialogs/confi
     MatProgressSpinnerModule,
     MatChipsModule,
     SnippetListComponentComponent,
+    AsyncStateComponent,
   ],
   templateUrl: './collection-detail-page.component.html',
   styleUrl: './collection-detail-page.component.scss',
 })
-export class CollectionDetailPageComponent implements OnInit {
+export class CollectionDetailPageComponent implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private location = inject(Location);
   private destroyRef = inject(DestroyRef);
   private collectionStoreService = inject(CollectionStoreService);
   private snackbarService = inject(SnackbarService);
-  private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
+  private searchDebouncer = new Debouncer();
 
   loading = signal(true);
   notFound = signal(false);
   searchQuery = signal('');
 
+  private shortId = '';
   pageSize = 6;
   pageIndex = 0;
 
@@ -46,22 +50,15 @@ export class CollectionDetailPageComponent implements OnInit {
     return this.collectionStoreService.activeCollection();
   }
 
-  private filteredSnippets = computed<SnippetList[]>(() => {
-    const all = this.collection?.snippets ?? [];
-    const query = this.searchQuery().trim().toLowerCase();
-    if (!query) return all;
-    return all.filter(s =>
-      s.name?.toLowerCase().includes(query) || s.description?.toLowerCase().includes(query)
-    );
-  });
+  private allSnippets = computed<SnippetList[]>(() => this.collection?.snippets ?? []);
 
   get total() {
-    return this.filteredSnippets().length;
+    return this.allSnippets().length;
   }
 
   get snippets(): SnippetList[] {
     const start = this.pageIndex * this.pageSize;
-    return this.filteredSnippets().slice(start, start + this.pageSize);
+    return this.allSnippets().slice(start, start + this.pageSize);
   }
 
   get penCount(): number {
@@ -74,16 +71,22 @@ export class CollectionDetailPageComponent implements OnInit {
       .subscribe(params => {
         const shortId = params.get('shortId');
         if (!shortId) return;
+        this.shortId = shortId;
         this.pageIndex = 0;
+        this.searchQuery.set('');
         this.load(shortId);
       });
   }
 
-  async load(shortId: string) {
+  ngOnDestroy() {
+    this.searchDebouncer.clear();
+  }
+
+  async load(shortId: string, q?: string) {
     this.loading.set(true);
     this.notFound.set(false);
     try {
-      await this.collectionStoreService.loadOne(shortId);
+      await this.collectionStoreService.loadOne(shortId, q);
     } catch {
       this.notFound.set(true);
       this.snackbarService.error('Failed to load collection');
@@ -95,6 +98,7 @@ export class CollectionDetailPageComponent implements OnInit {
   handleSearch(query: string) {
     this.searchQuery.set(query);
     this.pageIndex = 0;
+    this.searchDebouncer.run(() => this.load(this.shortId, query.trim() || undefined));
   }
 
   handlePageChange(event: PageEvent) {
@@ -102,30 +106,24 @@ export class CollectionDetailPageComponent implements OnInit {
     this.pageSize = event.pageSize;
   }
 
-  removeSnippet(snippet: SnippetList, event?: Event) {
+  async removeSnippet(snippet: SnippetList, event?: Event) {
     event?.stopPropagation();
     const collection = this.collection;
     if (!collection?.isOwner) return;
 
-    const ref = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Remove from collection',
-        message: `Remove "${snippet.name}" from this collection? The snippet itself is not deleted.`,
-        confirmText: 'Remove',
-        cancelText: 'Cancel',
-      },
+    const ok = await this.dialogService.confirm({
+      title: 'Remove from collection',
+      message: `Remove "${snippet.name}" from this collection? The snippet itself is not deleted.`,
+      confirmText: 'Remove',
+      cancelText: 'Cancel',
     });
-
-    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async ok => {
-      if (!ok) return;
-      try {
-        await this.collectionStoreService.removeSnippet(collection.collectionId, snippet.snippetId);
-        this.snackbarService.success('Removed from collection');
-      } catch {
-        this.snackbarService.error('Failed to remove snippet');
-      }
-    });
+    if (!ok) return;
+    try {
+      await this.collectionStoreService.removeSnippet(collection.collectionId, snippet.snippetId);
+      this.snackbarService.success('Removed from collection');
+    } catch {
+      this.snackbarService.error('Failed to remove snippet');
+    }
   }
 
   goBack() {

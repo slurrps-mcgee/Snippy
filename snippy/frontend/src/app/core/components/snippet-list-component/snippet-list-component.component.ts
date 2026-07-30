@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, DestroyRef, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
@@ -13,15 +13,13 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDialog } from '@angular/material/dialog';
 import { SnackbarService } from '../../../shared/services/component.services/snackbar.service';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ConfirmDialogComponent } from '../../../shared/components/dialogs/confirm-dialog/confirm-dialog.component';
 import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
 import { FollowApiService } from '../../../shared/services/api.services/follow.api.service';
 import { CommentDialogComponent } from '../../../shared/components/dialogs/comment-dialog/comment-dialog.component';
 import { AddToCollectionDialogComponent } from '../../../shared/components/dialogs/add-to-collection-dialog/add-to-collection-dialog.component';
 import { AuthStoreService } from '../../../shared/services/store.services/authStore.service';
+import { DialogService } from '../../../shared/services/component.services/dialog.service';
 import { firstValueFrom } from 'rxjs';
 
 @Component({
@@ -62,8 +60,7 @@ export class SnippetListComponentComponent {
   private followApi = inject(FollowApiService);
   private authStore = inject(AuthStoreService);
   private snackbarService = inject(SnackbarService);
-  private dialog = inject(MatDialog);
-  private destroyRef = inject(DestroyRef);
+  private dialogService = inject(DialogService);
 
   onSearchChange() {
     this.searchChange.emit(this.searchQuery);
@@ -113,9 +110,7 @@ export class SnippetListComponentComponent {
 
   commentOnSnippet(snippet: SnippetList, event?: Event) {
     if (event) event.stopPropagation();
-    this.dialog.open(CommentDialogComponent, {
-      width: '560px',
-      maxHeight: '85vh',
+    this.dialogService.open(CommentDialogComponent, 'lg', {
       data: {
         snippetId: snippet.snippetId,
         snippetName: snippet.name,
@@ -123,13 +118,13 @@ export class SnippetListComponentComponent {
         ownerUserName: snippet.userName,
         isSnippetOwner: snippet.isOwner,
       },
+      maxHeight: '85vh',
     });
   }
 
   addToCollection(snippet: SnippetList, event?: Event) {
     if (event) event.stopPropagation();
-    this.dialog.open(AddToCollectionDialogComponent, {
-      width: '420px',
+    this.dialogService.open(AddToCollectionDialogComponent, 'md', {
       data: { snippetId: snippet.snippetId },
     });
   }
@@ -168,28 +163,21 @@ export class SnippetListComponentComponent {
     this.removeFromCollection.emit(snippet);
   }
 
-  deleteSnippet(snippet: SnippetList, event?: Event) {
+  async deleteSnippet(snippet: SnippetList, event?: Event) {
     if (event) event.stopPropagation();
 
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Delete Snippet',
-        message: `Delete "${snippet.name}"? This cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel'
-      }
+    const ok = await this.dialogService.confirm({
+      title: 'Delete Snippet',
+      message: `Delete "${snippet.name}"? This cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
     });
-
-    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async result => {
-      if (result) {
-        try {
-          await this.snippetStoreService.deleteSnippet(snippet.snippetId);
-          this.snackbarService.success('Snippet deleted');
-        } catch {
-          this.snackbarService.error('Failed to delete snippet');
-        }
-      }
-    });
+    if (!ok) return;
+    try {
+      await this.snippetStoreService.deleteSnippet(snippet.snippetId);
+      this.snackbarService.success('Snippet deleted');
+    } catch {
+      this.snackbarService.error('Failed to delete snippet');
+    }
   }
 }

@@ -1,9 +1,9 @@
-<h2 mat-dialog-title [class]="'alert-' + data.type">
+<h2 mat-dialog-title [class]="'alert-' + (data.type || 'info')">
   {{ data.title }}
 </h2>
 
 <mat-dialog-content>
-  {{ data.message }}
+  <p>{{ data.message }}</p>
 </mat-dialog-content>
 
 <mat-dialog-actions align="end">

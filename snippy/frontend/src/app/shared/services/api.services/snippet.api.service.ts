@@ -18,11 +18,11 @@ export class SnippetAPIService {
     });
   }
 
-  getUserSnippets(page: number, limit: number): Observable<SnippetListResponse> {
+  getUserSnippets(page: number, limit: number, q?: string): Observable<SnippetListResponse> {
     return this.apiService.request<SnippetListResponse>({
       path: `/snippets/me`,
       method: 'GET',
-      params: { page, limit }
+      params: { page, limit, ...(q ? { q } : {}) }
     });
   }
 
@@ -30,36 +30,39 @@ export class SnippetAPIService {
     page: number,
     limit: number,
     sort: SnippetSort = 'newest',
-    tag?: string
+    tag?: string,
+    q?: string
   ): Observable<SnippetListResponse> {
     return this.apiService.request<SnippetListResponse>({
       path: `/snippets/public`,
       method: 'GET',
-      params: { page, limit, sort, ...(tag ? { tag } : {}) }
+      params: { page, limit, sort, ...(tag ? { tag } : {}), ...(q ? { q } : {}) }
     });
   }
 
   getFeedSnippets(
     page: number,
     limit: number,
-    sort: SnippetSort = 'newest'
+    sort: SnippetSort = 'newest',
+    q?: string
   ): Observable<SnippetListResponse> {
     return this.apiService.request<SnippetListResponse>({
       path: `/snippets/feed`,
       method: 'GET',
-      params: { page, limit, sort }
+      params: { page, limit, sort, ...(q ? { q } : {}) }
     });
   }
 
   getUserPublicSnippets(
     userName: string,
     page: number,
-    limit: number
+    limit: number,
+    q?: string
   ): Observable<SnippetListResponse> {
     return this.apiService.request<SnippetListResponse>({
       path: `/snippets/user/${encodeURIComponent(userName)}`,
       method: 'GET',
-      params: { page, limit }
+      params: { page, limit, ...(q ? { q } : {}) }
     });
   }
 

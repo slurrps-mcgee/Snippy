@@ -71,7 +71,7 @@ export async function favoriteHandler(
 //#region Favorite READ
 // Get Favorite Snippets by User Handler
 export async function getFavoriteSnippetsByUserHandler(
-    payload: ServicePayload<unknown, unknown, PaginationQuery>
+    payload: ServicePayload<unknown, unknown, PaginationQuery & { q?: string }>
 ): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
@@ -80,9 +80,10 @@ export async function getFavoriteSnippetsByUserHandler(
         }
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const q = payload.query?.q;
 
         return await executeInTransaction(async (t) => {
-            const result = await findFavoriteSnippetsByUser(auth0Id, offset, limit, t);
+            const result = await findFavoriteSnippetsByUser(auth0Id, offset, limit, t, q);
             return {
                 snippets: SnippetMapper.toListDTOs(
                     result.rows,

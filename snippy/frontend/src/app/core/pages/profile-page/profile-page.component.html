@@ -1,23 +1,20 @@
 <div class="flex h-full flex-col overflow-auto">
-  @if (loading()) {
-  <div class="flex flex-1 items-center justify-center">
-    <mat-spinner diameter="40"></mat-spinner>
-  </div>
-  } @else if (errorMessage()) {
-  <div class="flex flex-1 flex-col items-center justify-center gap-2 text-slate-400">
-    <mat-icon>lock</mat-icon>
-    <p>{{ errorMessage() }}</p>
-  </div>
-  } @else if (profileUser(); as user) {
-  <div class="page-shell">
-    <div class="mb-6 flex items-start gap-4">
-      <img [src]="user.pictureUrl || 'https://www.gravatar.com/avatar/?d=mp'" alt="Avatar"
-        class="h-20 w-20 rounded-full object-cover ring-1 ring-white/15" />
-
-      <div class="min-w-0 flex-1">
-        <div class="flex flex-wrap items-center gap-3">
-          <h1 class="text-3xl font-semibold text-white">{{ user.displayName || user.userName }}</h1>
-
+  <app-async-state
+    [loading]="loading()"
+    [spinnerOnly]="true"
+    [error]="errorMessage()"
+    errorIcon="lock">
+    @if (profileUser(); as user) {
+    <div class="page-shell">
+      <app-user-identity-header
+        [pictureUrl]="user.pictureUrl"
+        [displayName]="user.displayName"
+        [userName]="user.userName"
+        [bio]="user.bio"
+        [followerCount]="user.followerCount"
+        [followingCount]="user.followingCount"
+        [showStats]="true">
+        <ng-container identityActions>
           @if (!isSelf()) {
           <button mat-raised-button [color]="user.isFollowing ? undefined : 'primary'" [disabled]="followLoading()"
             (click)="toggleFollow()">
@@ -28,46 +25,31 @@
             }
           </button>
           }
-        </div>
+        </ng-container>
+      </app-user-identity-header>
 
-        <p class="mt-1 text-slate-400">&#64;{{ user.userName }}</p>
+      <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
+        <mat-tab label="Pens">
+          <app-async-state class="mt-4 block" [loading]="isLoadingPens" loadingText="Loading pens...">
+            <app-snippet-list-component class="mt-4 block" [snippets]="snippets" [total]="total"
+              [pageSize]="pageSize" [pageIndex]="pageIndex" [showNewButton]="false"
+              (searchChange)="handlePenSearch($event)"
+              (pageChange)="handlePenPageChange($event)">
+            </app-snippet-list-component>
+          </app-async-state>
+        </mat-tab>
 
-        @if (user.bio) {
-        <p class="mt-2 text-slate-300">{{ user.bio }}</p>
-        }
-
-        <div class="mt-3 flex gap-6 text-sm text-slate-400">
-          <span><strong class="text-slate-200">{{ user.followerCount ?? 0 }}</strong> Followers</span>
-          <span><strong class="text-slate-200">{{ user.followingCount ?? 0 }}</strong> Following</span>
-        </div>
-      </div>
+        <mat-tab label="Collections">
+          <app-async-state class="mt-4 block" [loading]="collectionsLoading" loadingText="Loading collections...">
+            <app-collection-list class="mt-4 block" [collections]="collections" [total]="collectionsTotal"
+              [pageSize]="collectionPageSize" [pageIndex]="collectionPageIndex" [showNewButton]="false"
+              [showDelete]="false" (searchChange)="handleCollectionSearch($event)"
+              (pageChange)="handleCollectionPageChange($event)" (openCollection)="openCollection($event)">
+            </app-collection-list>
+          </app-async-state>
+        </mat-tab>
+      </mat-tab-group>
     </div>
-
-    <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
-      <mat-tab label="Pens">
-        @if (isLoadingPens) {
-        <div class="p-6 text-center text-slate-400">Loading pens...</div>
-        } @else {
-        <app-snippet-list-component class="mt-4 block" [snippets]="snippets" [total]="total"
-          [pageSize]="pageSize" [pageIndex]="pageIndex" [showNewButton]="false"
-          (searchChange)="handlePenSearch($event)"
-          (pageChange)="handlePenPageChange($event)">
-        </app-snippet-list-component>
-        }
-      </mat-tab>
-
-      <mat-tab label="Collections">
-        @if (collectionsLoading) {
-        <div class="p-6 text-center text-slate-400">Loading collections...</div>
-        } @else {
-        <app-collection-list class="mt-4 block" [collections]="collections" [total]="collectionsTotal"
-          [pageSize]="collectionPageSize" [pageIndex]="collectionPageIndex" [showNewButton]="false"
-          [showDelete]="false" (searchChange)="handleCollectionSearch($event)"
-          (pageChange)="handleCollectionPageChange($event)" (openCollection)="openCollection($event)">
-        </app-collection-list>
-        }
-      </mat-tab>
-    </mat-tab-group>
-  </div>
-  }
+    }
+  </app-async-state>
 </div>

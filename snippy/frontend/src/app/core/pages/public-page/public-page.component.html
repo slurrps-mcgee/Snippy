@@ -1,25 +1,12 @@
 <div class="flex h-full flex-col overflow-auto">
   <div class="page-shell">
-    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
-      <h1 class="text-3xl font-semibold text-white">Explore</h1>
+    <app-sort-page-header title="Explore" [sort]="sort" (sortChange)="handleSortChange($event)" />
 
-      <mat-form-field appearance="outline" subscriptSizing="dynamic" class="min-w-[10rem]">
-        <mat-label>Sort by</mat-label>
-        <mat-select [value]="sort" (selectionChange)="handleSortChange($event.value)">
-          @for (option of sortOptions; track option.value) {
-          <mat-option [value]="option.value">{{ option.label }}</mat-option>
-          }
-        </mat-select>
-      </mat-form-field>
-    </div>
-
-    @if (isLoading) {
-    <div class="text-center text-slate-400">Loading snippets...</div>
-    } @else {
-    <app-snippet-list-component [snippets]="snippets" [total]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
-      [showNewButton]="false"
-      (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)">
-    </app-snippet-list-component>
-    }
+    <app-async-state [loading]="isLoading" loadingText="Loading snippets...">
+      <app-snippet-list-component [snippets]="snippets" [total]="total" [pageSize]="pageSize" [pageIndex]="pageIndex"
+        [showNewButton]="false"
+        (searchChange)="handleSearch($event)" (pageChange)="handlePageChange($event)">
+      </app-snippet-list-component>
+    </app-async-state>
   </div>
 </div>

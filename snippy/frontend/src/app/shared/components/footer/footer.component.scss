@@ -2,6 +2,35 @@
   display: block;
 }
 
+.site-footer {
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+}
+
+.footer-inner {
+  padding-block: 0.75rem;
+}
+
+.site-footer.editor-footer .footer-inner {
+  padding-block: 0.25rem;
+}
+
+.editor-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.125rem;
+}
+
+.copyright {
+  text-align: center;
+  font-size: 0.875rem;
+}
+
 :host ::ng-deep .editor-footer {
   .mat-mdc-button {
     min-height: 1.75rem;

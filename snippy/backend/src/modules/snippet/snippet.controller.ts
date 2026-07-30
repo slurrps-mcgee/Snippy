@@ -179,6 +179,12 @@ export async function forkSnippet(req: Request, res: Response, next: NextFunctio
  *     summary: Get public snippets
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Optional free-text filter over name, description, and tags
  *     responses:
  *       '200':
  *         description: Public snippets list
@@ -201,6 +207,12 @@ export async function getPublicSnippets(req: Request, res: Response, next: NextF
  *     summary: Get snippets for the current user
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Optional free-text filter over name, description, and tags
  *     responses:
  *       '200':
  *         description: User's snippets
@@ -307,6 +319,11 @@ export async function getSnippetByShortId(req: Request, res: Response, next: Nex
  *         required: true
  *         schema:
  *           type: string
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Optional free-text filter over name, description, and tags
  *     responses:
  *       '200':
  *         description: User public snippets

@@ -1,0 +1,21 @@
+@if (loading) {
+<div class="async-state" [class.async-state--fill]="spinnerOnly">
+  @if (spinnerOnly) {
+  <mat-spinner [diameter]="diameter"></mat-spinner>
+  } @else {
+  <p class="async-state__text">{{ loadingText }}</p>
+  }
+</div>
+} @else if (error) {
+<div class="async-state async-state--fill">
+  <mat-icon>{{ errorIcon }}</mat-icon>
+  <p class="async-state__text">{{ error }}</p>
+</div>
+} @else if (empty) {
+<div class="async-state async-state--fill">
+  <mat-icon>{{ emptyIcon }}</mat-icon>
+  <p class="async-state__text">{{ emptyText }}</p>
+</div>
+} @else {
+<ng-content></ng-content>
+}

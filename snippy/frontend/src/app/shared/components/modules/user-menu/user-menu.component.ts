@@ -1,13 +1,11 @@
-import { Component, DOCUMENT, inject, DestroyRef } from '@angular/core';
+import { Component, DOCUMENT, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { AuthStoreService } from '../../../services/store.services/authStore.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
-import { ConfirmDialogComponent } from '../../dialogs/confirm-dialog/confirm-dialog.component';
 import { AssetsDialogComponent } from '../../dialogs/assets-dialog/assets-dialog.component';
+import { DialogService } from '../../../services/component.services/dialog.service';
 import { Router } from '@angular/router';
 
 @Component({
@@ -23,28 +21,19 @@ export class UserMenuComponent {
   private router = inject(Router);
   private authStoreService = inject(AuthStoreService);
   private snippetStoreService = inject(SnippetStoreService);
-  private dialog = inject(MatDialog);
-  private destroyRef = inject(DestroyRef);
+  private dialogService = inject(DialogService);
 
-  logout() {
+  async logout() {
     if (this.snippetStoreService.isDirty()) {
-      const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-        width: '400px',
-        data: {
-          title: 'Unsaved Changes',
-          message: 'You have unsaved changes. Are you sure you want to logout?',
-          confirmText: 'Logout',
-          cancelText: 'Cancel'
-        }
+      const ok = await this.dialogService.confirm({
+        title: 'Unsaved Changes',
+        message: 'You have unsaved changes. Are you sure you want to logout?',
+        confirmText: 'Logout',
+        cancelText: 'Cancel',
       });
-
-      dialogRef.afterClosed()
-        .pipe(takeUntilDestroyed(this.destroyRef))
-        .subscribe(result => {
-          if (result) {
-            this.authStoreService.logout();
-          }
-        });
+      if (ok) {
+        this.authStoreService.logout();
+      }
     } else {
       this.authStoreService.logout();
     }
@@ -64,10 +53,7 @@ export class UserMenuComponent {
   }
 
   assets() {
-    this.dialog.open(AssetsDialogComponent, {
-      width: '640px',
-      maxHeight: '85vh',
-    });
+    this.dialogService.open(AssetsDialogComponent, 'lg');
   }
 
   createNewSnippet() {

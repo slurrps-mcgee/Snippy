@@ -1,9 +1,7 @@
-<footer
-  class="border-t border-white/15 bg-white/10 text-slate-300 backdrop-blur-[18px]"
-  [class.editor-footer]="!!snippetStoreService.snippet()?.snippetId">
-  <div class="page-container" [class.py-1]="!!snippetStoreService.snippet()?.snippetId" [class.py-3]="!snippetStoreService.snippet()?.snippetId">
+<footer class="site-footer" [class.editor-footer]="!!snippetStoreService.snippet()?.snippetId">
+  <div class="page-container footer-inner">
     @if (snippetStoreService.snippet()?.snippetId) {
-    <div class="flex flex-wrap items-center justify-center gap-0.5">
+    <div class="editor-actions">
       <button mat-button (click)="forkSnippet()" matTooltip="Fork this snippet">
         <mat-icon>fork_right</mat-icon>
         Fork
@@ -18,7 +16,7 @@
       </button>
     </div>
     } @else {
-    <div class="text-center text-sm">
+    <div class="copyright">
       <span>© 2026 Snippy. All rights reserved.</span>
     </div>
     }

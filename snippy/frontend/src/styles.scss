@@ -21,6 +21,415 @@ html {
   );
 }
 
+@import 'tailwindcss';
+
+:root {
+  --brand-violet: #8b5cf6;
+  --brand-cyan: #22d3ee;
+  --page-bg: #0f172a;
+  --card-bg: #1e293b;
+
+  /* Liquid glass (inspired by CodePen NPRPBjd — frosted surface) */
+  --glass-white: rgba(255, 255, 255, 0.1);
+  --glass-white-md: rgba(255, 255, 255, 0.16);
+  --glass-white-lg: rgba(255, 255, 255, 0.22);
+  --glass-dark: rgba(15, 23, 42, 0.35);
+  --glass-dark-md: rgba(15, 23, 42, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.22);
+  --glass-border-subtle: rgba(255, 255, 255, 0.12);
+  --glass-border-bright: rgba(255, 255, 255, 0.38);
+  --blur-sm: blur(8px);
+  --blur-md: blur(18px);
+  --blur-lg: blur(32px);
+  --shadow-glass:
+    0 8px 32px rgba(0, 0, 0, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.18);
+  --reflection-top: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(255, 255, 255, 0) 48%
+  );
+
+  /* Compat aliases used by Material overrides */
+  --card-bg-glass: var(--glass-white);
+  --card-border: var(--glass-border);
+  --header-bg: var(--glass-dark-md);
+  color-scheme: dark;
+}
+
+/* Must live in @layer base — an unlayered `* { padding: 0 }` beats
+   Tailwind @layer components and wiped all page padding. */
+@layer base {
+  * {
+    box-sizing: border-box;
+    margin: 0;
+  }
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  min-height: 100vh;
+  line-height: 1.6;
+  font-family: 'IBM Plex Sans', sans-serif;
+  background-color: var(--page-bg);
+  color: #f1f5f9;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1,
+h2,
+h3,
+.brand-mark {
+  font-family: 'Space Grotesk', sans-serif;
+  letter-spacing: -0.02em;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  font-size: 1rem;
+  text-decoration: none;
+  color: #f8fafc;
+  transition: opacity 220ms ease;
+}
+
+.brand-mark:hover {
+  opacity: 0.85;
+}
+
+.brand-star {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 9999px;
+  color: #ffffff;
+  background: linear-gradient(140deg, var(--brand-violet), var(--brand-cyan));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+  font-size: 0.8rem;
+  line-height: 1;
+}
+
+.nav-pill {
+  display: inline-flex;
+  padding: 0.45rem 0.8rem;
+  border-radius: 9999px;
+  text-decoration: none;
+  color: #e2e8f0;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 200ms ease;
+  cursor: pointer;
+  background: transparent;
+  border: 1px solid transparent;
+}
+
+.nav-pill:hover {
+  background: var(--glass-white);
+  border-color: var(--glass-border-subtle);
+  color: #ffffff;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+.nav-pill-active {
+  background: linear-gradient(
+    110deg,
+    rgba(139, 92, 246, 0.35),
+    rgba(34, 211, 238, 0.28)
+  );
+  border: 1px solid var(--glass-border);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28);
+  color: #fff;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+}
+
+/* Shared frosted / liquid glass surface */
+.glass,
+.glass-card {
+  position: relative;
+  overflow: hidden;
+  background: var(--glass-white);
+  border: 1px solid var(--glass-border);
+  border-radius: 1.1rem;
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  transition:
+    border-color 220ms ease,
+    box-shadow 220ms ease,
+    background 220ms ease,
+    transform 220ms ease;
+}
+
+.glass::before,
+.glass-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--reflection-top);
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+.glass > *,
+.glass-card > * {
+  position: relative;
+  z-index: 1;
+}
+
+.glass-card {
+  padding: 1.25rem;
+}
+
+.glass-card:hover {
+  background: var(--glass-white-md);
+  border-color: var(--glass-border-bright);
+  box-shadow: var(--shadow-float);
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  border: 1px solid var(--glass-border);
+  background: var(--glass-white);
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: #a5f3fc;
+}
+
+.site-header {
+  background: var(--header-bg);
+  backdrop-filter: var(--blur-lg);
+  -webkit-backdrop-filter: var(--blur-lg);
+  border-bottom: 1px solid var(--glass-border-subtle);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.06);
+  color: #f1f5f9;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass,
+  .glass-card,
+  .site-header,
+  .eyebrow,
+  .nav-pill-active {
+    background: rgba(30, 41, 59, 0.92);
+  }
+}
+
+.atmosphere {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(65px);
+  opacity: 0.5;
+  animation: drift 16s ease-in-out infinite alternate;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+.orb-cyan {
+  left: -9rem;
+  top: -6rem;
+  height: 20rem;
+  width: 20rem;
+  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.7) 0%, rgba(8, 47, 73, 0.1) 70%);
+}
+
+.orb-violet {
+  right: -7rem;
+  top: 24%;
+  height: 19rem;
+  width: 19rem;
+  background: radial-gradient(circle at center, rgba(124, 58, 237, 0.75) 0%, rgba(30, 27, 75, 0.08) 68%);
+  animation-delay: 1.2s;
+}
+
+.grid-mask {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+  -webkit-mask-image: radial-gradient(circle at center, black 35%, transparent 100%);
+  pointer-events: none;
+}
+
+.content-stagger > * {
+  opacity: 0;
+  animation: fadeRise 650ms ease both;
+  animation-delay: var(--entry-delay, 0ms);
+}
+
+.content-stagger > *:nth-child(1) {
+  --entry-delay: 60ms;
+}
+
+.content-stagger > *:nth-child(2) {
+  --entry-delay: 140ms;
+}
+
+.content-stagger > *:nth-child(3) {
+  --entry-delay: 220ms;
+}
+
+.content-stagger > *:nth-child(4) {
+  --entry-delay: 300ms;
+}
+
+.content-stagger > *:nth-child(5) {
+  --entry-delay: 380ms;
+}
+
+.content-stagger > *:nth-child(6) {
+  --entry-delay: 460ms;
+}
+
+.content-stagger > *:nth-child(7) {
+  --entry-delay: 540ms;
+}
+
+.content-stagger > *:nth-child(8) {
+  --entry-delay: 620ms;
+}
+
+@layer components {
+  .btn-primary {
+    @apply rounded-lg bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-violet-700;
+  }
+
+  .btn-secondary {
+    @apply rounded-lg border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-200 hover:border-white/40 hover:bg-white/15 hover:text-white;
+  }
+
+  .section-title {
+    @apply text-4xl font-bold text-white md:text-5xl;
+  }
+
+  .section-subtitle {
+    @apply text-lg text-slate-300;
+  }
+}
+
+/* Unlayered so padding always wins over base resets.
+   Replaces Bootstrap `.container` + former `p-5` gutters. */
+.page-container {
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.page-shell {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  max-width: 72rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 2rem 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .page-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .page-shell {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .page-container {
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+  }
+
+  .page-shell {
+    padding: 3rem 2.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .page-container {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+
+  .page-shell {
+    padding-left: 3rem;
+    padding-right: 3rem;
+  }
+}
+
+@keyframes drift {
+  from {
+    transform: translateY(0) scale(1);
+  }
+  to {
+    transform: translateY(-22px) scale(1.08);
+  }
+}
+
+@keyframes fadeRise {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .orb {
+    opacity: 0.38;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .content-stagger > * {
+    opacity: 1;
+    animation: none;
+  }
+
+  .orb {
+    animation: none;
+  }
+}
+
 /* Material surfaces → liquid frosted glass */
 .mat-mdc-card {
   --mdc-elevated-card-container-color: transparent !important;
@@ -111,6 +520,47 @@ html {
   outline: none !important;
   box-shadow: none !important;
   background: transparent !important;
+}
+
+/* Shared dialog layout (panelClass: snippy-dialog) */
+.snippy-dialog {
+  .mat-mdc-dialog-title {
+    margin: 0;
+    padding: 1.25rem 1.25rem 0.5rem;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+
+  .mat-mdc-dialog-title.alert-success {
+    color: #86efac;
+  }
+
+  .mat-mdc-dialog-title.alert-error {
+    color: #fca5a5;
+  }
+
+  .mat-mdc-dialog-title.alert-warning {
+    color: #fdba74;
+  }
+
+  .mat-mdc-dialog-title.alert-info {
+    color: #7dd3fc;
+  }
+
+  .mat-mdc-dialog-content {
+    padding: 0.5rem 1.25rem 1rem !important;
+    color: #cbd5e1;
+    max-height: min(70vh, 40rem);
+  }
+
+  .mat-mdc-dialog-actions {
+    margin: 0;
+    padding: 0.75rem 1.25rem 1.1rem !important;
+    gap: 0.5rem;
+    border-top: 1px solid var(--glass-border-subtle);
+  }
 }
 
 .mat-mdc-chip {

@@ -3,6 +3,7 @@ import { Snippets } from "../../entities/snippet.entity";
 import { SnippetFiles } from "../../entities/snippetFile.entity";
 import { Users } from "../../entities/user.entity";
 import { SnippetSort } from "./dto/snippet.dto";
+import { buildLikeSearchCondition } from "../../common/utilities/searchCondition";
 
 export function resolveSnippetOrder(sort?: string): Order {
     switch (sort) {
@@ -28,6 +29,26 @@ function buildTagCondition(tag?: string): WhereOptions | undefined {
         Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR'),
         Op.like,
         `%"${sanitized}"%`
+    );
+}
+
+/**
+ * Shared free-text search condition for snippets: case-insensitive match against
+ * name, description, and tags (JSON array cast to text). Used by every snippet list
+ * endpoint that accepts an optional `q` param, as well as by associations that join
+ * out to Snippets (favorites, collection snippets) via a custom `tableAlias`.
+ *
+ * Returns `null` when `q` is empty so callers can leave existing behavior unchanged.
+ */
+export function buildTextSearchCondition(q?: string | null, tableAlias: string = 'Snippets'): WhereOptions | null {
+    return buildLikeSearchCondition(
+        q,
+        [
+            { name: 'name' },
+            { name: 'description' },
+            { name: 'tags', cast: 'CHAR' },
+        ],
+        tableAlias
     );
 }
 
@@ -132,37 +153,18 @@ export async function searchSnippets(
     sort?: SnippetSort | string,
     tag?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
-    const sanitizedQuery = query.replace(/[%_\\]/g, '\\$&').trim();
+    const searchCondition = buildTextSearchCondition(query);
 
-    if (!sanitizedQuery) {
+    if (!searchCondition) {
         return { rows: [], count: 0 };
     }
 
-    const searchPattern = `%${sanitizedQuery.toLowerCase()}%`;
     const tagCondition = buildTagCondition(tag);
 
     const where: WhereOptions = {
         isPrivate: false,
         [Op.and]: [
-            {
-                [Op.or]: [
-                    Sequelize.where(
-                        Sequelize.fn('LOWER', Sequelize.col('Snippets.name')),
-                        Op.like,
-                        searchPattern
-                    ),
-                    Sequelize.where(
-                        Sequelize.fn('LOWER', Sequelize.col('Snippets.description')),
-                        Op.like,
-                        searchPattern
-                    ),
-                    Sequelize.where(
-                        Sequelize.fn('LOWER', Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR')),
-                        Op.like,
-                        searchPattern
-                    )
-                ]
-            },
+            searchCondition,
             ...(tagCondition ? [tagCondition] : []),
         ]
     };
@@ -183,12 +185,15 @@ export async function getAllPublicSnippets(
     limit: number,
     transaction?: Transaction,
     sort?: SnippetSort | string,
-    tag?: string
+    tag?: string,
+    q?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
     const tagCondition = buildTagCondition(tag);
+    const searchCondition = buildTextSearchCondition(q);
+    const andConditions = [tagCondition, searchCondition].filter((c): c is WhereOptions => !!c);
     const where: WhereOptions = {
         isPrivate: false,
-        ...(tagCondition ? { [Op.and]: [tagCondition] } : {}),
+        ...(andConditions.length ? { [Op.and]: andConditions } : {}),
     };
 
     return await Snippets.findAndCountAll({
@@ -206,10 +211,18 @@ export async function getUserPublicSnippets(
     auth0Id: string,
     offset: number,
     limit: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    q?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
+    const searchCondition = buildTextSearchCondition(q);
+    const where: WhereOptions = {
+        auth0Id,
+        isPrivate: false,
+        ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
+    };
+
     return await Snippets.findAndCountAll({
-        where: { auth0Id, isPrivate: false },
+        where,
         include: userInclude(),
         order: [['created_at', 'DESC']],
         offset,
@@ -223,10 +236,17 @@ export async function getMySnippets(
     auth0Id: string,
     offset: number,
     limit: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    q?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
+    const searchCondition = buildTextSearchCondition(q);
+    const where: WhereOptions = {
+        auth0Id,
+        ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
+    };
+
     return await Snippets.findAndCountAll({
-        where: { auth0Id },
+        where,
         include: userInclude(),
         order: [['created_at', 'DESC']],
         offset,
@@ -241,16 +261,20 @@ export async function getFeedSnippets(
     offset: number,
     limit: number,
     transaction?: Transaction,
-    sort?: SnippetSort | string
+    sort?: SnippetSort | string,
+    q?: string
 ): Promise<{ rows: Snippets[]; count: number }> {
     if (!followedAuth0Ids.length) {
         return { rows: [], count: 0 };
     }
 
+    const searchCondition = buildTextSearchCondition(q);
+
     return await Snippets.findAndCountAll({
         where: {
             isPrivate: false,
             auth0Id: { [Op.in]: followedAuth0Ids },
+            ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
         },
         include: userInclude(),
         order: resolveSnippetOrder(sort),

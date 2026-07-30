@@ -1,17 +1,16 @@
-import { Component, ElementRef, OnInit, ViewChild, inject, signal, DestroyRef } from '@angular/core';
+import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { MatDialogModule, MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ResourceApiService } from '../../../services/api.services/resource.api.service';
 import { SnackbarService } from '../../../services/component.services/snackbar.service';
+import { DialogService } from '../../../services/component.services/dialog.service';
 import { getRuntimeEnv } from '../../../../core/config/runtime-env';
 import { Assets } from '../../../interfaces/asset.interface';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 @Component({
   selector: 'app-assets-dialog',
@@ -31,8 +30,7 @@ export class AssetsDialogComponent implements OnInit {
 
   private resourceApiService = inject(ResourceApiService);
   private snackbarService = inject(SnackbarService);
-  private dialog = inject(MatDialog);
-  private destroyRef = inject(DestroyRef);
+  private dialogService = inject(DialogService);
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
@@ -85,30 +83,24 @@ export class AssetsDialogComponent implements OnInit {
     }
   }
 
-  deleteAsset(asset: Assets) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Delete Asset',
-        message: `Are you sure you want to delete "${asset.fileName}"? This action cannot be undone.`,
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-      },
+  async deleteAsset(asset: Assets) {
+    const ok = await this.dialogService.confirm({
+      title: 'Delete Asset',
+      message: `Are you sure you want to delete "${asset.fileName}"? This action cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
     });
-
-    dialogRef.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(async (result) => {
-      if (!result) return;
-      this.deletingId.set(asset.assetId);
-      try {
-        await firstValueFrom(this.resourceApiService.delete(asset.assetId));
-        this.assets.update(list => list.filter(a => a.assetId !== asset.assetId));
-        this.snackbarService.success('Asset deleted');
-      } catch {
-        this.snackbarService.error('Failed to delete asset');
-      } finally {
-        this.deletingId.set(null);
-      }
-    });
+    if (!ok) return;
+    this.deletingId.set(asset.assetId);
+    try {
+      await firstValueFrom(this.resourceApiService.delete(asset.assetId));
+      this.assets.update(list => list.filter(a => a.assetId !== asset.assetId));
+      this.snackbarService.success('Asset deleted');
+    } catch {
+      this.snackbarService.error('Failed to delete asset');
+    } finally {
+      this.deletingId.set(null);
+    }
   }
 
   async copyUrl(asset: Assets) {

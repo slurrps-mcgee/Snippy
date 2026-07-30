@@ -1,7 +1,7 @@
-import { Component, DestroyRef, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef, MatDialog } from '@angular/material/dialog';
+import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -10,12 +10,11 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommentService } from '../../../services/api.services/comment.api.service';
 import { SnackbarService } from '../../../services/component.services/snackbar.service';
 import { SnippetStoreService } from '../../../services/store.services/snippet.store.service';
+import { DialogService } from '../../../services/component.services/dialog.service';
 import { Comment } from '../../../interfaces/comment.interface';
-import { ConfirmDialogComponent } from '../confirm-dialog/confirm-dialog.component';
 
 export interface CommentDialogData {
   snippetId: string;
@@ -49,8 +48,7 @@ export class CommentDialogComponent implements OnInit {
   private commentService = inject(CommentService);
   private snippetStoreService = inject(SnippetStoreService);
   private snackbarService = inject(SnackbarService);
-  private dialog = inject(MatDialog);
-  private destroyRef = inject(DestroyRef);
+  private dialogService = inject(DialogService);
 
   comments = signal<Comment[]>([]);
   totalCount = signal(0);
@@ -129,31 +127,23 @@ export class CommentDialogComponent implements OnInit {
     }
   }
 
-  deleteComment(comment: Comment) {
-    const dialogRef = this.dialog.open(ConfirmDialogComponent, {
-      width: '400px',
-      data: {
-        title: 'Delete Comment',
-        message: 'Are you sure you want to delete this comment? This action cannot be undone.',
-        confirmText: 'Delete',
-        cancelText: 'Cancel',
-      },
+  async deleteComment(comment: Comment) {
+    const ok = await this.dialogService.confirm({
+      title: 'Delete Comment',
+      message: 'Are you sure you want to delete this comment? This action cannot be undone.',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
     });
-
-    dialogRef.afterClosed()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(async (result) => {
-        if (!result) return;
-        try {
-          await firstValueFrom(this.commentService.deleteComment(comment.commentId));
-          this.comments.update(list => list.filter(c => c.commentId !== comment.commentId));
-          this.totalCount.update(n => Math.max(0, n - 1));
-          this.snippetStoreService.bumpCommentCount(this.data.snippetId, -1);
-          this.snackbarService.success('Comment deleted');
-        } catch {
-          this.snackbarService.error('Failed to delete comment');
-        }
-      });
+    if (!ok) return;
+    try {
+      await firstValueFrom(this.commentService.deleteComment(comment.commentId));
+      this.comments.update(list => list.filter(c => c.commentId !== comment.commentId));
+      this.totalCount.update(n => Math.max(0, n - 1));
+      this.snippetStoreService.bumpCommentCount(this.data.snippetId, -1);
+      this.snackbarService.success('Comment deleted');
+    } catch {
+      this.snackbarService.error('Failed to delete comment');
+    }
   }
 
   close() {

@@ -3,7 +3,6 @@ import { CommonModule } from '@angular/common';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { MatDialog } from '@angular/material/dialog';
 import { EditorView, basicSetup } from 'codemirror';
 import { EditorState } from '@codemirror/state';
 import { html } from '@codemirror/lang-html';
@@ -11,7 +10,7 @@ import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
-import { AlertDialogComponent } from '../../../shared/components/dialogs/alert-dialog/alert-dialog.component';
+import { DialogService } from '../../../shared/services/component.services/dialog.service';
 
 @Component({
   selector: 'app-snippet-editor',
@@ -26,7 +25,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   @ViewChild('editor', { static: false }) editorRef?: ElementRef<HTMLDivElement>;
 
   private snippetStoreService = inject(SnippetStoreService);
-  private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
 
   // CodeMirror editor instance
   private editorInstance?: EditorView;
@@ -223,21 +222,12 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     }
 
     if (issues.length === 0) {
-      this.dialog.open(AlertDialogComponent, {
-        data: {
-          title: 'Analysis',
-          message: `No issues found in ${this.editorType.toUpperCase()}`,
-          type: 'success'
-        }
-      });
+      this.dialogService.success('Analysis', `No issues found in ${this.editorType.toUpperCase()}`);
     } else {
-      this.dialog.open(AlertDialogComponent, {
-        data: {
-          title: 'Issues Found',
-          message: `Issues found in ${this.editorType.toUpperCase()}:\n\n${issues.join('\n')}`,
-          type: 'warning'
-        }
-      });
+      this.dialogService.warning(
+        'Issues Found',
+        `Issues found in ${this.editorType.toUpperCase()}:\n\n${issues.join('\n')}`
+      );
     }
   }
 

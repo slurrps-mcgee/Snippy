@@ -347,9 +347,10 @@ export async function getAllPublicSnippetsHandler(
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
         const sort = payload.query?.sort;
         const tag = payload.query?.tag;
+        const q = payload.query?.q;
 
         return await executeInTransaction(async (t) => {
-            const result = await getAllPublicSnippets(offset, limit, t, sort, tag);
+            const result = await getAllPublicSnippets(offset, limit, t, sort, tag, q);
             return {
                 snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
@@ -361,11 +362,12 @@ export async function getAllPublicSnippetsHandler(
 }
 
 // Get Public Snippets by User
-export async function getUserPublicSnippetsHandler(payload: ServicePayload<unknown, { userName: string }, PaginationQuery>): Promise<ServiceResponse<SnippetListDTO>> {
+export async function getUserPublicSnippetsHandler(payload: ServicePayload<unknown, { userName: string }, PaginationQuery & { q?: string }>): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         const userName = payload.params?.userName;
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const q = payload.query?.q;
 
         if (!userName) {
             throw new CustomError("Username required", 400);
@@ -381,7 +383,7 @@ export async function getUserPublicSnippetsHandler(payload: ServicePayload<unkno
                 throw new CustomError("Forbidden: user profile is private", 403);
             }
 
-            const result = await getUserPublicSnippets(user.auth0Id, offset, limit, t);
+            const result = await getUserPublicSnippets(user.auth0Id, offset, limit, t, q);
             return {
                 snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
@@ -393,7 +395,7 @@ export async function getUserPublicSnippetsHandler(payload: ServicePayload<unkno
 }
 
 // Get Current User's Snippets
-export async function getMySnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery>): Promise<ServiceResponse<SnippetListDTO>> {
+export async function getMySnippetsHandler(payload: ServicePayload<unknown, unknown, PaginationQuery & { q?: string }>): Promise<ServiceResponse<SnippetListDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -401,9 +403,10 @@ export async function getMySnippetsHandler(payload: ServicePayload<unknown, unkn
         }
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+        const q = payload.query?.q;
 
         return await executeInTransaction(async (t) => {
-            const result = await getMySnippets(auth0Id, offset, limit, t);
+            const result = await getMySnippets(auth0Id, offset, limit, t, q);
             return {
                 snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count
@@ -458,10 +461,11 @@ export async function getFeedSnippetsHandler(
 
         const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
         const sort = payload.query?.sort;
+        const q = payload.query?.q;
 
         return await executeInTransaction(async (t) => {
             const followingIds = await findFollowingIds(auth0Id, t);
-            const result = await getFeedSnippets(followingIds, offset, limit, t, sort);
+            const result = await getFeedSnippets(followingIds, offset, limit, t, sort, q);
             return {
                 snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
                 totalCount: result.count

@@ -2,7 +2,7 @@
 
 <mat-dialog-content>
   @if (!minioEnabled) {
-  <div class="flex flex-col items-center gap-2 p-6 text-slate-500">
+  <div class="dialog-empty">
     <mat-icon>cloud_off</mat-icon>
     <p>Asset uploads are currently unavailable.</p>
   </div>
@@ -10,7 +10,7 @@
   <input #fileInput type="file" hidden accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
     (change)="onFileSelected($event)">
 
-  <div class="mb-4 flex justify-end">
+  <div class="upload-bar">
     <button mat-raised-button color="primary" [disabled]="uploading()" (click)="triggerUpload()">
       @if (uploading()) {
       <mat-spinner diameter="18"></mat-spinner>
@@ -24,28 +24,28 @@
   </div>
 
   @if (loading()) {
-  <div class="flex justify-center p-6">
+  <div class="dialog-loading">
     <mat-spinner diameter="32"></mat-spinner>
   </div>
   } @else if (assets().length === 0) {
-  <div class="flex flex-col items-center gap-2 p-6 text-slate-500">
+  <div class="dialog-empty">
     <mat-icon>image_not_supported</mat-icon>
     <p>No assets uploaded yet.</p>
   </div>
   } @else {
-  <div class="grid grid-cols-2 gap-3 md:grid-cols-3">
+  <div class="asset-grid">
     @for (asset of assets(); track asset.assetId) {
-    <div class="asset-card glass flex flex-col overflow-hidden rounded-xl">
-      <div class="asset-thumb flex items-center justify-center bg-black/40">
+    <div class="asset-card glass">
+      <div class="asset-thumb">
         @if (isImage(asset)) {
         <img [src]="asset.url" [alt]="asset.fileName">
         } @else {
         <mat-icon>insert_drive_file</mat-icon>
         }
       </div>
-      <div class="flex flex-col gap-2 p-2">
-        <span class="truncate text-xs text-slate-300" [matTooltip]="asset.fileName">{{ asset.fileName }}</span>
-        <div class="flex justify-between">
+      <div class="asset-meta">
+        <span class="asset-name" [matTooltip]="asset.fileName">{{ asset.fileName }}</span>
+        <div class="asset-actions">
           <button mat-icon-button matTooltip="Copy URL" (click)="copyUrl(asset)">
             <mat-icon>content_copy</mat-icon>
           </button>

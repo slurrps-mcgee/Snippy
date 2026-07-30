@@ -15,18 +15,11 @@ export class FavoriteService {
     });
   }
 
-  isFavorited(snippetId: string): Observable<{ success: boolean; isFavorited: boolean }> {
-    return this.apiService.request({
-      path: `/favorites/${snippetId}`,
-      method: 'GET',
-    });
-  }
-
-  getFavorites(page = 1, limit = 20): Observable<SnippetListResponse> {
+  getFavorites(page = 1, limit = 20, q?: string): Observable<SnippetListResponse> {
     return this.apiService.request({
       path: '/favorites',
       method: 'GET',
-      params: { page, limit },
+      params: { page, limit, ...(q ? { q } : {}) },
     });
   }
 }

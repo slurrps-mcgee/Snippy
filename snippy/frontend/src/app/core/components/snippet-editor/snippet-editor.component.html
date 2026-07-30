@@ -1,6 +1,6 @@
-<div class="flex h-full flex-col overflow-hidden border-b border-white/15 bg-white/10 backdrop-blur-[18px]">
-  <div class="flex items-center justify-between border-b border-white/10 bg-white/5 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-    <span class="px-3 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-cyan-300">{{ editorType.toUpperCase() }}</span>
+<div class="editor-shell">
+  <div class="editor-toolbar">
+    <span class="editor-type-label">{{ editorType.toUpperCase() }}</span>
     <button mat-icon-button [matMenuTriggerFor]="menu">
       <mat-icon>more_vert</mat-icon>
     </button>
@@ -15,5 +15,5 @@
       </button>
     </mat-menu>
   </div>
-  <div #editor class="min-h-0 flex-1 overflow-hidden"></div>
+  <div #editor class="editor-pane"></div>
 </div>

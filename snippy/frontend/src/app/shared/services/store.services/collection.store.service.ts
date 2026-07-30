@@ -12,50 +12,63 @@ export class CollectionStoreService {
   activeCollection = signal<Collection | null>(null);
 
   private api = inject(CollectionApiService);
+  private listGeneration = 0;
+  private detailGeneration = 0;
 
-  async loadMine(page = 1, limit = 50, snippetId?: string) {
+  async loadMine(page = 1, limit = 50, snippetId?: string, q?: string) {
+    const gen = ++this.listGeneration;
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getMyCollections(page, limit, snippetId));
+      const res = await firstValueFrom(this.api.getMyCollections(page, limit, snippetId, q));
+      if (gen !== this.listGeneration) return;
       this.collections.set(res.collections ?? []);
       this.totalCount.set(res.totalCount ?? 0);
     } catch {
+      if (gen !== this.listGeneration) return;
       this.error.set('Failed to load collections');
       this.collections.set([]);
+      this.totalCount.set(0);
     } finally {
-      this.loading.set(false);
+      if (gen === this.listGeneration) this.loading.set(false);
     }
   }
 
-  async loadUser(userName: string, page = 1, limit = 50) {
+  async loadUser(userName: string, page = 1, limit = 50, q?: string) {
+    const gen = ++this.listGeneration;
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getUserCollections(userName, page, limit));
+      const res = await firstValueFrom(this.api.getUserCollections(userName, page, limit, q));
+      if (gen !== this.listGeneration) return;
       this.collections.set(res.collections ?? []);
       this.totalCount.set(res.totalCount ?? 0);
     } catch {
+      if (gen !== this.listGeneration) return;
       this.error.set('Failed to load collections');
       this.collections.set([]);
+      this.totalCount.set(0);
     } finally {
-      this.loading.set(false);
+      if (gen === this.listGeneration) this.loading.set(false);
     }
   }
 
-  async loadOne(shortId: string) {
+  async loadOne(shortId: string, q?: string) {
+    const gen = ++this.detailGeneration;
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getCollection(shortId));
+      const res = await firstValueFrom(this.api.getCollection(shortId, q));
+      if (gen !== this.detailGeneration) return undefined;
       this.activeCollection.set(res.collection ?? null);
       return res.collection;
     } catch {
+      if (gen !== this.detailGeneration) return undefined;
       this.error.set('Failed to load collection');
       this.activeCollection.set(null);
       throw new Error('Failed to load collection');
     } finally {
-      this.loading.set(false);
+      if (gen === this.detailGeneration) this.loading.set(false);
     }
   }
 

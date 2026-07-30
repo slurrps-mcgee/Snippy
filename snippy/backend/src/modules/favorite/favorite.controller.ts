@@ -82,6 +82,11 @@ export async function isFavorite(req: Request, res: Response, next: NextFunction
  *         schema:
  *           type: integer
  *         description: Pagination limit
+ *       - in: query
+ *         name: q
+ *         schema:
+ *           type: string
+ *         description: Optional free-text filter over the favorited snippet's name, description, and tags
  *     responses:
  *       200:
  *         description: List of favorited snippets

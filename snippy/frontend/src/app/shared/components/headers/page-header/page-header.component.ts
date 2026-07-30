@@ -8,7 +8,6 @@ import { MatInputModule } from '@angular/material/input';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, NavigationEnd, Router, RouterModule } from '@angular/router';
 import { AuthService } from '@auth0/auth0-angular';
 import { filter } from 'rxjs/operators';
@@ -22,6 +21,7 @@ import { EditorLayout, EditorUiService } from '../../../services/communication/e
 import { SnippetSettingsDialogComponent } from '../../dialogs/snippet-settings-dialog/snippet-settings-dialog.component';
 import { CommentDialogComponent } from '../../dialogs/comment-dialog/comment-dialog.component';
 import { SnackbarService } from '../../../services/component.services/snackbar.service';
+import { DialogService } from '../../../services/component.services/dialog.service';
 
 @Component({
   selector: 'app-page-header',
@@ -47,7 +47,7 @@ export class PageHeaderComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   private auth0 = inject(AuthService);
   private authStore = inject(AuthStoreService);
-  private dialog = inject(MatDialog);
+  private dialogService = inject(DialogService);
   private snackbar = inject(SnackbarService);
 
   snippetStore = inject(SnippetStoreService);
@@ -116,11 +116,7 @@ export class PageHeaderComponent implements OnInit {
     const snippet = this.snippetStore.snippet();
     if (!snippet || !this.canEdit) return;
 
-    const dialogRef = this.dialog.open(SnippetSettingsDialogComponent, {
-      width: '50vw',
-      height: '80vh',
-      maxWidth: '50vw',
-      maxHeight: '80vh',
+    const dialogRef = this.dialogService.open(SnippetSettingsDialogComponent, 'xl', {
       data: snippet,
     });
 
@@ -155,9 +151,7 @@ export class PageHeaderComponent implements OnInit {
   openComments() {
     const snippet = this.snippetStore.snippet();
     if (!snippet?.snippetId) return;
-    this.dialog.open(CommentDialogComponent, {
-      width: '560px',
-      maxHeight: '85vh',
+    this.dialogService.open(CommentDialogComponent, 'lg', {
       data: {
         snippetId: snippet.snippetId,
         snippetName: snippet.name,
@@ -165,6 +159,7 @@ export class PageHeaderComponent implements OnInit {
         ownerUserName: snippet.userName || this.user()?.userName,
         isSnippetOwner: snippet.isOwner,
       },
+      maxHeight: '85vh',
     });
   }
 

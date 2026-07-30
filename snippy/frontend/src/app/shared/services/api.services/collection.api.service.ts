@@ -11,7 +11,12 @@ import {
 export class CollectionApiService {
   private api = inject(ApiService);
 
-  getMyCollections(page = 1, limit = 20, snippetId?: string): Observable<CollectionListResponse> {
+  getMyCollections(
+    page = 1,
+    limit = 20,
+    snippetId?: string,
+    q?: string
+  ): Observable<CollectionListResponse> {
     return this.api.request({
       path: '/collections/me',
       method: 'GET',
@@ -19,22 +24,29 @@ export class CollectionApiService {
         page,
         limit,
         ...(snippetId ? { snippetId } : {}),
+        ...(q ? { q } : {}),
       },
     });
   }
 
-  getUserCollections(userName: string, page = 1, limit = 20): Observable<CollectionListResponse> {
+  getUserCollections(
+    userName: string,
+    page = 1,
+    limit = 20,
+    q?: string
+  ): Observable<CollectionListResponse> {
     return this.api.request({
       path: `/collections/user/${encodeURIComponent(userName)}`,
       method: 'GET',
-      params: { page, limit },
+      params: { page, limit, ...(q ? { q } : {}) },
     });
   }
 
-  getCollection(shortId: string): Observable<CollectionResponse> {
+  getCollection(shortId: string, q?: string): Observable<CollectionResponse> {
     return this.api.request({
       path: `/collections/${shortId}`,
       method: 'GET',
+      params: { ...(q ? { q } : {}) },
     });
   }
 
@@ -46,17 +58,6 @@ export class CollectionApiService {
     return this.api.request({
       path: '/collections',
       method: 'POST',
-      body,
-    });
-  }
-
-  updateCollection(
-    collectionId: string,
-    body: { name?: string; description?: string | null; isPrivate?: boolean }
-  ): Observable<CollectionResponse> {
-    return this.api.request({
-      path: `/collections/${collectionId}`,
-      method: 'PUT',
       body,
     });
   }
@@ -80,14 +81,6 @@ export class CollectionApiService {
     return this.api.request({
       path: `/collections/${collectionId}/snippets/${snippetId}`,
       method: 'DELETE',
-    });
-  }
-
-  reorderSnippets(collectionId: string, snippetIds: string[]): Observable<{ success: boolean; message?: string }> {
-    return this.api.request({
-      path: `/collections/${collectionId}/snippets/order`,
-      method: 'PUT',
-      body: { snippetIds },
     });
   }
 }

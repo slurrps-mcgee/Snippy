@@ -5,6 +5,7 @@ import { provideHttpClient, withInterceptorsFromDi, HTTP_INTERCEPTORS } from '@a
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { AuthHttpInterceptor, provideAuth0 } from '@auth0/auth0-angular';
 import { assertAuth0Env, getRuntimeEnv } from './core/config/runtime-env';
+import { provideDialogDefaults } from './shared/services/component.services/dialog.service';
 
 const env = getRuntimeEnv();
 assertAuth0Env(env);
@@ -15,6 +16,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideAnimations(),
     provideHttpClient(withInterceptorsFromDi()),
+    provideDialogDefaults(),
     { provide: HTTP_INTERCEPTORS, useClass: AuthHttpInterceptor, multi: true },
     provideAuth0({
       domain: env.auth0_domain,

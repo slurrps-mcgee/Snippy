@@ -1,8 +1,22 @@
-import { Transaction } from 'sequelize';
+import { Op, Transaction, WhereOptions } from 'sequelize';
 import { Collections } from '../../entities/collection.entity';
 import { CollectionSnippets } from '../../entities/collectionSnippet.entity';
 import { Snippets } from '../../entities/snippet.entity';
 import { Users } from '../../entities/user.entity';
+import { buildTextSearchCondition } from '../snippet/snippet.repo';
+import { buildLikeSearchCondition } from '../../common/utilities/searchCondition';
+
+/** Free-text search over a collection's own name/description (collections have no tags). */
+function buildCollectionTextSearchCondition(q?: string, tableAlias: string = 'Collections'): WhereOptions | null {
+    return buildLikeSearchCondition(
+        q,
+        [
+            { name: 'name' },
+            { name: 'description' },
+        ],
+        tableAlias
+    );
+}
 
 export async function createCollection(
     data: Partial<Collections>,
@@ -54,10 +68,15 @@ export async function findMyCollections(
     auth0Id: string,
     offset: number,
     limit: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    q?: string
 ): Promise<{ rows: Collections[]; count: number }> {
+    const searchCondition = buildCollectionTextSearchCondition(q);
     return await Collections.findAndCountAll({
-        where: { auth0Id },
+        where: {
+            auth0Id,
+            ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
+        },
         include: [{ model: Users, attributes: ['userName', 'displayName'] }],
         order: [['created_at', 'DESC']],
         offset,
@@ -71,10 +90,16 @@ export async function findUserPublicCollections(
     auth0Id: string,
     offset: number,
     limit: number,
-    transaction?: Transaction
+    transaction?: Transaction,
+    q?: string
 ): Promise<{ rows: Collections[]; count: number }> {
+    const searchCondition = buildCollectionTextSearchCondition(q);
     return await Collections.findAndCountAll({
-        where: { auth0Id, isPrivate: false },
+        where: {
+            auth0Id,
+            isPrivate: false,
+            ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
+        },
         include: [{ model: Users, attributes: ['userName', 'displayName'] }],
         order: [['created_at', 'DESC']],
         offset,
@@ -86,10 +111,17 @@ export async function findUserPublicCollections(
 
 export async function findCollectionSnippetsOrdered(
     collectionId: string,
-    transaction?: Transaction
+    transaction?: Transaction,
+    q?: string
 ): Promise<CollectionSnippets[]> {
+    // Snippets is joined via the `snippet` association (see CollectionSnippets.snippet),
+    // so the shared search condition is qualified with that alias.
+    const searchCondition = buildTextSearchCondition(q, 'snippet');
     return await CollectionSnippets.findAll({
-        where: { collectionId },
+        where: {
+            collectionId,
+            ...(searchCondition ? { [Op.and]: [searchCondition] } : {}),
+        },
         include: [{
             model: Snippets,
             include: [{ model: Users, attributes: ['userName', 'displayName'] }],

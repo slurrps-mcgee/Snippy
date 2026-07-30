@@ -1,29 +1,21 @@
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { PageEvent } from '@angular/material/paginator';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatSelectModule } from '@angular/material/select';
 import { SnippetStoreService } from '../../../shared/services/store.services/snippet.store.service';
 import { SnippetSort } from '../../../shared/services/api.services/snippet.api.service';
 import { SnippetListComponentComponent } from '../../components/snippet-list-component/snippet-list-component.component';
-
-const SEARCH_DEBOUNCE_MS = 400;
+import { Debouncer } from '../../../shared/utils/debounce';
+import { SortPageHeaderComponent } from '../../../shared/components/headers/sort-page-header/sort-page-header.component';
+import { AsyncStateComponent } from '../../../shared/components/async-state/async-state.component';
 
 @Component({
   selector: 'app-public-page',
-  imports: [MatFormFieldModule, MatSelectModule, SnippetListComponentComponent],
+  imports: [SnippetListComponentComponent, SortPageHeaderComponent, AsyncStateComponent],
   templateUrl: './public-page.component.html',
   styleUrl: './public-page.component.scss',
 })
 export class PublicPageComponent implements OnInit, OnDestroy {
   private snippetStoreService = inject(SnippetStoreService);
-  private searchDebounceHandle?: ReturnType<typeof setTimeout>;
-
-  readonly sortOptions: { value: SnippetSort; label: string }[] = [
-    { value: 'newest', label: 'Newest' },
-    { value: 'views', label: 'Most Viewed' },
-    { value: 'favorites', label: 'Most Favorited' },
-    { value: 'forks', label: 'Most Forked' },
-  ];
+  private searchDebouncer = new Debouncer();
 
   get snippets() {
     return this.snippetStoreService.snippetList()?.snippets ?? [];
@@ -47,17 +39,17 @@ export class PublicPageComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    clearTimeout(this.searchDebounceHandle);
+    this.searchDebouncer.clear();
   }
 
   async load() {
     try {
-      const query = this.searchQuery.trim();
-      if (query) {
-        await this.snippetStoreService.searchSnippets(query, this.pageIndex + 1, this.pageSize, this.sort);
-      } else {
-        await this.snippetStoreService.loadPublicSnippets(this.pageIndex + 1, this.pageSize, this.sort);
-      }
+      await this.snippetStoreService.loadPublicSnippets(
+        this.pageIndex + 1,
+        this.pageSize,
+        this.sort,
+        this.searchQuery.trim() || undefined
+      );
     } catch (error) {
       console.error('Error loading public snippets:', error);
     }
@@ -72,8 +64,7 @@ export class PublicPageComponent implements OnInit, OnDestroy {
   handleSearch(searchQuery: string) {
     this.searchQuery = searchQuery;
     this.pageIndex = 0;
-    clearTimeout(this.searchDebounceHandle);
-    this.searchDebounceHandle = setTimeout(() => this.load(), SEARCH_DEBOUNCE_MS);
+    this.searchDebouncer.run(() => this.load());
   }
 
   handlePageChange(event: PageEvent) {
