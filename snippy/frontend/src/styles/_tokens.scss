@@ -69,10 +69,37 @@
   --danger-zone-bg: rgba(239, 68, 68, 0.1);
   --warn-fill-from: rgba(248, 113, 113, 0.42);
   --warn-fill-to: rgba(127, 29, 29, 0.35);
+  --warn-fill: linear-gradient(135deg, var(--warn-fill-from), var(--warn-fill-to));
+  --warn-fill-hover: linear-gradient(135deg, rgba(248, 113, 113, 0.55), rgba(127, 29, 29, 0.42));
   --warn-outline-from: rgba(248, 113, 113, 0.18);
   --warn-outline-to: rgba(127, 29, 29, 0.12);
+  --warn-outline-fill: linear-gradient(135deg, var(--warn-outline-from), var(--warn-outline-to));
+  --warn-outline-fill-hover: linear-gradient(135deg, rgba(248, 113, 113, 0.28), rgba(127, 29, 29, 0.18));
   --warn-border: rgba(248, 113, 113, 0.45);
   --warn-outline-color: rgba(248, 113, 113, 0.5);
+  --warn-border-hover: rgba(252, 165, 165, 0.65);
+
+  /* Glass buttons */
+  --btn-glass-radius: 0.5rem;
+  --btn-glass-shadow: inset 0 1px 0 var(--inset-highlight-md);
+
+  --btn-neutral-bg: rgba(255, 255, 255, 0.1);
+  --btn-neutral-bg-hover: rgba(255, 255, 255, 0.16);
+  --btn-neutral-border: rgba(255, 255, 255, 0.25);
+  --btn-neutral-border-hover: rgba(255, 255, 255, 0.4);
+  --btn-neutral-text: #f1f5f9;
+
+  --btn-primary-bg: rgba(139, 92, 246, 0.3);
+  --btn-primary-bg-hover: rgba(139, 92, 246, 0.44);
+  --btn-primary-border: rgba(167, 139, 250, 0.55);
+  --btn-primary-border-hover: rgba(196, 181, 253, 0.75);
+  --btn-primary-text: #f8fafc;
+
+  --btn-accent-bg: rgba(34, 211, 238, 0.22);
+  --btn-accent-bg-hover: rgba(34, 211, 238, 0.34);
+  --btn-accent-border: rgba(103, 232, 249, 0.5);
+  --btn-accent-border-hover: rgba(165, 243, 252, 0.7);
+  --btn-accent-text: #ecfeff;
 
   /* Atmosphere */
   --orb-cyan: radial-gradient(circle at center, rgba(6, 182, 212, 0.7) 0%, rgba(8, 47, 73, 0.1) 70%);

@@ -16,8 +16,14 @@
       </button>
     </div>
     } @else {
-    <div class="copyright">
-      <span>© 2026 Snippy. All rights reserved.</span>
+    <div class="footer-meta">
+      <span class="copyright">© 2026 Snippy. All rights reserved.</span>
+      <nav class="footer-links" aria-label="Legal and project links">
+        <a routerLink="/privacy">Privacy Policy</a>
+        <a routerLink="/terms">Terms</a>
+        <a [href]="licenseUrl" target="_blank" rel="noopener noreferrer">License</a>
+        <a [href]="githubUrl" target="_blank" rel="noopener noreferrer">GitHub</a>
+      </nav>
     </div>
     }
   </div>

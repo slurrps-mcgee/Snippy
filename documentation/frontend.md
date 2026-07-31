@@ -1,719 +1,659 @@
-# Snippy Frontend Architecture & Flow Documentation
+# Snippy Frontend Architecture & Flow
 
-## Table of Contents
+Developer guide for the Angular SPA in [`snippy/frontend`](../snippy/frontend). Paths below use the **current flat layout** under `src/app/` (there is no longer a `shared/` or `core/` tree).
+
+## Table of contents
+
 1. [Overview](#overview)
-2. [Routing](#routing)
-3. [State Management](#state-management)
-4. [Component Architecture](#component-architecture)
-5. [Snippet Editing Flow](#snippet-editing-flow)
-6. [Preview System](#preview-system)
-7. [Save & Navigation Flow](#save--navigation-flow)
-8. [Signal Reactivity & Effects](#signal-reactivity--effects)
-9. [Communication Services](#communication-services)
-10. [Authentication & Guards](#authentication--guards)
-11. [Data Flow Diagram](#data-flow-diagram)
-12. [Common Gotchas & Solutions](#common-gotchas--solutions)
+2. [Project setup](#project-setup)
+3. [Folder structure](#folder-structure)
+4. [App shell & header modes](#app-shell--header-modes)
+5. [Routing](#routing)
+6. [Authentication flow](#authentication-flow)
+7. [State management (signals)](#state-management-signals)
+8. [API layer](#api-layer)
+9. [UI services](#ui-services)
+10. [Pages & data flows](#pages--data-flows)
+11. [Snippet editing flow](#snippet-editing-flow)
+12. [Preview system](#preview-system)
+13. [Save, dirty tracking & navigation](#save-dirty-tracking--navigation)
+14. [Lists, feeds & pagination](#lists-feeds--pagination)
+15. [Dialogs](#dialogs)
+16. [Styles & design system](#styles--design-system)
+17. [Key interfaces](#key-interfaces)
+18. [End-to-end data flow](#end-to-end-data-flow)
+19. [Common gotchas](#common-gotchas)
 
 ---
 
 ## Overview
 
-The Snippy frontend is an Angular 20+ single-page application (SPA) built with standalone components and Angular signals for reactive state management. It provides a CodePen-like interface where users can create, edit, and share code snippets with real-time HTML/CSS/JS previews.
+Snippy’s frontend is an **Angular 20** standalone SPA that uses **signals** for domain state, **Auth0** for login, **Angular Material** for interactive chrome, and **Tailwind CSS v4** for layout utilities on top of a dark glass design system.
 
-**Key Technologies:**
-- Angular 20+ (standalone components, signals)
-- Tailwind CSS v4 (layout + Quantum-inspired design tokens)
-- Angular Material (interactive controls; dark violet/cyan M3 theme)
-- CodeMirror (code editor)
-- RxJS (observables, async operations)
-- Auth0 (authentication)
-- Angular Split (resizable panels)
+Users can create, edit, preview, share, favorite, comment on, fork, and organize HTML/CSS/JS snippets. Marketing, legal, feed, profile, settings, editor, and full-page preview surfaces all share one shell (`app-page-header` + `router-outlet` + `app-footer`).
 
-### Visual system
+**Key packages** (see [`package.json`](../snippy/frontend/package.json), currently `0.8.2`):
 
-Inspired by [Quantum Code Devs](https://quantumcode.dev/): always-dark `slate-950` surfaces, brand violet `#7c3aed` + cyan `#06b6d4`, Space Grotesk headings, IBM Plex Sans body, glass cards, ambient orbs/grid. Tokens and utilities live in [`src/styles.css`](../snippy/frontend/src/styles.css); Material theme in [`src/styles.scss`](../snippy/frontend/src/styles.scss). Bootstrap is not used.
+| Area | Packages |
+|------|----------|
+| Framework | `@angular/*` ^20.3 |
+| Auth | `@auth0/auth0-angular` |
+| UI | `@angular/material`, `@angular/cdk` |
+| Editor | `codemirror`, `@codemirror/lang-*`, `theme-one-dark`, `angular-split` |
+| Export | `jszip` |
+| Resilience | `cockatiel` (retry + circuit breaker on HTTP) |
+| Styling | `tailwindcss` ^4 + Material M3 theme (violet / cyan, dark) |
+
+**Path alias:** `@app/*` → `src/app/*` (`tsconfig.json`).
+
+---
+
+## Project setup
+
+### Bootstrap
+
+```
+index.html
+  └── loads /env.js          (runtime config; written by Docker entrypoints)
+  └── boots main.ts
+        └── bootstrapApplication(AppComponent, appConfig)
+```
+
+- [`src/main.ts`](../snippy/frontend/src/main.ts) — application entry
+- [`src/app/app.config.ts`](../snippy/frontend/src/app/app.config.ts) — zone, router, animations, HttpClient + `AuthHttpInterceptor`, `provideAuth0`, `provideDialogDefaults()`
+- [`src/app/app.component.ts`](../snippy/frontend/src/app/app.component.ts) — shell; injects `AuthStoreService` so Auth0→backend sync starts at bootstrap
 
 ### Runtime configuration (`/env.js`)
 
-Container entrypoints write `/env.js` (or `public/env.js` in Docker Compose dev) before the app starts. [`index.html`](../snippy/frontend/src/index.html) loads it before the Angular bundles. Typed access lives in [`src/app/core/config/runtime-env.ts`](../snippy/frontend/src/app/core/config/runtime-env.ts):
+Do **not** bake Auth0 tenants into build-time `environment.ts`. The same image must run under different domains.
+
+Container entrypoints write env before the app starts:
+
+| Mode | Entrypoint | Output |
+|------|------------|--------|
+| Dev Compose | `entrypoint.dev.sh` | `public/env.js` |
+| Prod image | `entrypoint.sh` | `/usr/share/nginx/html/env.js` |
+
+Typed access: [`src/app/config/runtime-env.ts`](../snippy/frontend/src/app/config/runtime-env.ts) via `getRuntimeEnv()` / `assertAuth0Env()`.
 
 | Field | Used for |
 |-------|----------|
-| `auth0_*` | `provideAuth0` in `app.config.ts` |
 | `api_base` | `ApiService` base path (default `/api/v1`) |
-| `minio_enabled` | Whether nginx/proxy has MinIO `/content` available |
+| `auth0_domain` / `auth0_client_id` | `provideAuth0` |
+| `auth0_audience` | Auth0 API audience (default `http://localhost:3000`) |
+| `minio_enabled` | Assets dialog / nginx MinIO proxy path |
 
-Do not use build-time `environment.ts` for Auth0 — the same image must run under different Auth0 tenants.
+Auth0 redirect after login: `window.location.origin + '/home'`.
 
 ### Proxies
 
 | Context | `/api` | `/content` |
 |---------|--------|------------|
 | Dev (`proxy.conf.json` + `ng serve`) | → `api:3000` | → `minio:9000` |
-| Prod (`nginx.nominio.conf` / `nginx.minio.conf` via `entrypoint.sh`) | → `api:3000` | → `minio:9000` when `ENABLE_MINIO` + healthy |
+| Prod (`nginx.nominio.conf` / `nginx.minio.conf`) | → `api:3000` | → `minio:9000` when MinIO is healthy |
 
-`proxy.conf.json` is **not** used by the production image. Public traffic (Cloudflare tunnel / NPM) must hit **frontend:80** only; the browser uses same-origin `api_base` (`/api/v1` by default) and nginx proxies to the compose service name `api`.
+Public traffic should hit the **frontend** origin only. The browser uses same-origin `api_base`; nginx (or the Angular proxy in dev) forwards to the API.
+
+---
+
+## Folder structure
+
+```text
+src/app/
+├── app.component.* / app.config.ts / app.routes.ts
+├── components/
+│   ├── async-state/
+│   ├── dialogs/            # alert, confirm, assets, comments, settings, collections
+│   ├── editor/             # snippet-editor (CodeMirror), snippet-preview (iframe)
+│   ├── footer/
+│   ├── headers/            # page-header, sort-page-header
+│   ├── lists/              # snippet-list, collection-list, external-resources-list
+│   ├── modules/            # user-menu, user-identity-header
+│   └── ui/                 # list-toolbar, list-paginator, list-empty-state,
+│                           # fork-attribution, snippet-stat-bar
+├── config/                 # runtime-env.ts
+├── guards/                 # unsaved-changes.guard.ts
+├── interfaces/
+├── pages/                  # home, user-home, feeds, profile, settings,
+│                           # collection-detail, snippet-web-view, fullpage-view,
+│                           # privacy-policy, terms
+├── services/
+│   ├── api/                # HTTP wrappers + resilience
+│   ├── stores/             # auth, snippet, collection (signal stores)
+│   └── ui/                 # dialog, snackbar, navigation, editor-ui,
+│                           # follow-ui, snippet-actions, snippet-save-ui
+└── utils/                  # list-page-state.ts
+```
+
+Styles live in [`src/styles.scss`](../snippy/frontend/src/styles.scss) plus partials under [`src/styles/`](../snippy/frontend/src/styles/).
+
+---
+
+## App shell & header modes
+
+[`app.component.html`](../snippy/frontend/src/app/app.component.html) layout:
+
+1. Atmosphere (orbs / grid)
+2. `app-page-header`
+3. `<main><router-outlet></main>`
+4. `app-footer`
+
+### Header modes
+
+Type: [`HeaderMode`](../snippy/frontend/src/app/interfaces/header-mode.ts) = `'landing' | 'feed' | 'editor' | 'minimal'`.
+
+Set via route `data.header`. [`PageHeaderComponent`](../snippy/frontend/src/app/components/headers/page-header/page-header.component.ts) reads the deepest activated route (with a URL fallback).
+
+| Mode | Chrome |
+|------|--------|
+| `landing` | Brand + Log in |
+| `feed` | Brand, nav pills (Your Snippets / Following / Public), user menu |
+| `editor` | Name field (owner/new), stat bar, save, layout menu, settings, user menu |
+| `minimal` | Brand + user menu (full-page preview) |
+
+### Footer
+
+[`FooterComponent`](../snippy/frontend/src/app/components/footer/footer.component.ts):
+
+- If `snippetStore.snippet()?.snippetId` → **Fork / Export ZIP / Assets**
+- Else → copyright + **Privacy Policy / Terms / License / GitHub**
+
+New unsaved pens (no `snippetId` yet) still show the legal footer until the first successful save.
 
 ---
 
 ## Routing
 
-### Route Structure
+Defined in [`app.routes.ts`](../snippy/frontend/src/app/app.routes.ts). Most routes lazy-load; only `''` (marketing home) is eager.
 
-```
-Routes (lazy except marketing ''):
-├── '' (HomePageComponent) — redirects to /home when Auth0 session exists
-├── 'home' (UserHomePageComponent, AuthGuard)
-├── 'public' / 'settings' (AuthGuard, lazy)
-├── 'snippet' / ':username/snippet/:id' (editor, AuthGuard + unsavedChangesGuard, lazy)
-├── ':username/fullpage/:id' (AuthGuard, lazy)
-├── ':username' (ProfilePageComponent, AuthGuard, lazy)
-└── '**' → ''
-```
+| Path | Page | Guards | `data.header` | Notes |
+|------|------|--------|---------------|-------|
+| `''` | HomePage | — | `landing` | Auto-navigates to `/home` if Auth0 session exists |
+| `privacy` | PrivacyPolicy | — | `landing` | Public legal |
+| `terms` | Terms | — | `landing` | Public legal |
+| `home` | UserHome | AuthGuard | `feed` | Snippets / Collections / Favorites / Projects tabs |
+| `following` | SnippetFeed | AuthGuard | `feed`, `feed: 'following'` | |
+| `public` | SnippetFeed | AuthGuard | `feed`, `feed: 'public'` | |
+| `settings` | Settings | AuthGuard | `feed` | |
+| `collections/:shortId` | CollectionDetail | AuthGuard | `feed` | |
+| `snippet` | SnippetWebView | AuthGuard + unsavedChanges | `editor` | New pen |
+| `:username/snippet/:id` | SnippetWebView | AuthGuard + unsavedChanges | `editor` | Existing pen (`id` = **shortId**) |
+| `:username/fullpage/:id` | FullpageView | AuthGuard | `minimal` | Preview only |
+| `:username` | Profile | AuthGuard | `feed` | Catch-all username |
+| `**` | → `''` | | | |
 
-### Route Guards
+**Ordering matter:** `privacy` and `terms` are registered **before** `:username`. If they were after the catch-all, `/privacy` would load as a profile named `privacy`.
 
-1. **AuthGuard** (Auth0)
-   - Protects all routes except home page
-   - Redirects unauthenticated users to Auth0 login
-   - Added by Auth0 Angular SDK
+### Guards
 
-2. **unsavedChangesGuard**
-   - Applied to snippet editor routes
-   - Prompts user before leaving if there are unsaved changes
-   - Uses `SnippetStoreService.isDirty()` to detect changes
-
----
-
-## State Management
-
-### SnippetStoreService
-
-Located: `src/app/shared/services/store.services/snippet.store.service.ts`
-
-Central hub for all snippet state using Angular signals.
-
-#### Core Signals
-
-```typescript
-snippet = signal<Snippet | null>(null)
-  └── Current loaded/edited snippet with all properties
-
-snippetList = signal<SnippetListResponse | null>(null)
-  └── Paginated list of snippets
-
-previewUpdateType = signal<string | null>(null)
-  ├── 'full': Complete iframe reload (HTML/JS changes)
-  ├── 'partial': CSS-only update (live CSS editing)
-  └── null: No preview update
-
-loading = signal<boolean>(false)
-  └── Indicates async operation in progress
-
-error = signal<string | null>(null)
-  └── Error message from last operation
-
-isDirty = computed(() => {...})
-  └── Compares current snippet with originalSnippet
-```
-
-#### API Methods
-
-**loadSnippet(snippetId)**: Fetches single snippet, sets previewUpdateType to 'full'
-
-**saveSnippet()**: Posts snippet to backend, calls setSnippet with response
-
-**updateSnippetFile(fileType, content)**: 
-- Sets previewUpdateType = 'full' for HTML/JS
-- Sets previewUpdateType = 'partial' for CSS
-- Called on every keystroke in editor
-
-**updateSnippetSettings(settings)**: Updates metadata, sets previewUpdateType = 'full'
-
-**setSnippet(snippet, updatePreview)**: 
-- Updates both snippet and originalSnippet signals
-- If updatePreview=true: sets previewUpdateType = 'full'
+1. **AuthGuard** (Auth0 SDK) — requires an Auth0 session. Does **not** wait for backend `AuthStoreService.user()`.
+2. **`unsavedChangesGuard`** — if `SnippetStoreService.isDirty()`, opens a confirm dialog; Leave vs Stay.
 
 ---
 
-## Component Architecture
+## Authentication flow
 
-### Page Components
-
-#### SnippetEditorPageComponent (Main Editor)
-
-**File:** `src/app/core/pages/snippet-editor-page/snippet-editor-page.component.ts`
-
-Handles both creating new and editing existing snippets.
-
-**Flow:**
-```
-ngOnInit():
-├── Get :id from route param
-├── If exists: load snippet from backend
-└── If not: create blank snippet
-
-@HostListener('window:keydown.control.s'):
-└── Save on Ctrl+S
-
-saveSnippetAndHandleUI():
-├── Check isDirty
-├── Save to backend
-├── Show snackbar
-└── If new: navigate to /:userName/snippet/:shortId
+```text
+Auth0 loginWithRedirect
+  → redirect_uri = origin + '/home'
+  → AuthHttpInterceptor attaches Bearer to /api/* and /api/v1/*
+  → AuthStoreService watches isAuthenticated$
+       → user$ (Auth0 profile)
+       → POST /users (AuthAPIService.syncBackendUser)
+       → user signal = backend User
 ```
 
-### View Components
+### `AuthStoreService` ([`services/stores/auth.store.service.ts`](../snippy/frontend/src/app/services/stores/auth.store.service.ts))
 
-#### SnippetWebViewComponent (Preview Coordinator)
+| Member | Kind | Meaning |
+|--------|------|---------|
+| `user` | `signal<User \| null>` | Backend profile (null until sync succeeds) |
+| `isAuthenticated` | `computed` | `!!user()` — **backend** user present |
+| `syncing` | `signal<boolean>` | Auth0→backend sync in flight |
+| `patchUser` | method | Merge fields after settings save |
+| `setUserFromApi` | method | Replace cached user |
+| `logout` | method | Clear store + Auth0 `returnTo: origin` |
+| `refreshUserFromBackend` | method | `GET /users/me` |
 
-**File:** `src/app/shared/components/views/snippet-web-view/snippet-web-view.component.ts`
+**Critical:** Auth0 `AuthGuard` can activate a route before `user()` is set. Anything that needs `userName`, ownership, or API identity must wait on `AuthStoreService.user()` / `isAuthenticated`, not Auth0 alone.
 
-**Critical Effect:**
-```typescript
-effect(() => {
-  const snippet = snippetStoreService.snippet()
-  const previewUpdateType = snippetStoreService.previewUpdateType()
-
-  if (!previewUpdateType || !snippet?.snippetFiles) return
-  
-  const htmlFile = snippet.snippetFiles.find(f => f.fileType === 'html')
-  const cssFile = snippet.snippetFiles.find(f => f.fileType === 'css')
-  const jsFile = snippet.snippetFiles.find(f => f.fileType === 'js')
-  
-  this.previewComponent.updatePreview(
-    htmlFile?.content || '',
-    cssFile?.content || '',
-    jsFile?.content || '',
-    previewUpdateType,
-    snippet.externalResources || []
-  )
-})
-```
-
-This effect automatically updates preview when:
-- `snippet()` signal changes (any property)
-- `previewUpdateType()` signal changes
-
-#### SnippetEditorComponent (CodeMirror Wrapper)
-
-**File:** `src/app/shared/components/snippet-editor/snippet-editor.component.ts`
-
-**Input:** `@Input() editorType: 'html' | 'css' | 'js'`
-
-**Initialization:**
-```
-ngAfterViewInit():
-└── Initialize CodeMirror with appropriate language
-
-EditorView.updateListener:
-├── On keystroke, update code signal
-└── Call snippetStoreService.updateSnippetFile(type, value)
-    └── Triggers preview update via effect
-```
-
-**Sync Effect:**
-```typescript
-effect(() => {
-  const snippet = snippetStoreService.snippet()
-  if (snippet?.snippetFiles) {
-    const file = snippet.snippetFiles.find(f => f.fileType === editorType)
-    if (file && file.content !== code()) {
-      code.set(file.content)
-      updateEditorContent(file.content) // Update CodeMirror
-    }
-  }
-})
-```
-
-Keeps editor in sync if store updates externally.
-
-#### SnippetPreviewComponent (iframe Manager)
-
-**File:** `src/app/shared/components/snippet-preview/snippet-preview.component.ts`
-
-```typescript
-updatePreview(html, css, js, previewUpdateType, externalResources):
-├── If previewUpdateType === 'partial':
-│   └── updateCssOnly(css)
-│       ├── Access iframe.contentDocument
-│       └── Update <style id="snippet-style">
-│
-└── Else:
-    └── fullReload(html, css, js, externalResources)
-        └── Set iframe.srcdoc = complete HTML string
-```
+Login entry points: landing header, home CTA. Logout: user menu (confirms if editor is dirty).
 
 ---
 
-## Snippet Editing Flow
+## State management (signals)
 
-### Creating New Snippet
+Domain state lives in three root-provided **store services**. UI chrome layout has a small fourth signal store (`EditorUiService`). Prefer updating stores; presentational components read signals and emit events.
 
-```
-1. User clicks "New Snippet"
-   └── Navigate to /snippet
+### Mental model
 
-2. SnippetEditorPageComponent.ngOnInit():
-   └── Create blank snippet
-
-3. User types in HTML editor
-   ├── CodeMirror updateListener fires
-   ├── snippetStoreService.updateSnippetFile('html', content)
-   │   ├── Sets previewUpdateType = 'full'
-   │   └── Updates snippet.snippetFiles[0].content
-   └── SnippetWebViewComponent effect detects change
-       └── Calls previewComponent.updatePreview('full')
-           └── iframe.srcdoc is set
-
-4. User types in CSS editor
-   ├── snippetStoreService.updateSnippetFile('css', content)
-   │   ├── Sets previewUpdateType = 'partial'
-   │   └── Updates snippet.snippetFiles[1].content
-   └── SnippetWebViewComponent effect detects change
-       └── Only <style> tag is updated in-place
-
-5. User saves (Ctrl+S or button)
-   ├── snippetStoreService.saveSnippet()
-   │   ├── POST to /snippets endpoint
-   │   ├── Backend generates shortId
-   │   ├── Call setSnippet(response.snippet, true)
-   │   │   └── Sets previewUpdateType = 'full'
-   │   └── Return response
-   ├── Show success snackbar
-   └── Navigate to /:userName/snippet/:shortId
+```text
+Page / header / list action
+  → UI service (optional) or store method
+  → API service (HttpClient + Auth interceptor + cockatiel)
+  → store signals updated
+  → templates / effects re-run
 ```
 
-### Editing Existing Snippet
-
-```
-1. Navigate to /:username/snippet/:shortId
-
-2. SnippetEditorPageComponent.ngOnInit():
-   └── snippetStoreService.loadSnippet(shortId)
-       ├── GET /snippets/:shortId
-       ├── Call setSnippet(response.snippet, true)
-       │   └── Sets previewUpdateType = 'full'
-       └── originalSnippet = copy of snippet
-
-3. SnippetWebViewComponent effect triggers
-   └── Preview iframe is populated
-
-4. User edits code (same as new snippet flow)
-
-5. User saves
-   ├── POST /snippets/:shortId (PATCH for update)
-   ├── setSnippet(response.snippet, false)
-   │   └── updatePreview=false (avoid unnecessary reload)
-   └── originalSnippet updated
-```
+Stale-response protection: list/detail loaders bump generation counters (`listGeneration`, `favoritesGeneration`, `detailGeneration`, collection equivalents) and ignore outdated responses.
 
 ---
 
-## Preview System
+### `SnippetStoreService`
 
-### Full Reload ('full')
+Path: [`services/stores/snippet.store.service.ts`](../snippy/frontend/src/app/services/stores/snippet.store.service.ts)
 
-**When:**
-- New snippet created
-- Snippet loaded from backend
-- HTML or JS code changes
-- Settings changed
-- After save (for new snippets)
+Central hub for the open pen, list pages, favorites, dirty tracking, and preview invalidation.
 
-**Process:**
-```
-fullReload(html, css, js, externalResources):
-├── Build complete HTML string with:
-│   ├── DOCTYPE, meta tags
-│   ├── External stylesheets
-│   ├── <style> with CSS code
-│   ├── <body> with HTML code
-│   ├── <script> with JS code
-│   └── External scripts
-└── Set iframe.srcdoc = htmlString
-    └── Entire iframe reloads
-```
+#### Signals
 
-**Pros:**
-- Guarantees clean state
-- Prevents memory leaks
-- Required for HTML/JS changes
+| Signal | Type | Role |
+|--------|------|------|
+| `snippet` | `Snippet \| null` | Active editor / fullpage pen |
+| `originalSnippet` | private `Snippet \| null` | Deep-cloned baseline for dirty checks |
+| `snippetList` | `SnippetListResponse \| null` | Public / feed / mine / profile list payload |
+| `favoritesList` | `SnippetListResponse \| null` | Favorites tab payload |
+| `previewUpdateType` | `string \| null` | `'full'` \| `'partial'` \| `null` |
+| `loading` | `boolean` | Primary list/detail loading |
+| `favoritesLoading` | `boolean` | Favorites-specific loading |
+| `error` | `string \| null` | Last error message |
+| `isDirty` | **computed** | Compares `snippet` vs `originalSnippet` |
 
-**Cons:**
-- Less smooth
-- Any state in user's JS is lost
+`isDirty` watches: `name`, `description`, `isPrivate`, `tags`, `externalResources` (type + url), and each `snippetFiles[].content`.
 
-### Partial Update ('partial')
+#### Loaders
 
-**When:**
-- Only CSS code changes (live editing)
+| Method | API | Writes |
+|--------|-----|--------|
+| `loadSnippet(shortId)` | `GET /snippets/:shortId` | `snippet` + `originalSnippet` via `setSnippet(..., true)` |
+| `loadUserSnippets` | `GET /snippets/me` | `snippetList` |
+| `loadPublicSnippets` | `GET /snippets/public` | `snippetList` |
+| `loadFeedSnippets` | `GET /snippets/feed` | `snippetList` |
+| `loadUserPublicSnippets` | `GET /snippets/user/:userName` | `snippetList` |
+| `loadFavorites` | `GET /favorites` | `favoritesList` |
+| `searchSnippets` | search endpoint | `snippetList` |
 
-**Process:**
-```
-updateCssOnly(css):
-├── Access iframe.contentDocument
-├── Find or create <style id="snippet-style">
-└── Set styleEl.textContent = css
-    └── CSS updated without iframe reload
-```
+#### Mutations
 
-**Pros:**
-- Smooth live CSS editing
-- User's JS state preserved
-- Fast
+| Method | Behavior |
+|--------|----------|
+| `setSnippet(s, updatePreview?)` | Sets `snippet` + deep-clones into `originalSnippet`; optionally `'full'` preview |
+| `updateSnippetFile(type, content)` | Patches file; html/js → `'full'`, css → `'partial'` |
+| `updateSnippetName` | Updates name; `'full'` preview |
+| `updateSnippetSettings` | description / privacy / tags / externalResources; `'full'` |
+| `updateSnippetCounts` / `patchSnippetCounts` | Fork/view/comment/favorite counts on detail + lists |
+| `bumpCommentCount` | ± commentCount on detail + both lists |
+| `saveSnippet` | POST (new) or PUT (existing `snippetId`); refreshes baseline |
+| `deleteSnippet` | DELETE + list cleanup |
+| `favoriteSnippet` | Toggle favorite; optimistic list/detail updates |
+| `forkSnippet` | POST fork; bumps forkCount on current if matching |
+| `recordView` | Non-blocking view count |
+| `clearSnippet` | Nulls open pen (call on editor/fullpage destroy) |
 
-**Cons:**
-- Requires iframe to exist
-- Fails if iframe is empty
+**Ownership rule:** Editor and fullpage views call `clearSnippet()` on destroy so list pages do not keep a stale open pen in the store.
 
-### Issue We Fixed
+#### Who consumes it
 
-**Problem:** After save, CSS-only edit cleared preview
-
-**Root Cause:** 
-- `updateCssOnly()` tried to update style tag
-- If iframe was empty, update failed silently
-- Preview appeared blank
-
-**Solution:**
-- Guard in `updateCssOnly()`: check if iframe.contentDocument exists
-- If not, fall back to full reload
-- Ensure after every save, next update is 'full'
+Editor / fullpage pages, feed / home / profile lists, page header, footer, `SnippetActionsService`, `SnippetSaveUIService`, `unsavedChangesGuard`, comment dialog, snippet editor, user menu (dirty logout).
 
 ---
 
-## Save & Navigation Flow
+### `CollectionStoreService`
 
-### Saving Mechanism
+Path: [`services/stores/collection.store.service.ts`](../snippy/frontend/src/app/services/stores/collection.store.service.ts)
 
-**SnippetSaveUIService** centralizes save logic:
+| Signal | Role |
+|--------|------|
+| `collections` | Current list page |
+| `totalCount` | Server total |
+| `loading` / `error` | Status |
+| `activeCollection` | Detail page collection (may embed snippets) |
 
-```typescript
-saveSnippetWithUI(snippetStoreService, userGetter):
-├── Get isNew = !snippetStoreService.snippet()?.shortId
-├── Check isDirty() (return if not)
-├── Try:
-│   ├── Await snippetStoreService.saveSnippet()
-│   │   ├── API call to backend
-│   │   └── Store updated via setSnippet()
-│   ├── Show success snackbar
-│   ├── If isNew && response.snippet.shortId:
-│   │   └── Navigate to /:userName/snippet/:shortId
-│   └── (existing snippet stays at current URL)
-└── Catch:
-    └── Show error snackbar
-```
+| Method | Role |
+|--------|------|
+| `loadMine` | Current user’s collections (`snippetId` optional for “contains” flags) |
+| `loadUser` | Public collections for a profile |
+| `loadOne` | Detail by `shortId` (+ optional search `q`) |
+| `create` / `delete` | CRUD |
+| `addSnippet` / `removeSnippet` | Membership |
 
-### Save Triggers
-
-1. **Keyboard Shortcut (Ctrl+S)** in SnippetEditorPageComponent
-2. **Navbar Save Button** in NavbarComponent
-3. **Auto-save on Settings Change** in NavbarComponent
-
-### Unsaved Changes Guard
-
-```typescript
-unsavedChangesGuard:
-├── Checks canDeactivate()
-├── Calls snippetStoreService.isDirty()
-├── If dirty:
-│   └── Prompt user: "Leave without saving?"
-└── If not dirty:
-    └── Allow navigation
-```
-
-Applied to snippet editor routes.
+Consumers: user-home, profile, collection-detail, create / add-to-collection dialogs.
 
 ---
 
-## Signal Reactivity & Effects
+### `EditorUiService`
 
-### What Are Signals?
+Path: [`services/ui/editor-ui.service.ts`](../snippy/frontend/src/app/services/ui/editor-ui.service.ts)
 
-Fine-grained reactive primitives (like Vue.ref, Svelte stores):
+| Signal | Role |
+|--------|------|
+| `layout` | `'top' \| 'bottom' \| 'left' \| 'right'` — persisted as `localStorage.editorLayout` |
 
-```typescript
-const count = signal(0)
-count()              // Read value
-count.set(1)         // Update
-count.update(v => v+1) // Update with function
-
-const doubled = computed(() => count() * 2) // Auto-memoized
-
-effect(() => {
-  console.log('Count changed:', count()) // Runs when count changes
-})
-```
-
-### Why Effects Instead of RxJS Subscriptions?
-
-**Benefits:**
-- Automatic cleanup on component destroy
-- Simpler syntax (no operators needed)
-- Fine-grained tracking (only re-runs if accessed properties change)
-- More intuitive for imperative DOM updates
-
-### Key Effects in Snippy
-
-#### 1. SnippetWebViewComponent (Preview Trigger)
-
-Watches both `snippet()` and `previewUpdateType()` signals.
-
-When either changes:
-1. Extract HTML, CSS, JS from snippet
-2. Call `previewComponent.updatePreview()`
-3. Preview component decides full vs. partial reload
-
-**Dependency tracking:** Only re-runs if accessed properties change.
-
-#### 2. SnippetEditorComponent (Editor Sync)
-
-Watches `snippet()` signal.
-
-If file content differs from local code signal:
-1. Update local code signal
-2. Update CodeMirror editor
-3. Keep editor in sync with store
-
-#### 3. CodeMirror Update Listener
-
-Direct event listener (not an effect):
-
-```
-User types → CodeMirror updateListener fires
-  → Call snippetStoreService.updateSnippetFile()
-    → Set previewUpdateType
-    → Update snippet.snippetFiles
-      → SnippetWebViewComponent effect detects change
-        → Preview updates automatically
-```
+`setLayout` updates the signal and storage. Page header toggles layout; snippet web-view remounts split + preview when it changes.
 
 ---
 
-## Communication Services
+## API layer
 
-### SnippetSaveUIService
+### `ApiService`
 
-**File:** `src/app/shared/services/communication/snippet-save-ui.service.ts`
+Path: [`services/api/api.service.ts`](../snippy/frontend/src/app/services/api/api.service.ts)
 
-Centralizes save UI logic so navbar and editor don't duplicate code.
+- Base URL from `getRuntimeEnv().api_base`
+- `request({ path, method, body, params, headers })` → HttpClient
+- Wrapped in cockatiel policy ([`resilience.service.ts`](../snippy/frontend/src/app/services/api/resilience.service.ts)): retry on 5xx/network, circuit breaker
+- **Does not** attach Authorization — Auth0 `AuthHttpInterceptor` does for `/api/*` and `/api/v1/*`
 
-**Why separate from store?**
-- Store handles data/API
-- UI service handles presentation (snackbars, navigation)
-- Keeps concerns separated
-- Reusable across components
+### Endpoint map
 
-### AuthStoreService
-
-Wraps Auth0 user state in Angular signals.
-
-```typescript
-user = signal<User | null>(null)
-isLoggedIn = signal<boolean>(false)
-
-// Set via subscription to Auth0
-auth0Service.user$.subscribe(user => {
-  this.user.set(user)
-  this.isLoggedIn.set(!!user)
-})
-```
+| Service | Responsibilities |
+|---------|------------------|
+| **AuthAPIService** | `POST /users` (sync), `GET /users/me` |
+| **UserApiService** | `GET /users/:userName`, `PUT /users`, `GET /users/check-username/:userName`, `DELETE /users` |
+| **SnippetAPIService** | Load/create/update/fork/view/delete/search; me / public / feed / user lists |
+| **FavoriteService** | `POST /favorites/:snippetId`, `GET /favorites` |
+| **CommentService** | CRUD under `/comments/...` |
+| **FollowApiService** | `POST` / `DELETE /users/:userName/follow` |
+| **CollectionApiService** | me / user / one; create/delete; add/remove snippets |
+| **ResourceApiService** | List/upload/delete assets (`POST` uses multipart `FormData`, bypasses generic JSON helper) |
 
 ---
 
-## Authentication & Guards
+## UI services
 
-### Auth0 Integration
+| Service | Role |
+|---------|------|
+| **DialogService** | Opens Material dialogs with size presets `sm`–`xl`, always merges `panelClass: snippy-dialog`, `maxHeight: 85vh`. Helpers: `confirm`, `confirmAndRun`, `alert` / typed variants. `provideDialogDefaults()` sets global MAT defaults. |
+| **SnackbarService** | Typed snackbars (success / error / …), bottom-end |
+| **NavigationService** | Canonical URLs: home, settings, new snippet, profile, snippet, parent fork, collection, `fullPageUrl` |
+| **SnippetActionsService** | Fork-and-open, open comments, add-to-collection, optimistic favorite, store favorite, delete-with-confirm |
+| **SnippetSaveUIService** | Save if dirty → snackbar → for new pens navigate to `/:userName/snippet/:shortId` |
+| **FollowUiService** | Follow / unfollow + snackbar; returns updated `isFollowing` |
+| **EditorUiService** | Editor layout signal (above) |
 
-Protected routes require AuthGuard from `@auth0/auth0-angular`.
-
-User data accessible via `AuthStoreService.user()` or `auth0Service.user$`.
-
-### Unsaved Changes Guard
-
-```typescript
-canDeactivateFn(component) {
-  if (component instanceof SnippetEditorPageComponent) {
-    if (component.snippetStoreService.isDirty()) {
-      return confirm('You have unsaved changes. Leave without saving?')
-    }
-  }
-  return true
-}
-```
-
-Applied to: `:username/snippet/:id` and `snippet` routes.
+Prefer these services from lists, header, and footer so behavior stays consistent.
 
 ---
 
-## Data Flow Diagram
+## Pages & data flows
 
-### Edit & Preview Flow
+| Page | Route | Data flow |
+|------|-------|-----------|
+| **Home** | `''` | Marketing + capabilities; Auth0 login; if authenticated → `/home` |
+| **User home** | `/home` | Tabs: `loadUserSnippets`, `loadMine` collections, `loadFavorites`; each owns a `ListPageState`; create collection dialog; Projects = coming soon |
+| **Snippet feed** | `/public`, `/following` | Same page; `data.feed` selects `loadPublicSnippets` vs `loadFeedSnippets`; sort via `SortPageHeaderComponent` |
+| **Profile** | `/:username` | `UserApiService.getByUserName` → local profile signal; public pens + collections; follow via `FollowUiService` |
+| **Settings** | `/settings` | Hydrate from `AuthStore.user`; profile + username (debounced availability); delete account → confirm → logout |
+| **Collection detail** | `/collections/:shortId` | `loadOne`; search reloads API; client-side page slice of embedded snippets; owner can remove |
+| **Snippet web view** | `/snippet`, `/:user/snippet/:id` | Load or blank template; CodeMirror + preview; Ctrl+S; clear store on destroy |
+| **Fullpage view** | `/:user/fullpage/:id` | Preview only; record view if not owner; clear on destroy |
+| **Privacy / Terms** | `/privacy`, `/terms` | Static legal; landing header; linked from footer |
 
-```
-User types in CodeMirror
-    ↓
-CodeMirror updateListener fires
-    ↓
-snippetStoreService.updateSnippetFile(type, content)
-├── Set previewUpdateType = 'full'|'partial'
-└── Update snippet.snippetFiles
-    ↓
-SnippetWebViewComponent effect detects change
-├── Extract html, css, js from snippet
-└── Call previewComponent.updatePreview()
-    ↓
-SnippetPreviewComponent.updatePreview()
-├── If 'partial': updateCssOnly(css)
-└── If 'full': fullReload(html, css, js)
-    ↓
-iframe.srcdoc or iframe.contentDocument updated
-    ↓
-Preview renders in real-time
-```
+---
 
-### Save & Navigate Flow
+## Snippet editing flow
 
-```
-User presses Ctrl+S or clicks Save
-    ↓
-SnippetEditorPageComponent.saveSnippetAndHandleUI()
-    ↓
-SnippetSaveUIService.saveSnippetWithUI()
-├── Call snippetStoreService.saveSnippet()
-│   ├── POST /snippets (or PATCH for update)
-│   └── Backend returns updated snippet
-│   ├── Call setSnippet(response.snippet, true/false)
-│   │   └── Set previewUpdateType = 'full' (if updatePreview=true)
-│   └── Return response
-├── Show success snackbar
-├── If new snippet & has shortId:
-│   └── Navigate to /:userName/snippet/:shortId
-└── (existing snippet stays in place)
-    ↓
-originalSnippet updated
-    ↓
-isDirty returns false
-    ↓
-Unsaved changes guard allows navigation
+```text
+/snippet  or  /:username/snippet/:shortId
+  → SnippetWebViewComponent
+       → loadSnippet(shortId)  OR  blank untitled template (isOwner: true)
+       → setSnippet(..., true) → previewUpdateType = 'full'
+       → as-split: SnippetEditorComponent | SnippetPreviewComponent
 ```
 
-### Load Existing Snippet Flow
+### Editing
 
+1. CodeMirror docs sync from `snippet()` files.
+2. On change → `updateSnippetFile(fileType, content)`:
+   - `html` / `js` → `previewUpdateType = 'full'`
+   - `css` → `'partial'`
+3. Name field (header, owners) → `updateSnippetName`.
+4. Settings dialog (owners) → on save result → `updateSnippetSettings` + `SnippetSaveUIService.saveSnippetWithUI`.
+
+### Settings dialog
+
+Opened from editor header with `DialogService.open(..., 'xl', { minHeight: '50vh', panelClass: 'snippy-dialog-tall' })`.
+
+Tabs:
+
+- **General** — description, private/public toggle, tags
+- **CSS** — `ExternalResourcesListComponent` (`resourceType: 'css'`)
+- **JS** — same for scripts
+
+Tall dialog CSS grows to a capped height, scrolls content, pins Cancel/Save, and hides inactive Material tab bodies so height follows the active tab only.
+
+### Other editor actions
+
+| Action | Where | Behavior |
+|--------|-------|----------|
+| Save | Header / Ctrl+S | `SnippetSaveUIService` |
+| Layout | Header menu | `EditorUiService.setLayout` |
+| Fork | Header / footer / lists | `SnippetActionsService.forkAndOpen` |
+| Comments | Stat bar / lists | `CommentDialogComponent` |
+| Favorite | Stat bar / lists | Optimistic + `favoriteSnippet` |
+| Assets | Footer / user menu | `AssetsDialogComponent` (MinIO / `minio_enabled`) |
+| Export ZIP | Footer | JSZip: `index.html`, `style.css`, `script.js`, `README.txt` |
+| Views | Effect in web-view / fullpage | One `recordView` per navigation for non-owners |
+
+---
+
+## Preview system
+
+[`SnippetWebViewComponent`](../snippy/frontend/src/app/pages/snippet-web-view/snippet-web-view.component.ts) runs an **effect** on:
+
+- `snippetStore.snippet()`
+- `snippetStore.previewUpdateType()`
+- `editorUi.layout()` (forces remount when split orientation changes)
+
+It resolves html/css/js files + `externalResources` and calls [`SnippetPreviewComponent.updatePreview`](../snippy/frontend/src/app/components/editor/snippet-preview/snippet-preview.component.ts):
+
+| `previewUpdateType` | Behavior |
+|---------------------|----------|
+| `'partial'` | Mutate `#snippet-style` inside the existing iframe (CSS-only fast path) |
+| `'full'` (or anything else non-null) | Rebuild `iframe.srcdoc` with external CSS `<link>`s, HTML, inline CSS, external JS `<script>`s, inline JS |
+
+After applying, clear or leave `previewUpdateType` as the preview component documents (avoid infinite loops by only setting the signal when content actually changes upstream).
+
+**Race note:** A `'partial'` update can no-op if the iframe `contentDocument` is not ready yet after a full reload. A subsequent `'full'` or another edit recovers.
+
+Fullpage view uses the same preview component without the CodeMirror split.
+
+---
+
+## Save, dirty tracking & navigation
+
+```text
+User edits store fields
+  → isDirty computed becomes true
+  → Save / Ctrl+S
+       → SnippetSaveUIService.saveSnippetWithUI
+            → store.saveSnippet (POST or PUT)
+            → originalSnippet refreshed (isDirty → false)
+            → snackbar success
+            → if new: navigate to /:userName/snippet/:shortId
 ```
-Navigate to /:username/snippet/:shortId
-    ↓
-Route guard checks Auth0
-    ↓
-SnippetEditorPageComponent.ngOnInit()
-├── Get :id from route.snapshot.paramMap
-└── Call snippetStoreService.loadSnippet(id)
-    ├── GET /snippets/:id
-    ├── Call setSnippet(response.snippet, true)
-    │   └── Set previewUpdateType = 'full'
-    └── Set originalSnippet = copy
-    ↓
-SnippetWebViewComponent effect triggers
-├── Detects previewUpdateType = 'full'
-└── Calls previewComponent.updatePreview()
-    └── fullReload() sets iframe.srcdoc
-    ↓
-Preview displays loaded snippet
-    ↓
-isDirty = false (snippet === originalSnippet)
+
+Leaving the editor with dirty state:
+
+- Router `unsavedChangesGuard` → confirm dialog
+- User menu logout also checks `isDirty()` and confirms
+
+**Do not** call `setSnippet` on every keystroke — that resets `originalSnippet` and breaks dirty tracking. Use `updateSnippetFile` / `updateSnippetName` / `updateSnippetSettings`.
+
+**ID confusion:** Routes and `loadSnippet` use **`shortId`**. Persist/update uses **`snippetId`** (UUID) on PUT.
+
+---
+
+## Lists, feeds & pagination
+
+### `ListPageState`
+
+Path: [`utils/list-page-state.ts`](../snippy/frontend/src/app/utils/list-page-state.ts)
+
+One instance per list surface (page or tab). Default `pageSize` = **6**.
+
+| API | Behavior |
+|-----|----------|
+| `page` | 1-based page for the backend |
+| `query` | Trimmed search or `undefined` |
+| `onSearch` | Reset to page 0 + reload |
+| `onSortChange` | Reset page + reload |
+| `onPageChange` | Update page + reload |
+| `setPage` | Page only (client-side paging, e.g. collection detail) |
+| `reload` | Invoke the injected loader |
+
+### Presentational pieces
+
+- **`SnippetListComponent`** — cards, toolbar, empty state, paginator; wires navigation + `SnippetActionsService` + follow
+- **`CollectionListComponent`** — same pattern; create / open / delete outputs
+- **`ListToolbarComponent`** — search submits on Enter
+- **`ListPaginatorComponent`** / **`ListEmptyStateComponent`**
+- **`SnippetStatBarComponent`** — comment / favorite / fork / views
+- **`ForkAttributionComponent`** — parent pen credit
+- **`AsyncStateComponent`** — loading wrapper used by pages
+
+### Feeds
+
+[`SnippetFeedPageComponent`](../snippy/frontend/src/app/pages/snippet-feed-page/snippet-feed-page.component.ts) is shared:
+
+- `data.feed === 'public'` → Explore / `loadPublicSnippets`
+- `data.feed === 'following'` → Following / `loadFeedSnippets`
+
+Sort options come from `SnippetSort` on the snippet API service.
+
+---
+
+## Dialogs
+
+Always open through **`DialogService`** so `snippy-dialog` + max-height apply.
+
+| Dialog | Trigger |
+|--------|---------|
+| **ConfirmDialog** | `confirm` / `confirmAndRun` — unsaved leave, deletes, dirty logout, remove from collection |
+| **AlertDialog** | Typed alerts (e.g. invalid external URLs in settings) |
+| **SnippetSettingsDialog** | Editor settings (`snippy-dialog-tall`) |
+| **AssetsDialog** | Footer / user menu (MinIO gated) |
+| **CommentDialog** | Stat bar / list comment action |
+| **AddToCollectionDialog** | List “add to collection”; loads mine with `snippetId` for `containsSnippet` |
+| **CollectionCreateDialog** | User-home create; can nest from add-to-collection |
+
+Dialog chrome: dark frosted glass, shared form tokens, explicit `<mat-divider>` above actions (not a CSS border on `mat-dialog-actions`). Tall/tabbed surfaces use `.snippy-dialog-tall` (see styles).
+
+---
+
+## Styles & design system
+
+Entry: [`src/styles.scss`](../snippy/frontend/src/styles.scss)
+
+1. Material M3 dark theme — violet primary, cyan tertiary, Space Grotesk / IBM Plex Sans
+2. `@import 'tailwindcss'`
+3. Partials:
+
+| Partial | Concern |
+|---------|---------|
+| `_tokens.scss` | CSS variables: brand, surfaces, dialog, text, glass, blur, shadows, snackbar |
+| `_base` / `_brand-nav` / `_glass` / `_atmosphere` / `_layout` / `_motion` | Global look |
+| `_list-card` | Shared list card chrome |
+| `_material-*` | Cards, dialogs, chips/menus, forms, tabs, buttons, snackbar, overlays, Tailwind fixes |
+
+Tokens live in `:root` (e.g. `--dialog-surface`, `--text-link`, `--brand-violet`). Prefer variables over hardcoded hex in new UI.
+
+**Dialog layout notes:**
+
+- `.snippy-dialog` — flex column surface; scrollable content; pinned actions
+- Global dialog surface `max-height: 85vh`
+- `.snippy-dialog-tall` — min/max height for snippet settings (currently capped at **50vh** in CSS); content scrolls; inactive tabs `display: none`
+
+---
+
+## Key interfaces
+
+### `Snippet`
+
+[`interfaces/snippet.interface.ts`](../snippy/frontend/src/app/interfaces/snippet.interface.ts)
+
+Identity: `snippetId?`, `shortId`, `name`, `description`, `tags`, `isPrivate`  
+Social: `forkCount`, `viewCount`, `commentCount`, `favoriteCount`, `isFavorited?`  
+Graph: `parentShortId`, `parentName?`, `parentUserName?`  
+Ownership: `isOwner`, `userName?`, `displayName`  
+Payload: `snippetFiles[]`, `externalResources?`
+
+### `SnippetList`
+
+Card row shape (no file bodies): counts + `isFollowing?` for follow UI on feeds/profiles.
+
+### `User`
+
+`userName`, `displayName`, `bio?`, `pictureUrl?`, `isAdmin?`, `isPrivate?`, `isFollowing?`, `followerCount?`, `followingCount?`, `assets?`
+
+### `Collection`
+
+Ids, name, description, `isPrivate`, `isOwner`, `snippetCount?`, `containsSnippet?`, optional embedded `snippets`
+
+Also see: `Comment`, `Assets`, `ExternalResource`, `SnippetFile`, and `*Response` wrappers (`success`, payload fields).
+
+---
+
+## End-to-end data flow
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│ AppComponent                                                    │
+│  AuthStoreService sync · PageHeader · RouterOutlet · Footer     │
+└─────────────────────────────────────────────────────────────────┘
+         │                         │                      │
+         ▼                         ▼                      ▼
+   Auth0 + POST /users      Route → Page              snippet()?
+         │                         │                 Fork/Export/Assets
+         ▼                         ▼
+   user / isAuthenticated   ListPageState + loaders
+                                   │
+                    ┌──────────────┼──────────────┐
+                    ▼              ▼              ▼
+            SnippetStore   CollectionStore   FollowUi / Actions
+                    │              │
+                    ▼              ▼
+              ApiService + AuthHttpInterceptor + cockatiel
+                    │
+                    ▼
+                 Backend /api/v1
+```
+
+### Editor signal loop
+
+```text
+CodeMirror change
+  → updateSnippetFile
+  → snippet signal + previewUpdateType
+  → effect in SnippetWebView
+  → SnippetPreviewComponent (partial CSS or full srcdoc)
+  → isDirty computed true
+  → Save → POST/PUT → setSnippet baseline → isDirty false
 ```
 
 ---
 
-## Common Gotchas & Solutions
+## Common gotchas
 
-### CSS-Only Edit Clears Preview
-
-**Problem:** After save, user edits only CSS and preview appears blank.
-
-**Root Cause:**
-- `updateSnippetFile('css', ...)` sets previewUpdateType = 'partial'
-- `updateCssOnly()` tries to update style tag
-- If iframe was just reloaded and contentDocument is null, update fails silently
-- Preview appears blank
-
-**Solution:**
-- Guard in `updateCssOnly()`: check if iframe.contentDocument exists
-- If not, fall back to full reload
-- Ensure after every save, first update is 'full'
-
-### Changes Not Reflecting in Preview
-
-**Problem:** User types but preview doesn't update.
-
-**Debug steps:**
-1. Check if previewUpdateType is changing (add console.log in effect)
-2. Check if snippet signal is changing (verify CodeMirror listener fires)
-3. Check if preview component exists (@ViewChild is defined)
-4. Check if updateSnippetFile is being called
-
-```typescript
-// Add to effect
-effect(() => {
-  const snippet = snippetStoreService.snippet()
-  const previewType = snippetStoreService.previewUpdateType()
-  console.log('Effect fired:', { snippet, previewType })
-})
-
-// Add to updateSnippetFile
-updateSnippetFile(fileType: string, content: string) {
-  console.log('updateSnippetFile called:', { fileType, contentLength: content.length })
-  // ... rest of code
-}
-```
-
-### Dirty Check Always False
-
-**Problem:** isDirty returns false even after edits.
-
-**Cause:** originalSnippet is updated when it shouldn't be (should only update on load/save).
-
-**Solution:** 
-- Only call setSnippet after load or save
-- `updateSnippetFile()` should only update `snippet()`, not `originalSnippet`
-- Check if setSnippet is being called unexpectedly
-
-### Navigation Doesn't Work After Save
-
-**Problem:** User saves new snippet but navigation doesn't happen.
-
-**Cause:** Backend not returning shortId or response format is wrong.
-
-**Debug:**
-```typescript
-async saveSnippet() {
-  const s = this.snippet()
-  // ...
-  let res = await firstValueFrom(this.snippetService.saveSnippet(s))
-  console.log('Save response:', res) // Check structure
-  // ...
-}
-```
+1. **`FRONTEND_URL` must match the browser origin** or API CORS fails. Restart the **api** container after changing it.
+2. **Restart the frontend** after Auth0 / MinIO env changes so `env.js` regenerates; hard-refresh the browser.
+3. **No build-time Auth0 config** — runtime `/env.js` only.
+4. **AuthGuard ≠ backend user ready** — wait for `AuthStoreService.user()`.
+5. **Open dialogs via `DialogService`** so `snippy-dialog` applies; tabbed settings need `snippy-dialog-tall`.
+6. **Clear the snippet store on editor/fullpage destroy** — otherwise lists see a stale open pen.
+7. **`setSnippet` resets dirty baseline** — use granular update methods while typing.
+8. **Routes use `shortId`; PUT uses `snippetId`.**
+9. **Partial CSS preview** can race an iframe reload — another edit or full rebuild recovers.
+10. **Footer editor actions require a saved `snippetId`.**
+11. **Dev proxy targets Docker DNS names** (`api`, `minio`) — host-only `ng serve` needs matching networking or proxy edits.
+12. **Static legal routes must stay above `:username`.**
+13. **Generation counters** — don’t assume the latest HTTP response wins if a newer load already started; trust the store’s generation checks.
 
 ---
 
-## Summary
+## Related docs
 
-The Snippy frontend uses:
-
-1. **Signals** for fine-grained reactive state
-2. **Effects** to automatically trigger preview updates when state changes
-3. **Services** to centralize API calls and shared logic
-4. **Components** organized by responsibility (pages, views, editors, preview)
-5. **Guards** to protect routes and warn of unsaved changes
-6. **Communication services** to avoid code duplication
-
-**Core Flow:**
-- User edits code → CodeMirror listener fires
-- Store updated → `snippet()` signal changes
-- Effect runs → Extracts code from store
-- Preview updates → iframe.srcdoc or CSS tag changes
-- Real-time preview → User sees changes instantly
-
-This reactive architecture ensures the UI always stays in sync with the underlying data model, making the editor feel responsive and reliable.
+- Root deploy guide: [`README.md`](../README.md)
+- Backend: [`documentation/backend.md`](./backend.md)
+- Database: [`documentation/db.md`](./db.md)
+- Frontend test plan: [`documentation/frontend-test-plan.md`](./frontend-test-plan.md)

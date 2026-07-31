@@ -1,67 +1,170 @@
-/* Buttons + warn / danger glass treatment */
+/* Glass Material buttons — same recipe as .btn-secondary, tinted by color */
 
+@mixin glass-button-surface($bg, $bg-hover, $border, $border-hover, $text) {
+  --mdc-protected-button-container-color: transparent;
+  --mdc-filled-button-container-color: transparent;
+  --mdc-text-button-container-color: transparent;
+  --mdc-outlined-button-outline-color: #{$border};
+  --mdc-protected-button-label-text-color: #{$text};
+  --mdc-filled-button-label-text-color: #{$text};
+  --mdc-text-button-label-text-color: #{$text};
+  --mdc-outlined-button-label-text-color: #{$text};
+  --mat-protected-button-container-color: transparent;
+  --mat-filled-button-container-color: transparent;
+  --mat-text-button-label-text-color: #{$text};
+  --mat-protected-button-label-text-color: #{$text};
+  --mat-filled-button-label-text-color: #{$text};
+  --mat-outlined-button-label-text-color: #{$text};
+  --mat-outlined-button-outline-color: #{$border};
+
+  background: $bg !important;
+  border: 1px solid $border !important;
+  border-radius: var(--btn-glass-radius) !important;
+  color: $text !important;
+  box-shadow: var(--btn-glass-shadow) !important;
+  backdrop-filter: var(--blur-sm);
+  -webkit-backdrop-filter: var(--blur-sm);
+  transition:
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+
+  .mdc-button__label,
+  .mat-icon {
+    color: inherit !important;
+  }
+
+  .mat-mdc-button-persistent-ripple,
+  .mat-mdc-button-ripple {
+    border-radius: inherit;
+  }
+
+  /* Kill Material elevation / state-layer muddiness on glass */
+  .mdc-button__ripple::before,
+  .mat-mdc-button-persistent-ripple::before {
+    opacity: 0 !important;
+  }
+
+  &:hover:not([disabled]),
+  &:focus-visible:not([disabled]) {
+    background: $bg-hover !important;
+    border-color: $border-hover !important;
+    box-shadow:
+      var(--btn-glass-shadow),
+      0 0 0 1px rgba(255, 255, 255, 0.04) !important;
+  }
+
+  &[disabled],
+  &.mat-mdc-button-disabled {
+    opacity: 0.45;
+    box-shadow: none !important;
+  }
+}
+
+/* Shared shape for all non-icon text buttons */
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-unelevated-button,
 .mat-mdc-outlined-button,
 .mat-mdc-protected-button,
 .mat-tonal-button,
 .mat-mdc-button.mat-tonal {
-  backdrop-filter: var(--blur-sm);
-  -webkit-backdrop-filter: var(--blur-sm);
+  min-height: 2.5rem;
+  padding: 0 1.1rem !important;
+  letter-spacing: 0.01em;
+  font-weight: 600 !important;
+  --mdc-protected-button-container-elevation-shadow: none;
+  --mdc-protected-button-hover-container-elevation-shadow: none;
+  --mdc-protected-button-focus-container-elevation-shadow: none;
+  --mdc-protected-button-pressed-container-elevation-shadow: none;
+  --mat-protected-button-container-elevation-shadow: none;
 }
 
-.mat-mdc-outlined-button {
-  border-color: var(--glass-border) !important;
-  background: var(--glass-white) !important;
+/* Default / basic — neutral glass (Explore Features) */
+.mat-mdc-button:not(.mat-primary):not(.mat-accent):not(.mat-warn):not(.mat-mdc-icon-button),
+.mat-mdc-raised-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+.mat-mdc-unelevated-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+.mat-mdc-outlined-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+.mat-mdc-protected-button:not(.mat-primary):not(.mat-accent):not(.mat-warn),
+.mat-tonal-button:not(.mat-primary):not(.mat-accent):not(.mat-warn) {
+  @include glass-button-surface(
+    var(--btn-neutral-bg),
+    var(--btn-neutral-bg-hover),
+    var(--btn-neutral-border),
+    var(--btn-neutral-border-hover),
+    var(--btn-neutral-text)
+  );
 }
 
-/* Primary filled/raised — brand violet so actions read as enabled */
-// .mat-mdc-raised-button.mat-primary,
-// .mat-mdc-unelevated-button.mat-primary,
-// .mat-mdc-button.mat-primary.mat-mdc-button-base[mat-flat-button],
-// button.mat-mdc-raised-button.mat-primary,
-// .mat-mdc-button.mat-primary {
-//   --mdc-protected-button-container-color: var(--brand-violet);
-//   --mdc-filled-button-container-color: var(--brand-violet);
-//   --mdc-protected-button-label-text-color: var(--text-white);
-//   --mdc-filled-button-label-text-color: var(--text-white);
-//   --mat-protected-button-container-color: var(--brand-violet);
-//   --mat-filled-button-container-color: var(--brand-violet);
-//   --mat-protected-button-label-text-color: var(--text-white);
-//   --mat-filled-button-label-text-color: var(--text-white);
-//   background-color: var(--brand-violet) !important;
-//   color: var(--text-white) !important;
-// }
+/* Primary — violet glass */
+.mat-mdc-button.mat-primary:not(.mat-mdc-icon-button),
+.mat-mdc-raised-button.mat-primary,
+.mat-mdc-unelevated-button.mat-primary,
+.mat-mdc-outlined-button.mat-primary,
+.mat-mdc-protected-button.mat-primary,
+.mat-tonal-button.mat-primary,
+.mat-mdc-button.mat-primary.mat-mdc-button-base[mat-flat-button],
+button.mat-mdc-raised-button.mat-primary {
+  @include glass-button-surface(
+    var(--btn-primary-bg),
+    var(--btn-primary-bg-hover),
+    var(--btn-primary-border),
+    var(--btn-primary-border-hover),
+    var(--btn-primary-text)
+  );
+}
 
-// .mat-mdc-raised-button.mat-primary .mdc-button__label,
-// .mat-mdc-unelevated-button.mat-primary .mdc-button__label,
-// .mat-mdc-button.mat-primary .mdc-button__label,
-// .mat-mdc-raised-button.mat-primary .mat-icon,
-// .mat-mdc-unelevated-button.mat-primary .mat-icon,
-// .mat-mdc-button.mat-primary .mat-icon {
-//   color: var(--text-white) !important;
-// }
+/* Accent / tertiary — cyan glass */
+.mat-mdc-button.mat-accent:not(.mat-mdc-icon-button),
+.mat-mdc-raised-button.mat-accent,
+.mat-mdc-unelevated-button.mat-accent,
+.mat-mdc-outlined-button.mat-accent,
+.mat-mdc-protected-button.mat-accent,
+.mat-tonal-button.mat-accent {
+  @include glass-button-surface(
+    var(--btn-accent-bg),
+    var(--btn-accent-bg-hover),
+    var(--btn-accent-border),
+    var(--btn-accent-border-hover),
+    var(--btn-accent-text)
+  );
+}
 
+/* Warn — danger glass */
+.mat-mdc-button.mat-warn:not(.mat-mdc-icon-button),
 .mat-mdc-raised-button.mat-warn,
 .mat-mdc-unelevated-button.mat-warn,
+.mat-mdc-outlined-button.mat-warn,
+.mat-mdc-protected-button.mat-warn,
 .mat-mdc-button.mat-warn.mat-mdc-button-base[mat-flat-button],
 button.mat-mdc-raised-button.mat-warn {
-  --mdc-protected-button-container-color: transparent;
-  --mdc-filled-button-container-color: transparent;
-  --mdc-protected-button-label-text-color: var(--text-white);
-  --mdc-filled-button-label-text-color: var(--text-white);
-  background: linear-gradient(135deg, var(--warn-fill-from), var(--warn-fill-to)) !important;
-  border: 1px solid var(--warn-border) !important;
-  color: var(--text-white) !important;
-  box-shadow: inset 0 1px 0 var(--inset-highlight-sm);
-  backdrop-filter: var(--blur-sm);
-  -webkit-backdrop-filter: var(--blur-sm);
+  @include glass-button-surface(
+    var(--warn-fill),
+    var(--warn-fill-hover),
+    var(--warn-border),
+    var(--warn-border-hover),
+    var(--text-white)
+  );
 }
 
 .mat-mdc-outlined-button.mat-warn,
 .mat-mdc-button.mat-warn[mat-stroked-button] {
-  --mdc-outlined-button-outline-color: var(--warn-outline-color);
-  --mdc-outlined-button-label-text-color: var(--danger-label);
-  background: linear-gradient(135deg, var(--warn-outline-from), var(--warn-outline-to)) !important;
-  border-color: var(--warn-border) !important;
-  color: var(--danger-label) !important;
-  box-shadow: inset 0 1px 0 var(--inset-highlight-faint);
+  @include glass-button-surface(
+    var(--warn-outline-fill),
+    var(--warn-outline-fill-hover),
+    var(--warn-outline-color),
+    var(--warn-border-hover),
+    var(--danger-label)
+  );
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .mat-mdc-button:not(.mat-mdc-icon-button),
+  .mat-mdc-raised-button,
+  .mat-mdc-unelevated-button,
+  .mat-mdc-outlined-button,
+  .mat-mdc-protected-button {
+    background: var(--fallback-solid) !important;
+  }
 }

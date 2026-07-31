@@ -1,5 +1,6 @@
 import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -12,7 +13,7 @@ import { SnippetActionsService } from '@app/services/ui/snippet-actions.service'
 
 @Component({
   selector: 'app-footer',
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './footer.component.html',
   styleUrl: './footer.component.scss',
 })
@@ -21,6 +22,9 @@ export class FooterComponent {
   private dialogService = inject(DialogService);
   private snippetActions = inject(SnippetActionsService);
   private snackbar = inject(SnackbarService);
+
+  readonly githubUrl = 'https://github.com/slurrps-mcgee/Snippy';
+  readonly licenseUrl = 'https://github.com/slurrps-mcgee/Snippy/blob/main/LICENSE';
 
   openAssets() {
     this.dialogService.open(AssetsDialogComponent, 'lg');

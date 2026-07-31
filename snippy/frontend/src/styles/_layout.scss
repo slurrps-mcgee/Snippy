@@ -1,12 +1,42 @@
 /* Page shells and shared Tailwind component utilities */
 
 @layer components {
+  /* Align utility CTAs with Material glass buttons */
   .btn-primary {
-    @apply rounded-lg bg-violet-600 px-5 py-3 text-sm font-semibold text-white transition-colors duration-200 hover:bg-violet-700;
+    @apply inline-flex items-center justify-center rounded-lg border px-5 py-3 text-sm font-semibold text-slate-50 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-200;
+    background: var(--btn-primary-bg);
+    border-color: var(--btn-primary-border);
+    color: var(--btn-primary-text);
+
+    &:hover {
+      background: var(--btn-primary-bg-hover);
+      border-color: var(--btn-primary-border-hover);
+    }
   }
 
   .btn-secondary {
-    @apply rounded-lg border border-white/25 bg-white/10 px-5 py-3 text-sm font-semibold text-slate-100 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-200 hover:border-white/40 hover:bg-white/15 hover:text-white;
+    @apply inline-flex items-center justify-center rounded-lg border px-5 py-3 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-200;
+    background: var(--btn-neutral-bg);
+    border-color: var(--btn-neutral-border);
+    color: var(--btn-neutral-text);
+
+    &:hover {
+      background: var(--btn-neutral-bg-hover);
+      border-color: var(--btn-neutral-border-hover);
+      color: var(--text-white);
+    }
+  }
+
+  .btn-accent {
+    @apply inline-flex items-center justify-center rounded-lg border px-5 py-3 text-sm font-semibold shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition-colors duration-200;
+    background: var(--btn-accent-bg);
+    border-color: var(--btn-accent-border);
+    color: var(--btn-accent-text);
+
+    &:hover {
+      background: var(--btn-accent-bg-hover);
+      border-color: var(--btn-accent-border-hover);
+    }
   }
 
   .section-title {

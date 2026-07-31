@@ -9,6 +9,21 @@ export const routes: Routes = [
   { path: '', component: HomePageComponent, data: { header: 'landing' satisfies HeaderMode } },
 
   {
+    path: 'privacy',
+    loadComponent: () =>
+      import('./pages/privacy-policy-page/privacy-policy-page.component').then(
+        m => m.PrivacyPolicyPageComponent
+      ),
+    data: { header: 'landing' satisfies HeaderMode },
+  },
+  {
+    path: 'terms',
+    loadComponent: () =>
+      import('./pages/terms-page/terms-page.component').then(m => m.TermsPageComponent),
+    data: { header: 'landing' satisfies HeaderMode },
+  },
+
+  {
     path: 'home',
     loadComponent: () =>
       import('./pages/user-home-page/user-home-page.component').then(m => m.UserHomePageComponent),
