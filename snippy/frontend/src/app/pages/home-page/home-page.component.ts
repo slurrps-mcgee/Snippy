@@ -2,14 +2,14 @@ import { Component, DOCUMENT, DestroyRef, inject } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
 import { Router } from '@angular/router';
-import { MatButton } from '@angular/material/button';
+import { MatButton, MatAnchor } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { filter, take } from 'rxjs';
 
 @Component({
   selector: 'app-home-page',
-  imports: [MatButton, MatIconModule],
+  imports: [MatButton, MatAnchor, MatIconModule],
   templateUrl: './home-page.component.html',
   styleUrl: './home-page.component.scss'
 })
