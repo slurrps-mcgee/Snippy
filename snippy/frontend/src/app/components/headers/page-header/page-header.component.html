@@ -2,11 +2,19 @@
 @case ('landing') {
 <header class="site-header">
   <div class="page-container flex items-center justify-between py-3">
-    <a href="/" class="brand-mark" (click)="$event.preventDefault()">
-      <span class="brand-star" aria-hidden="true">✦</span>
-      Snippy
-    </a>
+    @if (user()) {
+      <a routerLink="/home" class="brand-mark">
+        <span class="brand-star" aria-hidden="true">✦</span>
+        Snippy
+      </a>
+    <app-user-menu></app-user-menu>
+    } @else {
+      <a routerLink="/" class="brand-mark">
+        <span class="brand-star" aria-hidden="true">✦</span>
+        Snippy
+      </a>
     <button mat-raised-button color="primary" (click)="login()">Log in</button>
+    }
   </div>
 </header>
 }
