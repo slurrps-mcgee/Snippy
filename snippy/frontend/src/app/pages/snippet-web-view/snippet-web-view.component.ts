@@ -1,6 +1,6 @@
-import { Component, ViewChild, effect, AfterViewInit, OnInit, OnDestroy, inject, DestroyRef, HostListener } from '@angular/core';
+import { Component, ViewChild, effect, AfterViewInit, OnInit, OnDestroy, inject, DestroyRef, HostListener, ChangeDetectionStrategy } from '@angular/core';
 import { AngularSplitModule } from 'angular-split';
-import { CommonModule } from '@angular/common';
+
 import { SnippetEditorComponent } from '@app/components/editor/snippet-editor/snippet-editor.component';
 import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
@@ -15,12 +15,12 @@ import { PreviewConsoleService } from '@app/services/ui/preview-console.service'
 @Component({
   selector: 'app-snippet-web-view',
   imports: [
-    CommonModule,
     AngularSplitModule,
     SnippetEditorComponent,
-    SnippetPreviewComponent,
-  ],
+    SnippetPreviewComponent
+],
   templateUrl: './snippet-web-view.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-web-view.component.scss',
 })
 export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy {

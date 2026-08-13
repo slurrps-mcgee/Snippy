@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
@@ -32,6 +32,7 @@ import { SnippetStatBarComponent } from '@app/components/ui/snippet-stat-bar/sni
     SnippetStatBarComponent,
   ],
   templateUrl: './snippet-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-list.component.scss',
 })
 export class SnippetListComponent {

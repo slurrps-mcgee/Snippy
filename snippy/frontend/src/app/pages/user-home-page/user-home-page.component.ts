@@ -1,9 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
-import { CommonModule } from '@angular/common';
+
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
 import { SnippetListComponent } from '@app/components/lists/snippet-list/snippet-list.component';
 import { CollectionListComponent } from '@app/components/lists/collection-list/collection-list.component';
@@ -20,7 +20,6 @@ import { ListPageState } from '@app/utils/list-page-state';
 @Component({
   selector: 'app-user-home-page',
   imports: [
-    CommonModule,
     SnippetListComponent,
     CollectionListComponent,
     MatTabsModule,
@@ -28,9 +27,10 @@ import { ListPageState } from '@app/utils/list-page-state';
     MatButtonModule,
     MatIconModule,
     UserIdentityHeaderComponent,
-    AsyncStateComponent,
-  ],
+    AsyncStateComponent
+],
   templateUrl: './user-home-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-home-page.component.scss'
 })
 export class UserHomePageComponent implements OnInit {

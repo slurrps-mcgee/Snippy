@@ -7,6 +7,7 @@ import {
   computed,
   inject,
   signal,
+  ChangeDetectionStrategy
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -34,6 +35,7 @@ export type EmbedZoom = 1 | 0.5 | 0.25;
     EmbedCodePaneComponent,
   ],
   templateUrl: './embed-player.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './embed-player.component.scss',
 })
 export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {

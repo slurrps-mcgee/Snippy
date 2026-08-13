@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 /**
@@ -8,6 +8,7 @@ import { RouterModule } from '@angular/router';
 @Component({
   selector: 'app-fork-attribution',
   imports: [RouterModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (parentShortId) {
     <span class="text-sm text-slate-300 flex flex-col">

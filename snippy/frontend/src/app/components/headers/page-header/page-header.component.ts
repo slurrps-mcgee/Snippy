@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, DestroyRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -28,7 +28,6 @@ import { SnippetStatBarComponent } from '@app/components/ui/snippet-stat-bar/sni
 @Component({
   selector: 'app-page-header',
   imports: [
-    CommonModule,
     FormsModule,
     RouterModule,
     MatButtonModule,
@@ -40,9 +39,10 @@ import { SnippetStatBarComponent } from '@app/components/ui/snippet-stat-bar/sni
     MatTooltipModule,
     UserMenuComponent,
     ForkAttributionComponent,
-    SnippetStatBarComponent,
-  ],
+    SnippetStatBarComponent
+],
   templateUrl: './page-header.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './page-header.component.scss',
 })
 export class PageHeaderComponent implements OnInit {
@@ -127,8 +127,9 @@ export class PageHeaderComponent implements OnInit {
     const snippet = this.snippetStore.snippet();
     if (!snippet || !this.canEdit) return;
 
+    const guest = this.isGuest;
     const dialogRef = this.dialogService.open(SnippetSettingsDialogComponent, 'xl', {
-      data: snippet,
+      data: { ...snippet, guestMode: guest },
       minHeight: '50vh',
       panelClass: 'snippy-dialog-tall',
     });
@@ -137,8 +138,9 @@ export class PageHeaderComponent implements OnInit {
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(result => {
-        if (result) {
-          this.snippetStore.updateSnippetSettings(result);
+        if (!result) return;
+        this.snippetStore.updateSnippetSettings(result);
+        if (!guest) {
           this.snippetSaveUI.saveSnippetWithUI(this.snippetStore, this.user);
         }
       });

@@ -1,5 +1,5 @@
-import { Component, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -17,7 +17,6 @@ const DESCRIPTION_MAX_LENGTH = 2500;
 @Component({
   selector: 'app-collection-create-dialog',
   imports: [
-    CommonModule,
     FormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -25,9 +24,10 @@ const DESCRIPTION_MAX_LENGTH = 2500;
     MatButtonModule,
     MatSlideToggleModule,
     MatProgressSpinnerModule,
-    MatDividerModule,
-  ],
+    MatDividerModule
+],
   templateUrl: './collection-create-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './collection-create-dialog.component.scss',
 })
 export class CollectionCreateDialogComponent {

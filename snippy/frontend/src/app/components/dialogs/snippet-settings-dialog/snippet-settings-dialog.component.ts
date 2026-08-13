@@ -1,5 +1,5 @@
-import { Component, Inject, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -15,10 +15,11 @@ import { ExternalResource } from '@app/interfaces/externalResource.interface';
 import { Snippet } from '@app/interfaces/snippet.interface';
 import { DialogService } from '@app/services/ui/dialog.service';
 
+export type SnippetSettingsDialogData = Snippet & { guestMode?: boolean };
+
 @Component({
   selector: 'app-snippet-settings-dialog',
   imports: [
-    CommonModule,
     FormsModule,
     MatDialogModule,
     MatFormFieldModule,
@@ -30,13 +31,14 @@ import { DialogService } from '@app/services/ui/dialog.service';
     MatIconModule,
     MatDividerModule,
     ExternalResourcesListComponent
-  ],
+],
   templateUrl: './snippet-settings-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-settings-dialog.component.scss'
 })
 export class SnippetSettingsDialogComponent {
   dialogRef = inject(MatDialogRef<SnippetSettingsDialogComponent>);
-  data = inject<Snippet>(MAT_DIALOG_DATA);
+  data = inject<SnippetSettingsDialogData>(MAT_DIALOG_DATA);
   dialogService = inject(DialogService);
 
   description: string;
@@ -45,8 +47,10 @@ export class SnippetSettingsDialogComponent {
   newTag: string = '';
   cssResources: ExternalResource[] = [];
   jsResources: ExternalResource[] = [];
+  readonly guestMode: boolean;
 
   constructor() {
+    this.guestMode = !!this.data.guestMode;
     this.description = this.data.description || '';
     this.isPrivate = this.data.isPrivate;
     this.tags = [...(this.data.tags || [])];

@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
@@ -27,6 +27,7 @@ export type EmbedTabOption = 'html' | 'css' | 'js' | 'result';
     MatSlideToggleModule,
   ],
   templateUrl: './embed-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './embed-dialog.component.scss',
 })
 export class EmbedDialogComponent {

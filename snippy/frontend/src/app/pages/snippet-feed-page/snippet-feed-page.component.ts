@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { SnippetSort } from '@app/services/api/snippet.api.service';
@@ -22,6 +22,7 @@ const FEED_TITLES: Record<SnippetFeed, string> = {
   selector: 'app-snippet-feed-page',
   imports: [SnippetListComponent, SortPageHeaderComponent, AsyncStateComponent],
   templateUrl: './snippet-feed-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-feed-page.component.scss',
 })
 export class SnippetFeedPageComponent implements OnInit {

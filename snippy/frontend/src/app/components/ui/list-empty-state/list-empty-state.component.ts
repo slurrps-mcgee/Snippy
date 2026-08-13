@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { MatIconModule } from '@angular/material/icon';
 
 /** Placeholder shown inside a list grid when there are no results. */
 @Component({
   selector: 'app-list-empty-state',
   imports: [MatIconModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     <div class="col-span-full flex flex-col items-center gap-2 p-12 text-slate-300">
       <mat-icon>{{ icon }}</mat-icon>

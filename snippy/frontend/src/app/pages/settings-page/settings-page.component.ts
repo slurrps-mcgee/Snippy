@@ -1,5 +1,5 @@
-import { Component, DestroyRef, OnInit, effect, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, OnInit, effect, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError, firstValueFrom } from 'rxjs';
@@ -20,7 +20,6 @@ type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 
 @Component({
   selector: 'app-settings-page',
   imports: [
-    CommonModule,
     FormsModule,
     MatTabsModule,
     MatFormFieldModule,
@@ -28,9 +27,10 @@ type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatDividerModule,
-  ],
+    MatDividerModule
+],
   templateUrl: './settings-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './settings-page.component.scss',
 })
 export class SettingsPageComponent implements OnInit {

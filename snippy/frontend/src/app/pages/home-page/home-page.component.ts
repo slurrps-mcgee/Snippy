@@ -1,4 +1,4 @@
-import { Component, DOCUMENT, DestroyRef, inject } from '@angular/core';
+import { Component, DOCUMENT, DestroyRef, inject, ChangeDetectionStrategy } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
 import { Router, RouterLink } from '@angular/router';
@@ -11,6 +11,7 @@ import { filter, take } from 'rxjs';
   selector: 'app-home-page',
   imports: [MatButton, MatAnchor, MatIconModule, RouterLink],
   templateUrl: './home-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './home-page.component.scss'
 })
 export class HomePageComponent {

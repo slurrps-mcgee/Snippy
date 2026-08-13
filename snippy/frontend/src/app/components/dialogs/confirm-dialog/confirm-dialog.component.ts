@@ -1,8 +1,8 @@
-import { Component, Inject } from '@angular/core';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
-import { CommonModule } from '@angular/common';
+
 
 export interface ConfirmDialogData {
   title: string;
@@ -14,12 +14,12 @@ export interface ConfirmDialogData {
 @Component({
   selector: 'app-confirm-dialog',
   imports: [
-    CommonModule,
     MatDialogModule,
     MatButtonModule,
-    MatDividerModule,
-  ],
+    MatDividerModule
+],
   templateUrl: './confirm-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './confirm-dialog.component.scss'
 })
 export class ConfirmDialogComponent {

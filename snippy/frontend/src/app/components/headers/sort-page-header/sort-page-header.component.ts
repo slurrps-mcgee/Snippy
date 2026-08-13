@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
 import { SnippetSort } from '@app/services/api/snippet.api.service';
@@ -12,6 +12,7 @@ export interface SortOption {
   selector: 'app-sort-page-header',
   imports: [MatFormFieldModule, MatSelectModule],
   templateUrl: './sort-page-header.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './sort-page-header.component.scss',
 })
 export class SortPageHeaderComponent {

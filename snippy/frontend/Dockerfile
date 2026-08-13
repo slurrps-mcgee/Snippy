@@ -1,5 +1,5 @@
 # Step 1 build the angular application using production config
-FROM node:20 AS build
+FROM node:22 AS build
 
 WORKDIR /app
 

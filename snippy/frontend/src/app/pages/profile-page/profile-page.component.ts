@@ -1,5 +1,5 @@
-import { Component, DestroyRef, OnInit, inject, signal, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
@@ -24,7 +24,6 @@ import { ListPageState } from '@app/utils/list-page-state';
 @Component({
   selector: 'app-profile-page',
   imports: [
-    CommonModule,
     MatTabsModule,
     MatButtonModule,
     MatIconModule,
@@ -32,9 +31,10 @@ import { ListPageState } from '@app/utils/list-page-state';
     SnippetListComponent,
     CollectionListComponent,
     UserIdentityHeaderComponent,
-    AsyncStateComponent,
-  ],
+    AsyncStateComponent
+],
   templateUrl: './profile-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile-page.component.scss',
 })
 export class ProfilePageComponent implements OnInit {

@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -12,6 +12,7 @@ import { MatInputModule } from '@angular/material/input';
 @Component({
   selector: 'app-list-toolbar',
   imports: [FormsModule, MatButtonModule, MatFormFieldModule, MatIconModule, MatInputModule],
+  changeDetection: ChangeDetectionStrategy.Eager,
   templateUrl: './list-toolbar.component.html',
 })
 export class ListToolbarComponent {

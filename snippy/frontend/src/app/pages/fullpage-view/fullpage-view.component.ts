@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, OnDestroy, ViewChild, effect, DestroyRef } from '@angular/core';
+import { Component, inject, OnInit, OnDestroy, ViewChild, effect, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetPreviewComponent } from "@app/components/editor/snippet-preview/snippet-preview.component";
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
@@ -8,6 +8,7 @@ import { ActivatedRoute } from '@angular/router';
   selector: 'app-fullpage-view',
   imports: [SnippetPreviewComponent],
   templateUrl: './fullpage-view.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './fullpage-view.component.scss',
 })
 export class FullpageViewComponent implements OnInit, OnDestroy {

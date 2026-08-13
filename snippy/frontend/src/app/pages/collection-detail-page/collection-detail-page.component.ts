@@ -1,5 +1,5 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal } from '@angular/core';
-import { CommonModule, Location } from '@angular/common';
+import { Component, DestroyRef, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { PageEvent } from '@angular/material/paginator';
@@ -18,15 +18,15 @@ import { ListPageState } from '@app/utils/list-page-state';
 @Component({
   selector: 'app-collection-detail-page',
   imports: [
-    CommonModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
     MatChipsModule,
     SnippetListComponent,
-    AsyncStateComponent,
-  ],
+    AsyncStateComponent
+],
   templateUrl: './collection-detail-page.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './collection-detail-page.component.scss',
 })
 export class CollectionDetailPageComponent implements OnInit {

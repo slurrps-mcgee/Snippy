@@ -1,5 +1,5 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
@@ -14,8 +14,9 @@ import { DialogService } from '@app/services/ui/dialog.service';
 
 @Component({
   selector: 'app-snippet-editor',
-  imports: [CommonModule, MatMenuModule, MatIconModule, MatButtonModule],
+  imports: [MatMenuModule, MatIconModule, MatButtonModule],
   templateUrl: './snippet-editor.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-editor.component.scss',
 })
 export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy {

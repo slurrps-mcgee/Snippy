@@ -1,5 +1,5 @@
-import { Component, ElementRef, OnInit, ViewChild, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ElementRef, OnInit, ViewChild, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,15 +16,15 @@ import { MatDividerModule } from '@angular/material/divider';
 @Component({
   selector: 'app-assets-dialog',
   imports: [
-    CommonModule,
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatTooltipModule, 
-    MatDividerModule,
-  ],
+    MatTooltipModule,
+    MatDividerModule
+],
   templateUrl: './assets-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './assets-dialog.component.scss',
 })
 export class AssetsDialogComponent implements OnInit {

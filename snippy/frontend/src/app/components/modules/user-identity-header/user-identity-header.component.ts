@@ -1,10 +1,11 @@
-import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
+
 
 @Component({
   selector: 'app-user-identity-header',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './user-identity-header.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-identity-header.component.scss',
 })
 export class UserIdentityHeaderComponent {

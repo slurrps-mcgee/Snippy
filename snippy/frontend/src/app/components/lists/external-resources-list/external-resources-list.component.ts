@@ -5,9 +5,9 @@ import { MatInputModule } from '@angular/material/input';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, DestroyRef, EventEmitter, Input, Output, inject, OnInit } from '@angular/core';
+import { Component, DestroyRef, EventEmitter, Input, Output, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { CommonModule } from '@angular/common';
+
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { ExternalResource } from '@app/interfaces/externalResource.interface';
 import { CdnLibraryHit } from '@app/interfaces/cdnLibrary.interface';
@@ -27,7 +27,6 @@ import {
   selector: 'app-external-resources-list',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     ReactiveFormsModule,
     MatListModule,
@@ -37,9 +36,10 @@ import {
     MatAutocompleteModule,
     MatProgressSpinnerModule,
     MatButtonModule,
-    DragDropModule,
-  ],
+    DragDropModule
+],
   templateUrl: './external-resources-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './external-resources-list.component.scss',
 })
 export class ExternalResourcesListComponent implements OnInit {

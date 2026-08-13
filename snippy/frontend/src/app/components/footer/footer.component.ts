@@ -1,5 +1,5 @@
-import { Component, computed, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -16,8 +16,9 @@ import { PreviewConsoleService } from '@app/services/ui/preview-console.service'
 
 @Component({
   selector: 'app-footer',
-  imports: [CommonModule, RouterLink, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [RouterLink, MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './footer.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './footer.component.scss',
 })
 export class FooterComponent {

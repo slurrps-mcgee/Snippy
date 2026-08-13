@@ -1,6 +1,6 @@
 {
   "name": "snippy_api",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "main": "./src/index.js",
   "scripts": {
     "start": "node dist/index.js",
@@ -42,9 +42,9 @@
     "multer": "^2.0.2",
     "mysql2": "^3.14.4",
     "nanoid": "^5.1.6",
-    "nodemailer": "^7.0.6",
+    "nodemailer": "^9.0.5",
     "pg": "^8.16.3",
-    "sequelize": "^6.37.7",
+    "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.3",
     "sequelize-typescript": "^2.1.6",
     "swagger-jsdoc": "^6.2.8",
@@ -73,6 +73,6 @@
     "nodemon": "^3.1.10",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
-    "typescript": "^5.9.2"
+    "typescript": "^6.0.3"
   }
 }

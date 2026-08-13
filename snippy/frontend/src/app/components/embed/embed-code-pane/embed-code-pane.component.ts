@@ -9,8 +9,9 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
+  ChangeDetectionStrategy
 } from '@angular/core';
-import { CommonModule } from '@angular/common';
+
 import { EditorView, basicSetup } from 'codemirror';
 import { Compartment, EditorState } from '@codemirror/state';
 import { html } from '@codemirror/lang-html';
@@ -20,8 +21,9 @@ import { oneDark } from '@codemirror/theme-one-dark';
 
 @Component({
   selector: 'app-embed-code-pane',
-  imports: [CommonModule],
+  imports: [],
   template: `<div class="embed-code-pane" #host></div>`,
+  changeDetection: ChangeDetectionStrategy.Eager,
   styles: [
     `
       :host {

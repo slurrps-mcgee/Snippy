@@ -1,4 +1,4 @@
-import { Component, DestroyRef, OnInit, inject } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -7,18 +7,18 @@ import { FooterComponent } from '@app/components/footer/footer.component';
 import { PageHeaderComponent } from '@app/components/headers/page-header/page-header.component';
 import { PreviewConsolePanelComponent } from '@app/components/editor/preview-console-panel/preview-console-panel.component';
 import { HeaderMode } from '@app/interfaces/header-mode';
-import { CommonModule } from '@angular/common';
+
 
 @Component({
   selector: 'app-root',
   imports: [
-    CommonModule,
     RouterOutlet,
     FooterComponent,
     PageHeaderComponent,
-    PreviewConsolePanelComponent,
-  ],
+    PreviewConsolePanelComponent
+],
   templateUrl: './app.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './app.component.scss'
 })
 export class AppComponent implements OnInit {

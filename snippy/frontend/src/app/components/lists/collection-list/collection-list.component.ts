@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter } from '@angular/core';
+import { Component, Input, Output, EventEmitter, ChangeDetectionStrategy } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
@@ -23,6 +23,7 @@ import { ListPaginatorComponent } from '@app/components/ui/list-paginator/list-p
     ListPaginatorComponent,
   ],
   templateUrl: './collection-list.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './collection-list.component.scss',
 })
 export class CollectionListComponent {

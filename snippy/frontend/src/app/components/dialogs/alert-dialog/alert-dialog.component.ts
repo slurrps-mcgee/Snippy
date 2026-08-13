@@ -1,5 +1,5 @@
-import { Component, Inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, Inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -12,8 +12,9 @@ export interface AlertDialogData {
 
 @Component({
   selector: 'app-alert-dialog',
-  imports: [CommonModule, MatDialogModule, MatButtonModule, MatDividerModule],
+  imports: [MatDialogModule, MatButtonModule, MatDividerModule],
   templateUrl: './alert-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './alert-dialog.component.scss',
 })
 export class AlertDialogComponent {

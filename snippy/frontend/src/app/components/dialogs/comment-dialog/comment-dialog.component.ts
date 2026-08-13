@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,7 +27,6 @@ export interface CommentDialogData {
 @Component({
   selector: 'app-comment-dialog',
   imports: [
-    CommonModule,
     FormsModule,
     MatDialogModule,
     MatButtonModule,
@@ -36,9 +35,10 @@ export interface CommentDialogData {
     MatInputModule,
     MatProgressSpinnerModule,
     MatDividerModule,
-    MatTooltipModule,
-  ],
+    MatTooltipModule
+],
   templateUrl: './comment-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './comment-dialog.component.scss',
 })
 export class CommentDialogComponent implements OnInit {

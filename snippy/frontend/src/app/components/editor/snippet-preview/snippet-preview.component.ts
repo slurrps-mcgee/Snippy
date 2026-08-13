@@ -1,5 +1,5 @@
-import { Component, ViewChild, ElementRef, OnDestroy, inject, DestroyRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, ViewChild, ElementRef, OnDestroy, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+
 import { ExternalResource } from '@app/interfaces/externalResource.interface';
 import {
   ConsoleLevel,
@@ -10,8 +10,9 @@ import { fromEvent } from 'rxjs';
 
 @Component({
   selector: 'app-snippet-preview',
-  imports: [CommonModule],
+  imports: [],
   templateUrl: './snippet-preview.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-preview.component.scss',
 })
 export class SnippetPreviewComponent implements OnDestroy {

@@ -5,9 +5,8 @@
   "compilerOptions": {
     "outDir": "./dist/out-tsc",
     "rootDir": "./src",
-    "baseUrl": "./",
     "paths": {
-      "@app/*": ["src/app/*"]
+      "@app/*": ["./src/app/*"]
     },
     "strict": true,
     "noImplicitOverride": true,

@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatIconModule } from '@angular/material/icon';
 
@@ -6,6 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
   selector: 'app-async-state',
   imports: [MatProgressSpinnerModule, MatIconModule],
   templateUrl: './async-state.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './async-state.component.scss',
 })
 export class AsyncStateComponent {

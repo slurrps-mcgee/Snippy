@@ -1,5 +1,5 @@
-import { Component, DOCUMENT, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, DOCUMENT, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,8 +10,9 @@ import { NavigationService } from '@app/services/ui/navigation.service';
 
 @Component({
   selector: 'app-user-menu',
-  imports: [CommonModule, MatMenuModule, MatButtonModule],
+  imports: [MatMenuModule, MatButtonModule],
   templateUrl: './user-menu.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './user-menu.component.scss',
 })
 export class UserMenuComponent {

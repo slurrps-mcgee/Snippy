@@ -1,5 +1,5 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+
 import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
@@ -18,14 +18,14 @@ export interface AddToCollectionDialogData {
 @Component({
   selector: 'app-add-to-collection-dialog',
   imports: [
-    CommonModule,
     MatDialogModule,
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatDividerModule,
-  ],
+    MatDividerModule
+],
   templateUrl: './add-to-collection-dialog.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './add-to-collection-dialog.component.scss',
 })
 export class AddToCollectionDialogComponent implements OnInit {

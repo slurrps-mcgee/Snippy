@@ -1,5 +1,5 @@
-import { Component, HostListener, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, HostListener, inject, ChangeDetectionStrategy } from '@angular/core';
+
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
@@ -7,8 +7,9 @@ import { PreviewConsoleService } from '@app/services/ui/preview-console.service'
 
 @Component({
   selector: 'app-preview-console-panel',
-  imports: [CommonModule, MatButtonModule, MatIconModule, MatTooltipModule],
+  imports: [MatButtonModule, MatIconModule, MatTooltipModule],
   templateUrl: './preview-console-panel.component.html',
+  changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './preview-console-panel.component.scss',
 })
 export class PreviewConsolePanelComponent {
