@@ -30,7 +30,7 @@ The Snippy backend is a Node.js / Express REST API that powers a CodePen-like pr
 
 | Module | Mount | Responsibility |
 |--------|-------|----------------|
-| User | `/users` | Ensure/create profile, update, delete, username check, follow graph |
+| User | `/users` | Ensure/create profile, update (incl. privacy + editorPreferences), delete, username check, follow graph |
 | Snippet | `/snippets` | CRUD, fork, search, feed, views, embed, public/private |
 | Comment | `/comments` | CRUD on snippet comments |
 | Favorite | `/favorites` | List, status check, toggle |
@@ -155,6 +155,7 @@ Assets      — BelongsTo Users; unique (auth0_id, object_key)
 | `displayName`, `bio`, `pictureUrl` | Profile |
 | `isAdmin` | First registered user becomes admin |
 | `isPrivate` | Private profiles return 403 to non-owners |
+| `editorPreferences` | JSON (`editor_preferences`); null → merged defaults on owner responses |
 
 #### Snippets
 
@@ -421,6 +422,7 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
   pictureUrl: string | null;
   isAdmin?: boolean;      // owner responses only
   isPrivate?: boolean;    // owner responses only
+  editorPreferences?: EditorPreferences; // owner responses only; always merged with defaults
   isFollowing?: boolean;  // when viewing another user
   followerCount?: number;
   followingCount?: number;
@@ -428,6 +430,7 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 }
 ```
 
+Defaults and allowlists live in [`common/utilities/editor-preferences.ts`](../snippy/backend/src/common/utilities/editor-preferences.ts) (`DEFAULT_EDITOR_PREFERENCES`, `EDITOR_THEME_KEYS`, `EDITOR_FONT_KEYS`). Keep theme keys in sync with the frontend registry when adding themes.
 **AssetDTO**
 
 ```ts
@@ -456,7 +459,7 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 
 #### `GET /users/me`
 
-Returns the authenticated user’s profile including `isAdmin`, `isPrivate`, `followerCount`, `followingCount`, and `assets`.
+Returns the authenticated user’s profile including `isAdmin`, `isPrivate`, `editorPreferences` (merged with defaults), `followerCount`, `followingCount`, and `assets`.
 
 **Response `200`:** `{ success: true, user: UserDTO }`
 
@@ -498,7 +501,7 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
 - First user in the database is created with `isAdmin: true`
 - Username may be auto-generated from adjective+noun helper
 
-**Response:** `200` (existing) or `201` (created) — `{ success: true, user: UserDTO }`
+**Response:** `200` (existing) or `201` (created) — `{ success: true, user: UserDTO }` (owner fields including merged `editorPreferences`)
 
 #### `PUT /users`
 
@@ -510,11 +513,25 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
   "displayName": "string",
   "bio": "string",
   "pictureUrl": "https://...",
-  "isPrivate": false
+  "isPrivate": false,
+  "editorPreferences": {
+    "fontSize": 15,
+    "fontFamily": "monospace",
+    "indentWith": "spaces",
+    "indentWidth": 2,
+    "lineNumbers": true,
+    "lineWrapping": true,
+    "codeFolding": true,
+    "autocomplete": true,
+    "matchBrackets": true,
+    "theme": "one-dark"
+  }
 }
 ```
 
 Cannot change `auth0Id` or `isAdmin`.
+
+`editorPreferences` may be a partial object; the server merges it with the user’s existing prefs and defaults (`mergeEditorPreferences`). Joi bounds: `fontSize` 10–24, `indentWidth` 1–8, `theme` / `fontFamily` from allowlists in [`editor-preferences.ts`](../snippy/backend/src/common/utilities/editor-preferences.ts).
 
 **Response `200`:** `{ success: true, user: UserDTO }`
 

@@ -48,6 +48,15 @@
     </mat-slide-toggle>
   </div>
 
+  <mat-form-field appearance="outline" class="w-full mb-4">
+    <mat-label>Editor theme</mat-label>
+    <mat-select [value]="theme()" (selectionChange)="onThemeChange($event.value)">
+      @for (t of themes; track t.key) {
+      <mat-option [value]="t.key">{{ t.label }} ({{ t.group }})</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+
   <label class="mb-1 block text-sm font-medium text-slate-200">Height: {{ height() }}px</label>
   <mat-slider class="w-full mb-4" min="150" max="800" step="10" discrete>
     <input matSliderThumb [value]="height()" (valueChange)="onHeightChange($event)" />

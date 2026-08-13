@@ -23,13 +23,14 @@ Manual QA checklist for fully exercising the Angular frontend. Use this after UI
 17. [Comments](#17-comments)
 18. [Assets](#18-assets)
 19. [Settings](#19-settings)
-20. [Search (server-side)](#20-search-server-side)
-21. [Dialogs, snackbars, and glass UI](#21-dialogs-snackbars-and-glass-ui)
-22. [Guards and navigation edge cases](#22-guards-and-navigation-edge-cases)
-23. [Responsive and accessibility](#23-responsive-and-accessibility)
-24. [Error and empty states](#24-error-and-empty-states)
-25. [Regression matrix](#25-regression-matrix)
-26. [Sign-off](#26-sign-off)
+20. [Embed player](#20-embed-player)
+21. [Search (server-side)](#21-search-server-side)
+22. [Dialogs, snackbars, and glass UI](#22-dialogs-snackbars-and-glass-ui)
+23. [Guards and navigation edge cases](#23-guards-and-navigation-edge-cases)
+24. [Responsive and accessibility](#24-responsive-and-accessibility)
+25. [Error and empty states](#25-error-and-empty-states)
+26. [Regression matrix](#26-regression-matrix)
+27. [Sign-off](#27-sign-off)
 
 ---
 
@@ -42,7 +43,8 @@ Manual QA checklist for fully exercising the Angular frontend. Use this after UI
 - Collections create/open/delete/add/remove
 - Editor layouts, save, unsaved-changes guard, full-page preview
 - Assets upload/copy/delete (when MinIO enabled)
-- Settings profile/username/delete account
+- Settings profile / editor preferences / account privacy / username / delete account
+- Embed player (tabs, editable, theme query param)
 - Server-side search (`q`) on lists and collections
 - Shared UI: pill tabs, glass cards, dialogs, snackbars
 
@@ -329,13 +331,32 @@ On home / explore / following / profile lists:
 | ST2 | Edit profile → Save | Success; header/identity reflect new name |
 | ST3 | Username availability | checking / available / taken / invalid / current hints |
 | ST4 | Update username | Success; routes/`@` handle new name |
-| ST5 | Delete account Cancel | No deletion |
-| ST6 | Delete account Confirm | Account deleted; logged out (destructive — use disposable account) |
-| ST7 | Danger zone styling | Glass danger panel readable |
+| ST5 | Editor tab → change theme/font | Live preview updates immediately |
+| ST6 | Editor tab → Save preferences | Success; reopen snippet editor — prefs applied; survive refresh |
+| ST7 | Account → toggle Private → Save privacy | Success toast; non-owner cannot open profile (403 / blocked UI) |
+| ST8 | Account → toggle Public → Save privacy | Profile visible again |
+| ST9 | Delete account Cancel | No deletion |
+| ST10 | Delete account Confirm | Account deleted; logged out (destructive — use disposable account) |
+| ST11 | Danger zone styling | Glass danger panel readable |
 
 ---
 
-## 20. Search (server-side)
+## 20. Embed player
+
+Requires a **public** saved snippet with a `shortId`.
+
+| ID | Steps | Expected |
+|----|-------|----------|
+| EM1 | Open Embed dialog from editor | Preview iframe + copyable HTML; blocked if private/unsaved |
+| EM2 | Select theme (e.g. Dracula) | Preview URL includes `theme=dracula`; code pane uses that theme |
+| EM3 | Open `/embed/{shortId}?theme=light` | Light theme on code tabs |
+| EM4 | Open with invalid `theme=nope` | Editor still loads; theme falls back (defaults / viewer prefs) |
+| EM5 | `editable=true` | Local edits allowed; not persisted to snippet |
+| EM6 | `default-tab=css,result` | CSS + Result panes shown |
+
+---
+
+## 21. Search (server-side)
 
 For each surface below: type a query that matches an item **not on page 1** (or reduce page size), wait ~400ms debounce, verify Network call includes `q=...` and UI total updates.
 
@@ -356,7 +377,7 @@ Also verify empty query does not send useless search-only empty results.
 
 ---
 
-## 21. Dialogs, snackbars, and glass UI
+## 22. Dialogs, snackbars, and glass UI
 
 | ID | Steps | Expected |
 |----|-------|----------|
@@ -370,7 +391,7 @@ Also verify empty query does not send useless search-only empty results.
 
 ---
 
-## 22. Guards and navigation edge cases
+## 23. Guards and navigation edge cases
 
 | ID | Steps | Expected |
 |----|-------|----------|
@@ -383,7 +404,7 @@ Also verify empty query does not send useless search-only empty results.
 
 ---
 
-## 23. Responsive and accessibility
+## 24. Responsive and accessibility
 
 | ID | Steps | Expected |
 |----|-------|----------|
@@ -395,7 +416,7 @@ Also verify empty query does not send useless search-only empty results.
 
 ---
 
-## 24. Error and empty states
+## 25. Error and empty states
 
 | ID | Steps | Expected |
 |----|-------|----------|
@@ -406,7 +427,7 @@ Also verify empty query does not send useless search-only empty results.
 
 ---
 
-## 25. Regression matrix
+## 26. Regression matrix
 
 Quick cross-check after any large UI/store change:
 
@@ -418,13 +439,14 @@ Quick cross-check after any large UI/store change:
 | Social | S5–S7 | §12–13, §17 |
 | Collections | S8 | §14 |
 | Editor | S2–S3 | §15–16 |
-| Search | S9 | §20 |
+| Search | S9 | §21 |
 | Settings / Assets | — | §18–19 |
-| Visual system | — | §8, §21 |
+| Embed | — | §20 |
+| Visual system | — | §8, §22 |
 
 ---
 
-## 26. Sign-off
+## 27. Sign-off
 
 | Field | Value |
 |-------|--------|

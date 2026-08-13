@@ -84,6 +84,14 @@ export class Users extends Model<Users> {
   })
   isPrivate!: boolean;
 
+  @Column({
+    field: 'editor_preferences',
+    type: DataType.JSON,
+    allowNull: true,
+    defaultValue: null,
+  })
+  editorPreferences?: Record<string, unknown> | null;
+
   // Relations
   @HasMany(() => Snippets, {
     foreignKey: 'auth0Id',

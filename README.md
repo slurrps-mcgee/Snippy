@@ -19,6 +19,7 @@ Snippy is an open-source [CodePen](https://codepen.io/)-style app for writing, p
 - [Updating production images](#updating-production-images)
 - [Troubleshooting](#troubleshooting)
 - [Project layout](#project-layout)
+- [Documentation](#documentation)
 - [License and legal](#license-and-legal)
 
 ---
@@ -56,7 +57,10 @@ Compose loads environment variables from a root env file and wires the services 
 Shipped today:
 
 - Live HTML / CSS / JS editor with instant preview and layout options
+- Per-account editor preferences (theme, font, indent, line numbers, wrapping, folding, autocomplete) with Settings live preview
+- Guest `/try` editor and public `/embed/:shortId` player (tabs, editable, theme query params)
 - Public and private snippets, shareable links, full-page view
+- Account privacy toggle (private profiles hidden from others)
 - Favorites, comments, follows, collections, and forking
 - External CSS / JS resources on snippets
 - ZIP export of snippet files
@@ -549,12 +553,27 @@ Snippy/
 ├── .github/workflows/docker-image.yml # Build & push Hub images
 ├── LICENSE                            # MIT
 ├── README.md
+├── documentation/                     # Architecture & QA docs
+│   ├── frontend.md
+│   ├── backend.md
+│   ├── db.md
+│   ├── frontend-test-plan.md
+│   └── snippy-api.postman_collection.json
 └── snippy/
     ├── backend/                       # API
     ├── frontend/                      # Angular app
     ├── db/                            # MySQL image + init.sh
     └── minio/                         # MinIO bootstrap image
 ```
+
+### Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [documentation/frontend.md](./documentation/frontend.md) | Angular architecture, editor preferences, themes how-to, embed player |
+| [documentation/backend.md](./documentation/backend.md) | API layers, auth, `PUT /users` + `editorPreferences` |
+| [documentation/db.md](./documentation/db.md) | Schema (including `users.editor_preferences`) |
+| [documentation/frontend-test-plan.md](./documentation/frontend-test-plan.md) | Manual QA checklist |
 
 In-app legal pages (when the frontend is running):
 

@@ -91,6 +91,7 @@ Legend:
 | `picture_url` | VARCHAR(255) | NULL | Profile picture URL |
 | `is_admin` | BOOLEAN | DEFAULT: false | Admin flag for future admin features |
 | `is_private` | BOOLEAN | DEFAULT: false | Privacy setting for user profile |
+| `editor_preferences` | JSON | NULL | CodeMirror editor prefs bag; null → app merges defaults |
 | `created_at` | TIMESTAMP | NOT NULL | Account creation timestamp |
 | `updated_at` | TIMESTAMP | NOT NULL | Last update timestamp |
 
@@ -102,6 +103,8 @@ INDEX idx_users_username (user_name)
 INDEX idx_users_display_name (display_name)
 ```
 
+Added by migration [`20260813143000-005-add-user-editor-preferences.js`](../snippy/backend/src/database/migrations/20260813143000-005-add-user-editor-preferences.js).
+
 **Sample Data:**
 ```json
 {
@@ -112,11 +115,22 @@ INDEX idx_users_display_name (display_name)
   "picture_url": "https://auth0.com/pictures/...",
   "is_admin": false,
   "is_private": false,
+  "editor_preferences": {
+    "fontSize": 15,
+    "fontFamily": "monospace",
+    "indentWith": "spaces",
+    "indentWidth": 2,
+    "lineNumbers": true,
+    "lineWrapping": true,
+    "codeFolding": true,
+    "autocomplete": true,
+    "matchBrackets": true,
+    "theme": "one-dark"
+  },
   "created_at": "2024-01-15T10:30:00Z",
   "updated_at": "2024-01-20T15:45:00Z"
 }
 ```
-
 ---
 
 ### snippets

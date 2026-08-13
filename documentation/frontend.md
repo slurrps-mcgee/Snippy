@@ -15,28 +15,31 @@ Developer guide for the Angular SPA in [`snippy/frontend`](../snippy/frontend). 
 9. [UI services](#ui-services)
 10. [Pages & data flows](#pages--data-flows)
 11. [Snippet editing flow](#snippet-editing-flow)
-12. [Preview system](#preview-system)
-13. [Save, dirty tracking & navigation](#save-dirty-tracking--navigation)
-14. [Lists, feeds & pagination](#lists-feeds--pagination)
-15. [Dialogs](#dialogs)
-16. [Styles & design system](#styles--design-system)
-17. [Key interfaces](#key-interfaces)
-18. [End-to-end data flow](#end-to-end-data-flow)
-19. [Common gotchas](#common-gotchas)
+12. [Editor preferences & themes](#editor-preferences--themes)
+13. [Embed player](#embed-player)
+14. [Preview system](#preview-system)
+15. [Save, dirty tracking & navigation](#save-dirty-tracking--navigation)
+16. [Lists, feeds & pagination](#lists-feeds--pagination)
+17. [Dialogs](#dialogs)
+18. [Styles & design system](#styles--design-system)
+19. [Key interfaces](#key-interfaces)
+20. [End-to-end data flow](#end-to-end-data-flow)
+21. [Common gotchas](#common-gotchas)
+22. [Related docs](#related-docs)
 
 ---
 
 ## Overview
 
-Snippy’s frontend is an **Angular 20** standalone SPA that uses **signals** for domain state, **Auth0** for login, **Angular Material** for interactive chrome, and **Tailwind CSS v4** for layout utilities on top of a dark glass design system.
+Snippy’s frontend is an **Angular 22** standalone SPA that uses **signals** for domain state, **Auth0** for login, **Angular Material** for interactive chrome, and **Tailwind CSS v4** for layout utilities on top of a dark glass design system.
 
-Users can create, edit, preview, share, favorite, comment on, fork, and organize HTML/CSS/JS snippets. Marketing, legal, feed, profile, settings, editor, and full-page preview surfaces all share one shell (`app-page-header` + `router-outlet` + `app-footer`).
+Users can create, edit, preview, share, favorite, comment on, fork, and organize HTML/CSS/JS snippets. Marketing, legal, feed, profile, settings, editor, guest try, embed player, and full-page preview surfaces share one shell (`app-page-header` + `router-outlet` + `app-footer`); embed mode hides chrome.
 
-**Key packages** (see [`package.json`](../snippy/frontend/package.json), currently `0.8.2`):
+**Key packages** (see [`package.json`](../snippy/frontend/package.json), currently `0.8.6`):
 
 | Area | Packages |
 |------|----------|
-| Framework | `@angular/*` ^20.3 |
+| Framework | `@angular/*` ^22 |
 | Auth | `@auth0/auth0-angular` |
 | UI | `@angular/material`, `@angular/cdk` |
 | Editor | `codemirror`, `@codemirror/lang-*`, `theme-one-dark`, `angular-split` |
@@ -103,8 +106,10 @@ src/app/
 ├── app.component.* / app.config.ts / app.routes.ts
 ├── components/
 │   ├── async-state/
-│   ├── dialogs/            # alert, confirm, assets, comments, settings, collections
+│   ├── dialogs/            # alert, confirm, assets, comments, settings,
+│   │                       # collections, embed
 │   ├── editor/             # snippet-editor (CodeMirror), snippet-preview (iframe)
+│   ├── embed/              # embed-player, embed-code-pane
 │   ├── footer/
 │   ├── headers/            # page-header, sort-page-header
 │   ├── lists/              # snippet-list, collection-list, external-resources-list
@@ -112,11 +117,12 @@ src/app/
 │   └── ui/                 # list-toolbar, list-paginator, list-empty-state,
 │                           # fork-attribution, snippet-stat-bar
 ├── config/                 # runtime-env.ts
+├── editor/                 # preferences types, service, CodeMirror factory, themes/
 ├── guards/                 # unsaved-changes.guard.ts
 ├── interfaces/
 ├── pages/                  # home, user-home, feeds, profile, settings,
 │                           # collection-detail, snippet-web-view, fullpage-view,
-│                           # privacy-policy, terms
+│                           # embed-player-page, privacy-policy, terms
 ├── services/
 │   ├── api/                # HTTP wrappers + resilience
 │   ├── stores/             # auth, snippet, collection (signal stores)
@@ -140,7 +146,7 @@ Styles live in [`src/styles.scss`](../snippy/frontend/src/styles.scss) plus part
 
 ### Header modes
 
-Type: [`HeaderMode`](../snippy/frontend/src/app/interfaces/header-mode.ts) = `'landing' | 'feed' | 'editor' | 'minimal'`.
+Type: [`HeaderMode`](../snippy/frontend/src/app/interfaces/header-mode.ts) = `'landing' | 'feed' | 'editor' | 'minimal' | 'embed'`.
 
 Set via route `data.header`. [`PageHeaderComponent`](../snippy/frontend/src/app/components/headers/page-header/page-header.component.ts) reads the deepest activated route (with a URL fallback).
 
@@ -150,6 +156,7 @@ Set via route `data.header`. [`PageHeaderComponent`](../snippy/frontend/src/app/
 | `feed` | Brand, nav pills (Your Snippets / Following / Public), user menu |
 | `editor` | Name field (owner/new), stat bar, save, layout menu, settings, user menu |
 | `minimal` | Brand + user menu (full-page preview) |
+| `embed` | Shell hides header/footer; player provides its own bar |
 
 ### Footer
 
@@ -174,15 +181,17 @@ Defined in [`app.routes.ts`](../snippy/frontend/src/app/app.routes.ts). Most rou
 | `home` | UserHome | AuthGuard | `feed` | Snippets / Collections / Favorites / Projects tabs |
 | `following` | SnippetFeed | AuthGuard | `feed`, `feed: 'following'` | |
 | `public` | SnippetFeed | AuthGuard | `feed`, `feed: 'public'` | |
-| `settings` | Settings | AuthGuard | `feed` | |
+| `settings` | Settings | AuthGuard | `feed` | Tabs: Profile, Editor, Account |
 | `collections/:shortId` | CollectionDetail | AuthGuard | `feed` | |
+| `embed/:shortId` | EmbedPlayerPage | — | `embed` | Public embed iframe player |
+| `try` | SnippetWebView | unsavedChanges | `editor`, `guest: true` | Guest editor (defaults prefs) |
 | `snippet` | SnippetWebView | AuthGuard + unsavedChanges | `editor` | New pen |
 | `:username/snippet/:id` | SnippetWebView | AuthGuard + unsavedChanges | `editor` | Existing pen (`id` = **shortId**) |
 | `:username/fullpage/:id` | FullpageView | AuthGuard | `minimal` | Preview only |
 | `:username` | Profile | AuthGuard | `feed` | Catch-all username |
 | `**` | → `''` | | | |
 
-**Ordering matter:** `privacy` and `terms` are registered **before** `:username`. If they were after the catch-all, `/privacy` would load as a profile named `privacy`.
+**Ordering matter:** `privacy` and `terms` are registered **before** `:username`. If they were after the catch-all, `/privacy` would load as a profile named `privacy`. Same for `try` / `embed` / `snippet` — they must stay before the username catch-all.
 
 ### Guards
 
@@ -207,15 +216,17 @@ Auth0 loginWithRedirect
 
 | Member | Kind | Meaning |
 |--------|------|---------|
-| `user` | `signal<User \| null>` | Backend profile (null until sync succeeds) |
+| `user` | `signal<User \| null>` | Backend profile (null until sync succeeds); includes `editorPreferences` when present |
 | `isAuthenticated` | `computed` | `!!user()` — **backend** user present |
 | `syncing` | `signal<boolean>` | Auth0→backend sync in flight |
 | `patchUser` | method | Merge fields after settings save |
-| `setUserFromApi` | method | Replace cached user |
+| `setUserFromApi` | method | Replace cached user (also used after editor prefs / privacy save) |
 | `logout` | method | Clear store + Auth0 `returnTo: origin` |
 | `refreshUserFromBackend` | method | `GET /users/me` |
 
 **Critical:** Auth0 `AuthGuard` can activate a route before `user()` is set. Anything that needs `userName`, ownership, or API identity must wait on `AuthStoreService.user()` / `isAuthenticated`, not Auth0 alone.
+
+Editor preferences ride along on `POST /users` (ensure) and `GET /users/me` / `PUT /users` responses — no separate preferences endpoint. After login sync, `EditorPreferencesService` reads them from `AuthStore.user`.
 
 Login entry points: landing header, home CTA. Logout: user menu (confirms if editor is dirty).
 
@@ -383,9 +394,11 @@ Prefer these services from lists, header, and footer so behavior stays consisten
 | **User home** | `/home` | Tabs: `loadUserSnippets`, `loadMine` collections, `loadFavorites`; each owns a `ListPageState`; create collection dialog; Projects = coming soon |
 | **Snippet feed** | `/public`, `/following` | Same page; `data.feed` selects `loadPublicSnippets` vs `loadFeedSnippets`; sort via `SortPageHeaderComponent` |
 | **Profile** | `/:username` | `UserApiService.getByUserName` → local profile signal; public pens + collections; follow via `FollowUiService` |
-| **Settings** | `/settings` | Hydrate from `AuthStore.user`; profile + username (debounced availability); delete account → confirm → logout |
+| **Settings** | `/settings` | Hydrate from `AuthStore.user`. **Profile** (display name, bio); **Editor** (live CodeMirror preview + prefs → `PUT /users`); **Account** (username, privacy toggle, delete → confirm → logout) |
 | **Collection detail** | `/collections/:shortId` | `loadOne`; search reloads API; client-side page slice of embedded snippets; owner can remove |
 | **Snippet web view** | `/snippet`, `/:user/snippet/:id` | Load or blank template; CodeMirror + preview; Ctrl+S; clear store on destroy |
+| **Try (guest)** | `/try` | Same editor UI without AuthGuard; prefs = defaults until login |
+| **Embed player** | `/embed/:shortId` | Public iframe player; query params for tabs / editable / theme |
 | **Fullpage view** | `/:user/fullpage/:id` | Preview only; record view if not owner; clear on destroy |
 | **Privacy / Terms** | `/privacy`, `/terms` | Static legal; landing header; linked from footer |
 
@@ -410,6 +423,8 @@ Prefer these services from lists, header, and footer so behavior stays consisten
 3. Name field (header, owners) → `updateSnippetName`.
 4. Settings dialog (owners) → on save result → `updateSnippetSettings` + `SnippetSaveUIService.saveSnippetWithUI`.
 
+Editors apply user prefs from [`EditorPreferencesService`](../snippy/frontend/src/app/editor/editor-preferences.service.ts) via a CodeMirror `Compartment` (see [Editor preferences & themes](#editor-preferences--themes)).
+
 ### Settings dialog
 
 Opened from editor header with `DialogService.open(..., 'xl', { minHeight: '50vh', panelClass: 'snippy-dialog-tall' })`.
@@ -432,8 +447,99 @@ Tall dialog CSS grows to a capped height, scrolls content, pins Cancel/Save, and
 | Comments | Stat bar / lists | `CommentDialogComponent` |
 | Favorite | Stat bar / lists | Optimistic + `favoriteSnippet` |
 | Assets | Footer / user menu | `AssetsDialogComponent` (MinIO / `minio_enabled`) |
-| Export ZIP | Footer | JSZip: `index.html`, `style.css`, `script.js`, `README.txt` |
+| Export ZIP | Footer | JSZip: full HTML shell + `style.css` / `script.js` + external resources |
+| Embed | Footer / actions | `EmbedDialogComponent` — iframe URL with tabs, editable, theme |
+| Account editor prefs | `/settings` → Editor | Persisted on user; applied to all CodeMirror panes |
 | Views | Effect in web-view / fullpage | One `recordView` per navigation for non-owners |
+
+---
+
+## Editor preferences & themes
+
+User CodeMirror preferences are stored as JSON on the **user** row (`editorPreferences`), loaded with login, and applied in the snippet editor, embed code pane, and Settings live preview.
+
+### Shape and defaults
+
+Defined in [`editor/editor-preferences.ts`](../snippy/frontend/src/app/editor/editor-preferences.ts):
+
+| Preference | Default |
+|------------|---------|
+| `fontSize` | `15` (allowed 10–24) |
+| `fontFamily` | `monospace` (`fira-code`, `jetbrains-mono`, `source-code-pro`) |
+| `indentWith` / `indentWidth` | `spaces` / `2` (width 1–8) |
+| `lineNumbers`, `lineWrapping`, `codeFolding`, `autocomplete`, `matchBrackets` | `true` |
+| `theme` | `one-dark` (also `dracula`, `light`) |
+
+`mergeEditorPreferences(stored)` always returns a full object (defaults fill missing keys). Guests and `/try` never have account prefs — they use defaults until login.
+
+### `EditorPreferencesService`
+
+[`editor/editor-preferences.service.ts`](../snippy/frontend/src/app/editor/editor-preferences.service.ts)
+
+| Member | Role |
+|--------|------|
+| `preferences` | Computed: local override → `AuthStore.user.editorPreferences` → defaults |
+| `applyLocal` | Settings page live preview before save |
+| `clearLocal` | Discard unsaved preview override |
+| `snapshot` | Copy of effective prefs |
+
+### CodeMirror wiring
+
+[`editor/codemirror-extensions.ts`](../snippy/frontend/src/app/editor/codemirror-extensions.ts):
+
+- `baseEditorExtensions()` — history, selection, keymaps, etc.
+- `buildPreferenceExtensions(prefs)` — theme, font, indent, line numbers, wrapping, folding, brackets, autocomplete
+
+Editors hold a `Compartment` and reconfigure when `preferences()` changes:
+
+- [`snippet-editor`](../snippy/frontend/src/app/components/editor/snippet-editor/)
+- [`embed-code-pane`](../snippy/frontend/src/app/components/embed/embed-code-pane/) (optional `@Input() theme` overrides URL theme)
+- Settings Editor tab preview
+
+Device layout (`EditorUiService` / `localStorage.editorLayout`) is separate and not synced to the server.
+
+### Settings → Editor tab
+
+Live HTML/CSS/JS sample preview, theme radios (dark/light groups), font family + size, indent, option checkboxes. Save calls `UserApiService.updateProfile({ editorPreferences })` → `AuthStore.setUserFromApi` → editors update.
+
+### How to add a theme
+
+Keep frontend and backend allowlists in sync.
+
+1. **Define the extension** in [`editor/themes/index.ts`](../snippy/frontend/src/app/editor/themes/index.ts) — import an npm CodeMirror theme (like `oneDark`) or build one with `EditorView.theme({ ... }, { dark: true|false })`.
+2. **Register it** in `EDITOR_THEMES` with `{ key, label, group: 'dark'|'light', extension }`.
+3. **Allowlist the key** in:
+   - Frontend [`EDITOR_THEME_KEYS`](../snippy/frontend/src/app/editor/editor-preferences.ts)
+   - Backend [`EDITOR_THEME_KEYS`](../snippy/backend/src/common/utilities/editor-preferences.ts) (Joi for `PUT /users`)
+4. Settings radios and the embed dialog theme dropdown pick it up from `EDITOR_THEMES` / keys automatically. `getThemeExtension()` falls back to `one-dark` for unknown keys.
+
+Optional: load web fonts in [`index.html`](../snippy/frontend/src/index.html) if the theme or font family needs them (Fira Code / JetBrains Mono / Source Code Pro are already linked).
+
+---
+
+## Embed player
+
+Public route [`/embed/:shortId`](../snippy/frontend/src/app/pages/embed-player-page/) hosts [`EmbedPlayerComponent`](../snippy/frontend/src/app/components/embed/embed-player/). Only **public** saved snippets can be embedded.
+
+### Query parameters
+
+| Param | Example | Behavior |
+|-------|---------|----------|
+| `default-tab` | `html,css,result` | Comma-separated tabs to show (`html`, `css`, `js`, `result`) |
+| `editable` | `true` | Local-only edits in the code pane (not saved) |
+| `theme` | `dracula` | CodeMirror theme override; must be in `EDITOR_THEME_KEYS`; invalid → ignored (viewer prefs / defaults apply) |
+
+Example:
+
+```text
+/embed/{shortId}?default-tab=html,result&editable=false&theme=dracula
+```
+
+### Embed dialog
+
+[`EmbedDialogComponent`](../snippy/frontend/src/app/components/dialogs/embed-dialog/) builds the iframe URL (tabs, editable, theme select defaulting to the user’s saved theme or `one-dark`) and copyable HTML. Preview iframe uses the same URL.
+
+Theme is **URL-only** (same as `editable`) — not stored on the snippet.
 
 ---
 
@@ -531,6 +637,7 @@ Always open through **`DialogService`** so `snippy-dialog` + max-height apply.
 |--------|---------|
 | **ConfirmDialog** | `confirm` / `confirmAndRun` — unsaved leave, deletes, dirty logout, remove from collection |
 | **AlertDialog** | Typed alerts (e.g. invalid external URLs in settings) |
+| **EmbedDialog** | Footer embed action — iframe URL (tabs, editable, theme) |
 | **SnippetSettingsDialog** | Editor settings (`snippy-dialog-tall`) |
 | **AssetsDialog** | Footer / user menu (MinIO gated) |
 | **CommentDialog** | Stat bar / list comment action |
@@ -584,7 +691,9 @@ Card row shape (no file bodies): counts + `isFollowing?` for follow UI on feeds/
 
 ### `User`
 
-`userName`, `displayName`, `bio?`, `pictureUrl?`, `isAdmin?`, `isPrivate?`, `isFollowing?`, `followerCount?`, `followingCount?`, `assets?`
+`userName`, `displayName`, `bio?`, `pictureUrl?`, `isAdmin?`, `isPrivate?`, `editorPreferences?`, `isFollowing?`, `followerCount?`, `followingCount?`, `assets?`
+
+`editorPreferences` is owner-only from the API (merged with defaults). See [`editor/editor-preferences.ts`](../snippy/frontend/src/app/editor/editor-preferences.ts).
 
 ### `Collection`
 
@@ -648,6 +757,8 @@ CodeMirror change
 11. **Dev proxy targets Docker DNS names** (`api`, `minio`) — host-only `ng serve` needs matching networking or proxy edits.
 12. **Static legal routes must stay above `:username`.**
 13. **Generation counters** — don’t assume the latest HTTP response wins if a newer load already started; trust the store’s generation checks.
+14. **Theme allowlists** — adding a CodeMirror theme requires updating both FE and BE `EDITOR_THEME_KEYS` or `PUT /users` will reject the theme.
+15. **Embed `theme` is URL-only** — it does not change the author’s saved editor preferences.
 
 ---
 

@@ -58,6 +58,7 @@
         [language]="activeCodeTab()"
         [content]="activeCodeTab() === 'html' ? html() : activeCodeTab() === 'css' ? css() : js()"
         [editable]="editable()"
+        [theme]="theme()"
         (contentChange)="onCodeChange(activeCodeTab(), $event)">
       </app-embed-code-pane>
       }

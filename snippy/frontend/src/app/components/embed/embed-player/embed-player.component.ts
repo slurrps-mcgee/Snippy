@@ -20,6 +20,7 @@ import { Snippet } from '@app/interfaces/snippet.interface';
 import { ExternalResource } from '@app/interfaces/externalResource.interface';
 import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { EmbedCodePaneComponent } from '@app/components/embed/embed-code-pane/embed-code-pane.component';
+import { EDITOR_THEME_KEYS, EditorThemeKey } from '@app/editor/editor-preferences';
 
 export type EmbedTab = 'html' | 'css' | 'js' | 'result';
 export type EmbedZoom = 1 | 0.5 | 0.25;
@@ -55,6 +56,7 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   resources = signal<ExternalResource[]>([]);
 
   editable = signal(false);
+  theme = signal<EditorThemeKey | null>(null);
   enabledTabs = signal<EmbedTab[]>(['html', 'result']);
   activeCodeTab = signal<'html' | 'css' | 'js'>('html');
   showResult = signal(true);
@@ -90,6 +92,12 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
 
     this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(q => {
       this.editable.set(q.get('editable') === 'true');
+      const themeRaw = (q.get('theme') || '').toLowerCase();
+      this.theme.set(
+        (EDITOR_THEME_KEYS as readonly string[]).includes(themeRaw)
+          ? (themeRaw as EditorThemeKey)
+          : null
+      );
       const raw = (q.get('default-tab') || 'html,result').toLowerCase();
       const tabs = raw
         .split(',')

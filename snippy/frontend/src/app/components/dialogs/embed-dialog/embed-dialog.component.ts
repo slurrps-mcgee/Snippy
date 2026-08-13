@@ -7,10 +7,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatSliderModule } from '@angular/material/slider';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { MatFormFieldModule } from '@angular/material/form-field';
+import { MatSelectModule } from '@angular/material/select';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { EditorUiService } from '@app/services/ui/editor-ui.service';
+import { AuthStoreService } from '@app/services/stores/auth.store.service';
+import { EDITOR_THEMES } from '@app/editor/themes';
+import { DEFAULT_EDITOR_PREFERENCES, EditorThemeKey } from '@app/editor/editor-preferences';
 
 export type EmbedTabOption = 'html' | 'css' | 'js' | 'result';
 
@@ -25,6 +30,8 @@ export type EmbedTabOption = 'html' | 'css' | 'js' | 'result';
     MatSliderModule,
     MatDividerModule,
     MatSlideToggleModule,
+    MatFormFieldModule,
+    MatSelectModule,
   ],
   templateUrl: './embed-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -36,10 +43,16 @@ export class EmbedDialogComponent {
   private snackbar = inject(SnackbarService);
   private sanitizer = inject(DomSanitizer);
   private editorUi = inject(EditorUiService);
+  private authStore = inject(AuthStoreService);
 
   height = signal(300);
   editable = signal(false);
   defaultTabs = signal<EmbedTabOption[]>(['html', 'result']);
+  theme = signal<EditorThemeKey>(
+    (this.authStore.user()?.editorPreferences?.theme as EditorThemeKey | undefined) ??
+      DEFAULT_EDITOR_PREFERENCES.theme
+  );
+  readonly themes = EDITOR_THEMES;
 
   readonly canEmbed = computed(() => {
     if (this.editorUi.guestMode()) return false;
@@ -69,6 +82,7 @@ export class EmbedDialogComponent {
     const params = new URLSearchParams({
       'default-tab': tabs,
       editable: String(this.editable()),
+      theme: this.theme(),
     });
     return `${origin}/embed/${s.shortId}?${params.toString()}`;
   });
@@ -103,6 +117,10 @@ export class EmbedDialogComponent {
 
   onEditableChange(value: boolean) {
     this.editable.set(value);
+  }
+
+  onThemeChange(value: EditorThemeKey) {
+    this.theme.set(value);
   }
 
   isTabSelected(tab: EmbedTabOption): boolean {

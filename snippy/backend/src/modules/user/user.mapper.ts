@@ -1,5 +1,6 @@
 import { Assets } from '../../entities/asset.entity';
 import { Users } from '../../entities/user.entity';
+import { mergeEditorPreferences } from '../../common/utilities/editor-preferences';
 import { AssetDTO, UserDTO } from './dto/user.dto';
 
 /**
@@ -25,6 +26,9 @@ export class UserMapper {
         if (includeOwnerFields) {
             dto.isAdmin = user.isAdmin;
             dto.isPrivate = user.isPrivate;
+            dto.editorPreferences = mergeEditorPreferences(
+                user.editorPreferences as Parameters<typeof mergeEditorPreferences>[0]
+            );
         }
 
         if (extras?.isFollowing !== undefined) {

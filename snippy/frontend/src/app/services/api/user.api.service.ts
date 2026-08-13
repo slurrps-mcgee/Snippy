@@ -19,7 +19,7 @@ export class UserApiService {
     });
   }
 
-  updateProfile(body: Partial<Pick<User, 'userName' | 'displayName' | 'bio' | 'pictureUrl' | 'isPrivate'>>): Observable<UserResponse> {
+  updateProfile(body: Partial<Pick<User, 'userName' | 'displayName' | 'bio' | 'pictureUrl' | 'isPrivate' | 'editorPreferences'>>): Observable<UserResponse> {
     return this.api.request({
       path: '/users',
       method: 'PUT',

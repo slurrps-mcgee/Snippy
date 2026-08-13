@@ -28,7 +28,7 @@
 }
 
 .section-label {
-  margin: 0;
+  margin: 0 0 0.75rem;
   font-size: 0.75rem;
   font-weight: 500;
   letter-spacing: 0.16em;
@@ -50,4 +50,101 @@
 
 .username-status--bad {
   color: var(--danger-soft);
+}
+
+.preview-lang-tabs {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.preview-lang-tabs__btn {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-soft);
+  border-radius: 0.5rem;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.8125rem;
+  cursor: pointer;
+}
+
+.preview-lang-tabs__btn--active {
+  background: rgba(148, 163, 184, 0.15);
+  border-color: rgba(148, 163, 184, 0.25);
+  color: #fff;
+}
+
+.editor-preview {
+  min-height: 220px;
+  max-height: 320px;
+  overflow: auto;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+:host ::ng-deep .editor-preview .cm-editor {
+  min-height: 220px;
+}
+
+.theme-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+}
+
+.theme-group__block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.theme-group__heading {
+  font-size: 0.75rem;
+  color: var(--text-faint);
+  margin-bottom: 0.25rem;
+}
+
+.editor-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.editor-row__grow {
+  flex: 1 1 12rem;
+}
+
+.editor-row__size {
+  flex: 0 0 8rem;
+}
+
+.editor-options {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.privacy-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-top: 0.25rem;
+}
+
+.privacy-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.privacy-row__title {
+  font-weight: 600;
+  color: #f1f5f9;
+}
+
+.privacy-row__copy {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: var(--text-soft);
 }

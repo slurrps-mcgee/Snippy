@@ -9,15 +9,23 @@ import {
   Output,
   SimpleChanges,
   ViewChild,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
+  effect,
+  inject,
+  untracked,
 } from '@angular/core';
 
-import { EditorView, basicSetup } from 'codemirror';
+import { EditorView } from 'codemirror';
 import { Compartment, EditorState } from '@codemirror/state';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
+import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
+import {
+  baseEditorExtensions,
+  buildPreferenceExtensions,
+} from '@app/editor/codemirror-extensions';
+import { EditorPreferences } from '@app/editor/editor-preferences';
 
 @Component({
   selector: 'app-embed-code-pane',
@@ -48,13 +56,28 @@ export class EmbedCodePaneComponent implements AfterViewInit, OnChanges, OnDestr
   @Input() language: 'html' | 'css' | 'js' = 'html';
   @Input() content = '';
   @Input() editable = false;
+  /** Optional URL theme override (e.g. from ?theme=). */
+  @Input() theme: string | null = null;
   @Output() contentChange = new EventEmitter<string>();
 
   @ViewChild('host') hostRef?: ElementRef<HTMLDivElement>;
 
+  private editorPrefs = inject(EditorPreferencesService);
   private view?: EditorView;
   private readOnlyCompartment = new Compartment();
+  private prefsCompartment = new Compartment();
   private suppressEmit = false;
+
+  constructor() {
+    effect(() => {
+      const prefs = this.effectivePrefs(this.editorPrefs.preferences());
+      const view = untracked(() => this.view);
+      if (!view) return;
+      view.dispatch({
+        effects: this.prefsCompartment.reconfigure(buildPreferenceExtensions(prefs)),
+      });
+    });
+  }
 
   ngAfterViewInit() {
     this.createEditor();
@@ -67,6 +90,14 @@ export class EmbedCodePaneComponent implements AfterViewInit, OnChanges, OnDestr
       this.view.dispatch({
         effects: this.readOnlyCompartment.reconfigure(
           EditorState.readOnly.of(!this.editable)
+        ),
+      });
+    }
+
+    if (changes['theme'] && !changes['theme'].firstChange) {
+      this.view.dispatch({
+        effects: this.prefsCompartment.reconfigure(
+          buildPreferenceExtensions(this.effectivePrefs(this.editorPrefs.preferences()))
         ),
       });
     }
@@ -92,18 +123,24 @@ export class EmbedCodePaneComponent implements AfterViewInit, OnChanges, OnDestr
     this.view?.destroy();
   }
 
+  private effectivePrefs(prefs: EditorPreferences): EditorPreferences {
+    if (!this.theme) return prefs;
+    return { ...prefs, theme: this.theme as EditorPreferences['theme'] };
+  }
+
   private createEditor() {
     if (!this.hostRef) return;
     this.hostRef.nativeElement.innerHTML = '';
+
+    const prefs = this.effectivePrefs(this.editorPrefs.preferences());
 
     this.view = new EditorView({
       state: EditorState.create({
         doc: this.content ?? '',
         extensions: [
-          basicSetup,
+          ...baseEditorExtensions(),
+          this.prefsCompartment.of(buildPreferenceExtensions(prefs)),
           this.languageExtension(),
-          oneDark,
-          EditorView.lineWrapping,
           this.readOnlyCompartment.of(EditorState.readOnly.of(!this.editable)),
           EditorView.updateListener.of(update => {
             if (!update.docChanged || this.suppressEmit || !this.editable) return;

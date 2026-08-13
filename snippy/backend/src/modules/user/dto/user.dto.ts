@@ -2,6 +2,8 @@
  * User Data Transfer Objects
  */
 
+import { EditorPreferences } from '../../../common/utilities/editor-preferences';
+
 export interface UserDTO {
     userName: string;
     displayName: string | null;
@@ -9,6 +11,7 @@ export interface UserDTO {
     pictureUrl: string | null;
     isAdmin?: boolean;
     isPrivate?: boolean;
+    editorPreferences?: EditorPreferences;
     isFollowing?: boolean;
     followerCount?: number;
     followingCount?: number;
@@ -30,6 +33,7 @@ export interface UpdateUserRequest {
     bio?: string | null;
     pictureUrl?: string;
     isPrivate?: boolean;
+    editorPreferences?: Partial<EditorPreferences>;
 }
 
 export interface EnsureUserRequest {

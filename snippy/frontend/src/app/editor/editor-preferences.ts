@@ -1,0 +1,63 @@
+export const EDITOR_THEME_KEYS = ['one-dark', 'light', 'dracula'] as const;
+export type EditorThemeKey = (typeof EDITOR_THEME_KEYS)[number];
+
+export const EDITOR_FONT_KEYS = [
+  'monospace',
+  'fira-code',
+  'jetbrains-mono',
+  'source-code-pro',
+] as const;
+export type EditorFontKey = (typeof EDITOR_FONT_KEYS)[number];
+
+export interface EditorPreferences {
+  fontSize: number;
+  fontFamily: EditorFontKey;
+  indentWith: 'spaces' | 'tabs';
+  indentWidth: number;
+  lineNumbers: boolean;
+  lineWrapping: boolean;
+  codeFolding: boolean;
+  autocomplete: boolean;
+  matchBrackets: boolean;
+  theme: EditorThemeKey;
+}
+
+export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
+  fontSize: 15,
+  fontFamily: 'monospace',
+  indentWith: 'spaces',
+  indentWidth: 2,
+  lineNumbers: true,
+  lineWrapping: true,
+  codeFolding: true,
+  autocomplete: true,
+  matchBrackets: true,
+  theme: 'one-dark',
+};
+
+export function mergeEditorPreferences(
+  stored: Partial<EditorPreferences> | null | undefined
+): EditorPreferences {
+  if (!stored || typeof stored !== 'object') {
+    return { ...DEFAULT_EDITOR_PREFERENCES };
+  }
+  return {
+    ...DEFAULT_EDITOR_PREFERENCES,
+    ...stored,
+  };
+}
+
+export const FONT_FAMILY_CSS: Record<EditorFontKey, string> = {
+  monospace:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  'fira-code': '"Fira Code", ui-monospace, monospace',
+  'jetbrains-mono': '"JetBrains Mono", ui-monospace, monospace',
+  'source-code-pro': '"Source Code Pro", ui-monospace, monospace',
+};
+
+export const FONT_FAMILY_LABELS: Record<EditorFontKey, string> = {
+  monospace: 'System monospace',
+  'fira-code': 'Fira Code',
+  'jetbrains-mono': 'JetBrains Mono',
+  'source-code-pro': 'Source Code Pro',
+};

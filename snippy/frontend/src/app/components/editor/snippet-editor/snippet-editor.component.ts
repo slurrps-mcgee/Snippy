@@ -1,16 +1,20 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect, inject, ChangeDetectionStrategy, untracked } from '@angular/core';
 
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
-import { EditorView, basicSetup } from 'codemirror';
-import { EditorState } from '@codemirror/state';
+import { EditorView } from 'codemirror';
+import { Compartment, EditorState } from '@codemirror/state';
 import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
-import { oneDark } from '@codemirror/theme-one-dark';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { DialogService } from '@app/services/ui/dialog.service';
+import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
+import {
+  baseEditorExtensions,
+  buildPreferenceExtensions,
+} from '@app/editor/codemirror-extensions';
 
 @Component({
   selector: 'app-snippet-editor',
@@ -27,9 +31,11 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private snippetStoreService = inject(SnippetStoreService);
   private dialogService = inject(DialogService);
+  private editorPrefs = inject(EditorPreferencesService);
 
   // CodeMirror editor instance
   private editorInstance?: EditorView;
+  private prefsCompartment = new Compartment();
 
   // Code content signal
   private code = signal('');
@@ -48,6 +54,15 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
           }
         }
       }
+    });
+
+    effect(() => {
+      const prefs = this.editorPrefs.preferences();
+      const view = untracked(() => this.editorInstance);
+      if (!view) return;
+      view.dispatch({
+        effects: this.prefsCompartment.reconfigure(buildPreferenceExtensions(prefs)),
+      });
     });
   }
 
@@ -79,28 +94,25 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   private initializeEditor() {
     if (!this.editorRef) return;
 
-    // Get language extension
-    const languageExtension = this.getLanguageExtension();
+    const prefs = this.editorPrefs.preferences();
 
-    // Create editor instance
     this.editorInstance = new EditorView({
       state: EditorState.create({
         doc: this.code(),
         extensions: [
-          basicSetup,
-          languageExtension,
-          oneDark,
-          EditorView.lineWrapping,
+          ...baseEditorExtensions(),
+          this.prefsCompartment.of(buildPreferenceExtensions(prefs)),
+          this.getLanguageExtension(),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
               const value = update.state.doc.toString();
               this.code.set(value);
               this.snippetStoreService.updateSnippetFile(this.editorType, value);
             }
-          })
-        ]
+          }),
+        ],
       }),
-      parent: this.editorRef.nativeElement
+      parent: this.editorRef.nativeElement,
     });
   }
 

@@ -10,6 +10,7 @@ import { AuthorizationService } from "../../common/services/authorization.servic
 import { config } from "../../config";
 import { deleteUserMinioObjects } from "../resource/resource.service";
 import { countFollowers, countFollowing, findFollow } from "../follow/follow.repo";
+import { mergeEditorPreferences } from "../../common/utilities/editor-preferences";
 /**
  * Protected fields that cannot be updated through the updateUser endpoint
  * These fields are system-managed and should not be modified by users
@@ -109,7 +110,20 @@ export async function updateUserHandler(payload: ServicePayload<UpdateUserReques
 
     try {
         return await executeInTransaction(async (t) => {
-            await updateUser(auth0Id, patch as any, t);
+            const existing = await findById(auth0Id, t);
+            if (!existing) {
+                throw new CustomError('User not found', 404);
+            }
+
+            const updatePatch: Record<string, unknown> = { ...patch };
+            if (patch.editorPreferences) {
+                updatePatch.editorPreferences = mergeEditorPreferences({
+                    ...(existing.editorPreferences as object | null),
+                    ...patch.editorPreferences,
+                });
+            }
+
+            await updateUser(auth0Id, updatePatch as any, t);
 
             // Get complete user data then sanitize for frontend response
             const user = await findById(auth0Id, t);
