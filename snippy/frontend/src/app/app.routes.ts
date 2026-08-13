@@ -65,6 +65,23 @@ export const routes: Routes = [
     data: { header: 'feed' satisfies HeaderMode },
   },
   {
+    path: 'embed/:shortId',
+    loadComponent: () =>
+      import('./pages/embed-player-page/embed-player-page.component').then(
+        m => m.EmbedPlayerPageComponent
+      ),
+    data: { header: 'embed' satisfies HeaderMode },
+  },
+  {
+    path: 'try',
+    loadComponent: () =>
+      import('./pages/snippet-web-view/snippet-web-view.component').then(
+        m => m.SnippetWebViewComponent
+      ),
+    canDeactivate: [unsavedChangesGuard],
+    data: { header: 'editor' satisfies HeaderMode, guest: true },
+  },
+  {
     path: 'snippet',
     loadComponent: () =>
       import('./pages/snippet-web-view/snippet-web-view.component').then(

@@ -43,7 +43,7 @@
 <header class="site-header">
   <div class="page-container flex flex-wrap items-center justify-between gap-3 py-2">
     <div class="flex min-w-0 flex-1 items-center gap-3">
-      <a routerLink="/home" class="brand-mark shrink-0">
+      <a [routerLink]="isGuest ? '/' : '/home'" class="brand-mark shrink-0">
         <span class="brand-star" aria-hidden="true">✦</span>
         Snippy
       </a>
@@ -68,7 +68,7 @@
       }
     </div>
 
-    @if (snippetStore.snippet(); as snippet) {
+    @if (!isGuest && snippetStore.snippet(); as snippet) {
     @if (hasSavedSnippet) {
     <app-snippet-stat-bar variant="toolbar" [stats]="snippet" [showFork]="true" (favorite)="toggleFavorite()"
       (comment)="openComments()" (fork)="forkSnippet()" />
@@ -76,7 +76,7 @@
     }
 
     <div class="flex items-center gap-2">
-      @if (canEdit) {
+      @if (canEdit && !isGuest) {
       <button mat-raised-button color="primary"
         (click)="snippetSaveUI.saveSnippetWithUI(snippetStore, user)"
         [disabled]="!snippetStore.isDirty()">
@@ -99,16 +99,22 @@
             <mat-button-toggle value="bottom">Bottom</mat-button-toggle>
           </mat-button-toggle-group>
         </div>
+        @if (!isGuest) {
         <button mat-menu-item (click)="viewFullPage()">Full Page View</button>
+        }
       </mat-menu>
 
-      @if (canEdit) {
+      @if (canEdit && !isGuest) {
       <button mat-icon-button (click)="openSettings()">
         <mat-icon>settings</mat-icon>
       </button>
       }
 
+      @if (isGuest) {
+      <button mat-raised-button color="primary" (click)="login()">Log in</button>
+      } @else {
       <app-user-menu></app-user-menu>
+      }
     </div>
   </div>
 </header>
@@ -124,5 +130,9 @@
     <app-user-menu></app-user-menu>
   </div>
 </header>
+}
+
+@case ('embed') {
+  <!-- Embed player provides its own chrome -->
 }
 }

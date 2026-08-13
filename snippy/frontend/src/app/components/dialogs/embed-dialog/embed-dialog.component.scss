@@ -1,0 +1,29 @@
+:host {
+  display: block;
+}
+
+.embed-preview__frame {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: #1e1f26;
+}
+
+.embed-code {
+  width: 100%;
+  box-sizing: border-box;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.75rem;
+  line-height: 1.45;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(15, 23, 42, 0.85);
+  color: #e2e8f0;
+}
+
+.tab-active {
+  background: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(255, 255, 255, 0.45) !important;
+}

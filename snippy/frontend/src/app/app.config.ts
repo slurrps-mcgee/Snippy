@@ -29,12 +29,14 @@ export const appConfig: ApplicationConfig = {
         allowedList: [
           {
             uri: '/api/*',
+            allowAnonymous: true,
             tokenOptions: {
               authorizationParams: { audience: env.auth0_audience }
             }
           },
           {
             uri: '/api/v1/*',
+            allowAnonymous: true,
             tokenOptions: { authorizationParams: { audience: env.auth0_audience } }
           }
         ]

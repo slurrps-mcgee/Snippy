@@ -74,6 +74,10 @@ export class PageHeaderComponent implements OnInit {
     return !!this.snippetStore.snippet()?.snippetId;
   }
 
+  get isGuest(): boolean {
+    return this.editorUi.guestMode();
+  }
+
   ngOnInit() {
     this.syncFromRouter();
 
@@ -99,13 +103,15 @@ export class PageHeaderComponent implements OnInit {
 
     const url = this.router.url.split('?')[0];
     if (url === '/' || url === '') return 'landing';
-    if (url === '/snippet' || /\/snippet\//.test(url)) return 'editor';
+    if (url.startsWith('/embed/')) return 'embed';
+    if (url === '/try' || url === '/snippet' || /\/snippet\//.test(url)) return 'editor';
     if (/\/fullpage\//.test(url)) return 'minimal';
     return 'feed';
   }
 
   login() {
-    this.auth0.loginWithRedirect({ appState: { target: '/home' } });
+    const target = this.editorUi.guestMode() ? '/snippet' : '/home';
+    this.auth0.loginWithRedirect({ appState: { target } });
   }
 
   onSnippetNameChange(name: string) {

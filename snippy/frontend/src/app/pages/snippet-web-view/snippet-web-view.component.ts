@@ -10,6 +10,7 @@ import { SnippetSaveUIService } from '@app/services/ui/snippet-save-ui.service';
 import { EditorUiService } from '@app/services/ui/editor-ui.service';
 import { ActivatedRoute } from '@angular/router';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
+import { PreviewConsoleService } from '@app/services/ui/preview-console.service';
 
 @Component({
   selector: 'app-snippet-web-view',
@@ -31,10 +32,12 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
 
   private route = inject(ActivatedRoute);
   private authStoreService = inject(AuthStoreService);
+  private previewConsole = inject(PreviewConsoleService);
   private destroyRef = inject(DestroyRef);
 
   get user() { return this.authStoreService.user; }
   get selectedLayout() { return this.editorUi.layout(); }
+  get isGuest() { return this.editorUi.guestMode(); }
 
   snippetId: string | null = null;
   error: string | null = null;
@@ -42,6 +45,10 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
 
   @HostListener('window:keydown.control.s', ['$event'])
   onSaveShortcut(event: Event) {
+    if (this.isGuest) {
+      event.preventDefault();
+      return;
+    }
     event.preventDefault();
     this.snippetSaveUIService.saveSnippetWithUI(this.snippetStoreService, this.user);
   }
@@ -50,7 +57,6 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
     effect(() => {
       const snippet = this.snippetStoreService.snippet();
       const previewUpdateType = this.snippetStoreService.previewUpdateType();
-      // Re-run when layout changes so preview remounts cleanly
       this.editorUi.layout();
 
       if (!previewUpdateType || !snippet?.snippetFiles) return;
@@ -79,6 +85,9 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   ngAfterViewInit() {}
 
   ngOnInit(): void {
+    const guest = !!this.route.snapshot.data['guest'];
+    this.editorUi.setGuestMode(guest);
+
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
@@ -87,37 +96,45 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
         this.viewRecorded = false;
         this.error = null;
 
-        if (id) {
+        if (id && !guest) {
           void this.snippetStoreService.loadSnippet(id);
         } else {
-          this.snippetStoreService.clearSnippet();
-          this.snippetStoreService.setSnippet({
-            shortId: '',
-            name: 'Untitled',
-            description: '',
-            tags: [],
-            isPrivate: false,
-            forkCount: 0,
-            viewCount: 0,
-            commentCount: 0,
-            favoriteCount: 0,
-            parentShortId: '',
-            isOwner: true,
-            displayName: this.user()?.displayName || '',
-            snippetFiles: [
-              { fileType: 'html', content: '' },
-              { fileType: 'css', content: '' },
-              { fileType: 'js', content: '' }
-            ]
-          }, false);
-          this.snippetStoreService.previewUpdateType.set('full');
-          this.snippetStoreService.loading.set(false);
+          this.initBlankSnippet(guest);
         }
       });
   }
 
   ngOnDestroy(): void {
+    this.editorUi.setGuestMode(false);
+    this.previewConsole.setOpen(false);
+    this.previewConsole.clear();
     this.snippetStoreService.clearSnippet();
+  }
+
+  private initBlankSnippet(guest: boolean) {
+    this.snippetStoreService.clearSnippet();
+    this.snippetStoreService.setSnippet({
+      shortId: '',
+      name: guest ? 'Try Snippy' : 'Untitled',
+      description: '',
+      tags: [],
+      isPrivate: false,
+      forkCount: 0,
+      viewCount: 0,
+      commentCount: 0,
+      favoriteCount: 0,
+      parentShortId: '',
+      isOwner: true,
+      displayName: guest ? 'Guest' : (this.user()?.displayName || ''),
+      snippetFiles: [
+        { fileType: 'html', content: guest ? '<h1>Hello, Snippy!</h1>\n<p>Edit HTML, CSS, and JS — preview updates live.</p>\n' : '' },
+        { fileType: 'css', content: guest ? 'body {\n  font-family: system-ui, sans-serif;\n  padding: 2rem;\n}\n' : '' },
+        { fileType: 'js', content: guest ? 'console.log("Welcome to Snippy");\n' : '' },
+      ],
+      externalResources: [],
+    }, false);
+    this.snippetStoreService.previewUpdateType.set('full');
+    this.snippetStoreService.loading.set(false);
   }
 
   private updatePreview(

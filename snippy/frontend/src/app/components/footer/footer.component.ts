@@ -1,4 +1,4 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -7,9 +7,12 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import JSZip from 'jszip';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { AssetsDialogComponent } from '@app/components/dialogs/assets-dialog/assets-dialog.component';
+import { EmbedDialogComponent } from '@app/components/dialogs/embed-dialog/embed-dialog.component';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { SnippetActionsService } from '@app/services/ui/snippet-actions.service';
+import { EditorUiService } from '@app/services/ui/editor-ui.service';
+import { PreviewConsoleService } from '@app/services/ui/preview-console.service';
 
 @Component({
   selector: 'app-footer',
@@ -19,6 +22,8 @@ import { SnippetActionsService } from '@app/services/ui/snippet-actions.service'
 })
 export class FooterComponent {
   snippetStoreService = inject(SnippetStoreService);
+  editorUi = inject(EditorUiService);
+  previewConsole = inject(PreviewConsoleService);
   private dialogService = inject(DialogService);
   private snippetActions = inject(SnippetActionsService);
   private snackbar = inject(SnackbarService);
@@ -26,8 +31,26 @@ export class FooterComponent {
   readonly githubUrl = 'https://github.com/slurrps-mcgee/Snippy';
   readonly licenseUrl = 'https://github.com/slurrps-mcgee/Snippy/blob/main/LICENSE';
 
+  readonly showEditorActions = computed(
+    () => this.editorUi.guestMode() || !!this.snippetStoreService.snippet()
+  );
+
+  readonly isGuest = computed(() => this.editorUi.guestMode());
+
+  readonly hasSavedSnippet = computed(
+    () => !!this.snippetStoreService.snippet()?.snippetId
+  );
+
   openAssets() {
     this.dialogService.open(AssetsDialogComponent, 'lg');
+  }
+
+  openEmbed() {
+    this.dialogService.open(EmbedDialogComponent, 'lg');
+  }
+
+  toggleConsole() {
+    this.previewConsole.toggle();
   }
 
   forkSnippet() {

@@ -47,14 +47,18 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// JWT Middleware to protect /api/v1 routes — except public embed HTML
+// JWT Middleware to protect /api/v1 routes — except public snippet read + embed HTML
 app.use((req, res, next) => {
-  const isPublicEmbed =
-    req.method === 'GET' &&
-    /^\/api\/v1\/snippets\/[^/]+\/embed\/?$/.test(req.originalUrl.split('?')[0]);
+  if (req.method === 'GET') {
+    const path = req.originalUrl.split('?')[0];
+    const isPublicEmbed = /^\/api\/v1\/snippets\/[^/]+\/embed\/?$/.test(path);
+    const isPublicSnippetGet =
+      /^\/api\/v1\/snippets\/(?!(?:me|public|feed|search|user)(?:\/|$))[^/]+\/?$/.test(path);
 
-  if (isPublicEmbed) {
-    return next();
+    if (isPublicEmbed || isPublicSnippetGet) {
+      // Optional auth: attach identity when a valid token is present; ignore missing/invalid tokens
+      return auth0Check(req as any, res as any, ((_err?: unknown) => next()) as any);
+    }
   }
 
   return auth0Check(req as any, res as any, next as any);

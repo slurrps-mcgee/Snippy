@@ -1,19 +1,39 @@
-<footer class="site-footer" [class.editor-footer]="!!snippetStoreService.snippet()?.snippetId">
+<footer class="site-footer" [class.editor-footer]="showEditorActions()">
   <div class="page-container footer-inner">
-    @if (snippetStoreService.snippet()?.snippetId) {
+    @if (showEditorActions()) {
     <div class="editor-actions">
-      <button mat-button (click)="forkSnippet()" matTooltip="Fork this snippet">
+      <button
+        mat-button
+        type="button"
+        (click)="toggleConsole()"
+        [class.active-console]="previewConsole.open()"
+        matTooltip="Toggle JavaScript console">
+        <mat-icon>terminal</mat-icon>
+        Console
+      </button>
+
+      @if (!isGuest() && hasSavedSnippet()) {
+      <button mat-button type="button" (click)="forkSnippet()" matTooltip="Fork this snippet">
         <mat-icon>fork_right</mat-icon>
         Fork
       </button>
-      <button mat-button (click)="exportZip()" matTooltip="Download HTML/CSS/JS as ZIP">
+      }
+
+      <button mat-button type="button" (click)="exportZip()" matTooltip="Download HTML/CSS/JS as ZIP">
         <mat-icon>download</mat-icon>
         Export
       </button>
-      <button mat-button (click)="openAssets()" matTooltip="Manage assets">
+
+      @if (!isGuest()) {
+      <button mat-button type="button" (click)="openAssets()" matTooltip="Manage assets">
         <mat-icon>perm_media</mat-icon>
         Assets
       </button>
+      <button mat-button type="button" (click)="openEmbed()" matTooltip="Get embed code">
+        <mat-icon>code</mat-icon>
+        Embed
+      </button>
+      }
     </div>
     } @else {
     <div class="footer-meta">
