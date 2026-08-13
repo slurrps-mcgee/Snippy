@@ -44,8 +44,39 @@ export class FooterComponent {
     const html = snippet.snippetFiles.find(f => f.fileType === 'html')?.content ?? '';
     const css = snippet.snippetFiles.find(f => f.fileType === 'css')?.content ?? '';
     const js = snippet.snippetFiles.find(f => f.fileType === 'js')?.content ?? '';
+    const externalResources = snippet.externalResources ?? [];
 
-    zip.file('index.html', html);
+    const stylesheets = externalResources
+      .filter(res => res.resourceType === 'css')
+      .map(res => `<link rel="stylesheet" href="${res.url}">`)
+      .join('\n  ');
+
+    const scripts = externalResources
+      .filter(res => res.resourceType === 'js')
+      .map(res => `<script src="${res.url}"><\/script>`)
+      .join('\n  ');
+
+    const title = (snippet.name || 'snippet')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+
+    const indexHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${title}</title>
+  ${stylesheets ? stylesheets + '\n  ' : ''}<link rel="stylesheet" href="style.css">
+</head>
+<body>
+${html}
+  <script src="script.js"><\/script>${scripts ? '\n  ' + scripts : ''}
+</body>
+</html>
+`;
+
+    zip.file('index.html', indexHtml);
     zip.file('style.css', css);
     zip.file('script.js', js);
     zip.file(
