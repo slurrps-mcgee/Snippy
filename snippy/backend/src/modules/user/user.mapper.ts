@@ -1,6 +1,7 @@
 import { Assets } from '../../entities/asset.entity';
 import { Users } from '../../entities/user.entity';
 import { mergeEditorPreferences } from '../../common/utilities/editor-preferences';
+import { isSystemObjectKey } from '../asset/dto/asset.dto';
 import { AssetDTO, UserDTO } from './dto/user.dto';
 
 /**
@@ -20,7 +21,11 @@ export class UserMapper {
             displayName: user.displayName ?? null,
             bio: user.bio ?? null,
             pictureUrl: user.pictureUrl ?? null,
-            assets: user.assets ? user.assets.map(asset => this.toAssetDTO(asset)) : []
+            assets: user.assets
+                ? user.assets
+                    .filter(asset => !isSystemObjectKey(user.auth0Id, asset.objectKey))
+                    .map(asset => this.toAssetDTO(asset))
+                : []
         };
 
         if (includeOwnerFields) {

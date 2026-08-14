@@ -17,7 +17,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 import { SnippetAPIService } from '@app/services/api/snippet.api.service';
 import { Snippet } from '@app/interfaces/snippet.interface';
-import { ExternalResource } from '@app/interfaces/externalResource.interface';
+import { CdnResource } from '@app/interfaces/cdnResource.interface';
 import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { EmbedCodePaneComponent } from '@app/components/embed/embed-code-pane/embed-code-pane.component';
 import { EDITOR_THEME_KEYS, EditorThemeKey } from '@app/editor/editor-preferences';
@@ -53,7 +53,7 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   html = signal('');
   css = signal('');
   js = signal('');
-  resources = signal<ExternalResource[]>([]);
+  resources = signal<CdnResource[]>([]);
 
   editable = signal(false);
   theme = signal<EditorThemeKey | null>(null);
@@ -153,7 +153,7 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
       this.html.set(snip.snippetFiles?.find(f => f.fileType === 'html')?.content ?? '');
       this.css.set(snip.snippetFiles?.find(f => f.fileType === 'css')?.content ?? '');
       this.js.set(snip.snippetFiles?.find(f => f.fileType === 'js')?.content ?? '');
-      this.resources.set(snip.externalResources ?? []);
+      this.resources.set(snip.cdnResources ?? []);
       this.loading.set(false);
       queueMicrotask(() => this.refreshPreview());
     } catch {

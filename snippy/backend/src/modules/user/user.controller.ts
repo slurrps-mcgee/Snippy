@@ -5,9 +5,13 @@ import {
     ensureUserHandler, 
     getCurrentUserHandler, 
     getUserProfileHandler, 
+    updateProfilePictureHandler,
     updateUserHandler 
 } from './user.service';
 import { validateRegister, validateUpdateUser } from './user.validator';
+import multer from 'multer';
+import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from '../asset/dto/asset.dto';
+import { CustomError } from '../../common/exceptions/custom-error';
 
 /**
  * @swagger
@@ -73,6 +77,7 @@ export async function ensureUser(req: Request, res: Response, next: NextFunction
  *                 type: string
  *               pictureUrl:
  *                 type: string
+ *                 nullable: true
  *     responses:
  *       '200':
  *         description: Updated user
@@ -203,3 +208,53 @@ export async function checkUsername(req: Request, res: Response, next: NextFunct
         next(error);
     }
 }
+
+const pictureUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_ASSET_SIZE_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if ((ALLOWED_ASSET_MIME_TYPES as readonly string[]).includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new CustomError('Unsupported file type. Allowed: png, jpeg, gif, webp, svg', 400));
+    }
+  },
+});
+
+/**
+ * @swagger
+ * /users/picture:
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: Upload current user's profile picture to MinIO
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '200':
+ *         description: Profile picture updated
+ *       '503':
+ *         description: MinIO unavailable
+ */
+export const updateProfilePicture = [
+  pictureUpload.single('file'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { user } = await updateProfilePictureHandler(req);
+      res.status(200).json({ success: true, user });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+

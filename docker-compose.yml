@@ -2,32 +2,34 @@
 # and deployed via Docker Hub (kennyl777/snippy-*).
 
 services:
-  # minio:
-  #   image: minio/minio:latest
-  #   container_name: minio
-  #   command: server /data --console-address ":9001"
-  #   ports:
-  #     - "9000:9000"
-  #     - "9001:9001"
-  #   env_file:
-  #     - ./.env
-  #   volumes:
-  #     - minio_data:/data
-  #   healthcheck:
-  #     test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-  #     interval: 5s
-  #     timeout: 3s
-  #     retries: 5
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    env_file:
+      - ./.env
+    volumes:
+      - minio_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 3s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
 
-  # minio-init:
-  #   build: ./snippy/minio
-  #   container_name: minio-init
-  #   depends_on:
-  #     minio:
-  #       condition: service_healthy
-  #   env_file:
-  #     - ./.env
-  #   restart: "no"
+  minio-init:
+    build: ./snippy/minio
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    restart: "no"
 
   db:
     image: mysql:8.0
@@ -105,4 +107,4 @@ services:
 
 volumes:
   mysql-data:
-  # minio_data:
+  minio_data:

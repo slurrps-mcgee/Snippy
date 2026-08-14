@@ -88,7 +88,7 @@ Legend:
 | `user_name` | VARCHAR(255) | UNIQUE, NOT NULL | Username for profile URL (auto-generated if not provided) |
 | `display_name` | VARCHAR(255) | NULL | User's display name |
 | `bio` | TEXT | NULL | User biography/description |
-| `picture_url` | VARCHAR(255) | NULL | Profile picture URL |
+| `picture_url` | VARCHAR(255) | NULL | Profile picture URL (Auth0 or `/content/{auth0Id}/profile/avatar.*`) |
 | `is_admin` | BOOLEAN | DEFAULT: false | Admin flag for future admin features |
 | `is_private` | BOOLEAN | DEFAULT: false | Privacy setting for user profile |
 | `editor_preferences` | JSON | NULL | CodeMirror editor prefs bag; null → app merges defaults |
@@ -155,7 +155,8 @@ Added by migration [`20260813143000-005-add-user-editor-preferences.js`](../snip
 | `fork_count` | INT | DEFAULT: 0 | Number of forks |
 | `favorite_count` | INT | DEFAULT: 0 | Number of favorites |
 | `comment_count` | INT | DEFAULT: 0 | Number of comments |
-| `external_resources` | JSON | DEFAULT: [] | CDN scripts/stylesheets |
+| `cdnResources` | JSON | DEFAULT: [] | CDN libraries (`resourceType` + `url`) |
+| `snapshotUrl` | VARCHAR(512) | NULL | List preview JPEG (`/content/{auth0Id}/snippets/{snippetId}.jpg`) |
 | `created_at` | TIMESTAMP | NOT NULL | Creation timestamp |
 | `updated_at` | TIMESTAMP | NOT NULL | Last update timestamp |
 
@@ -177,6 +178,10 @@ INDEX idx_snippets_name_search (name)
 INDEX idx_snippets_description_search (description)
 ```
 
+Column `cdnResources` was renamed from `externalResources` by [`20260814001500-006-rename-external-resources-to-cdn-resources.js`](../snippy/backend/src/database/migrations/20260814001500-006-rename-external-resources-to-cdn-resources.js).
+
+`snapshotUrl` added by [`20260814020000-007-add-snippet-snapshot-url.js`](../snippy/backend/src/database/migrations/20260814020000-007-add-snippet-snapshot-url.js).
+
 **Sample Data:**
 ```json
 {
@@ -192,8 +197,8 @@ INDEX idx_snippets_description_search (description)
   "fork_count": 3,
   "favorite_count": 7,
   "comment_count": 2,
-  "external_resources": [
-    { "type": "script", "url": "https://cdn.jsdelivr.net/npm/react@18/..." }
+  "cdnResources": [
+    { "resourceType": "js", "url": "https://cdn.jsdelivr.net/npm/react@18/..." }
   ],
   "created_at": "2024-01-15T10:30:00Z",
   "updated_at": "2024-01-20T15:45:00Z"

@@ -35,7 +35,7 @@ The Snippy backend is a Node.js / Express REST API that powers a CodePen-like pr
 | Comment | `/comments` | CRUD on snippet comments |
 | Favorite | `/favorites` | List, status check, toggle |
 | Collection | `/collections` | CRUD collections + ordered pens |
-| Resource | `/resources` | MinIO asset list / upload / delete |
+| Asset | `/assets` | MinIO asset list / upload / delete |
 
 **Deployment:**
 
@@ -107,7 +107,7 @@ Source: [`snippy/backend/src/index.ts`](../snippy/backend/src/index.ts)
 7. If `ENABLE_MINIO=true`, attempt MinIO connect/bucket check and set `featureFlags.isMinioAvailable`
 8. Listen on `PORT` (default `3000`)
 
-MinIO failure does **not** stop the API. Resource endpoints return **503** when MinIO is unavailable.
+MinIO failure does **not** stop the API. Asset / picture / snapshot endpoints return **503** when MinIO is unavailable. A later **connection** error (refused, DNS, timeout) latches `isMinioAvailable` to `false` until the API process restarts — it does not flip back on its own.
 
 ---
 
@@ -167,7 +167,8 @@ Assets      — BelongsTo Users; unique (auth0_id, object_key)
 | `isPrivate` | Owner-only for non-owners |
 | Counters | `viewCount`, `forkCount`, `favoriteCount`, `commentCount` (denormalized) |
 | `tags` | JSON string array |
-| `externalResources` | JSON array of `{ resourceType: 'css'\|'js'\|'other', url }` |
+| `cdnResources` | JSON array of `{ resourceType: 'css'\|'js'\|'other', url }` |
+| `snapshotUrl` | MinIO preview JPEG path (`/content/...`) or null |
 
 #### SnippetViews
 
@@ -209,7 +210,7 @@ Assets      — BelongsTo Users; unique (auth0_id, object_key)
 | `url` | Public path `/content/{segment-encoded-objectKey}` |
 | `fileName`, `fileType` | Original name + MIME |
 
-Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed asset URLs in HTML/CSS content.
+Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed asset URLs in HTML/CSS content. `GET /assets` and owner `UserDTO.assets` omit `profile/` and `snippets/` prefixes (avatars and list snapshots). Those prefixes skip `assets` rows on upload.
 
 ---
 
@@ -220,12 +221,13 @@ Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed ass
 | Path | Purpose |
 |------|---------|
 | `GET /health` | Liveness probe — `{ status: "ok", minio: boolean }` |
+| `GET /api/v1/health` | Same body, public (no JWT) — SPA reads this through nginx `/api/` |
 | `GET /api/v1/snippets/:shortId/embed` | Runnable HTML for **public** pens (iframe-friendly) |
 | `/api-docs` | Swagger UI (non-production only) |
 
 ### Auth0 JWT (`/api/v1/*`)
 
-Every request under `/api/v1` requires a valid Bearer token **except** the embed route above:
+Every request under `/api/v1` requires a valid Bearer token **except** `GET /api/v1/health` and the embed route above:
 
 ```
 Authorization: Bearer <access_token>
@@ -277,7 +279,7 @@ Order in `index.ts`:
 |---------|--------------|----------|
 | `globalLimiter` | 200 | All requests |
 | `publicReadLimiter` | 150 | GET routes |
-| `writeLimiter` | 50 | Mutations |
+| `writeLimiter` | 50 | Mutations including `POST /users/picture` |
 | `authLimiter` | 20 | `POST /users` |
 | `searchLimiter` | 60 | `GET /snippets/search` |
 
@@ -310,7 +312,7 @@ Order in `index.ts`:
 | 404 | Not found |
 | 429 | Rate limited |
 | 500 | Unexpected server error |
-| 503 | MinIO unavailable (resource routes) |
+| 503 | MinIO unavailable (asset routes, `POST /users/picture`) |
 
 ---
 
@@ -398,13 +400,13 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 | DELETE | `/collections/:collectionId/snippets/:snippetId` | Remove pen |
 | PUT | `/collections/:collectionId/snippets/order` | Reorder `{ snippetIds }` |
 
-### Resources (MinIO)
+### Assets (MinIO)
 
 | Method | Path | Description |
 |--------|------|-------------|
-| GET | `/resources` | List my assets |
-| POST | `/resources` | Upload file (`multipart`) |
-| DELETE | `/resources/:assetId` | Delete asset by UUID |
+| GET | `/assets` | List my assets |
+| POST | `/assets` | Upload file (`multipart`) |
+| DELETE | `/assets/:assetId` | Delete asset by UUID |
 
 ---
 
@@ -443,10 +445,10 @@ Defaults and allowlists live in [`common/utilities/editor-preferences.ts`](../sn
 }
 ```
 
-**SnippetDTO** — full pen (includes files + external resources)  
+**SnippetDTO** — full pen (includes files + CDN libraries)  
 **SnippetListDTO** — list card fields (no files); includes `isFavorited?`  
 **CommentDTO** — `commentId`, `content`, `userName?`, `displayName?`, `isOwner`, timestamps  
-**ExternalResource** — `{ resourceType: 'css' | 'js' | 'other', url: string }`  
+**CdnResource** — `{ resourceType: 'css' | 'js' | 'other', url: string }`  
 **CollectionDTO** — `collectionId`, `shortId`, `name`, `description`, `isPrivate`, `isOwner`, optional `snippets` / `snippetCount`
 
 ---
@@ -500,6 +502,7 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
 
 - First user in the database is created with `isAdmin: true`
 - Username may be auto-generated from adjective+noun helper
+- Existing users: Auth0 `pictureUrl` is **not** applied when the stored value already starts with `/content/` (MinIO avatar). First-time create still uses the Auth0 picture.
 
 **Response:** `200` (existing) or `201` (created) — `{ success: true, user: UserDTO }` (owner fields including merged `editorPreferences`)
 
@@ -512,7 +515,7 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
   "userName": "string",
   "displayName": "string",
   "bio": "string",
-  "pictureUrl": "https://...",
+  "pictureUrl": "https://... or null to clear",
   "isPrivate": false,
   "editorPreferences": {
     "fontSize": 15,
@@ -531,7 +534,21 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
 
 Cannot change `auth0Id` or `isAdmin`.
 
+`pictureUrl` may be `null` to clear a custom avatar. Relative `/content/` URLs are set by `POST /users/picture`, not this URI field.
+
 `editorPreferences` may be a partial object; the server merges it with the user’s existing prefs and defaults (`mergeEditorPreferences`). Joi bounds: `fontSize` 10–24, `indentWidth` 1–8, `theme` / `fontFamily` from allowlists in [`editor-preferences.ts`](../snippy/backend/src/common/utilities/editor-preferences.ts).
+
+**Response `200`:** `{ success: true, user: UserDTO }`
+
+#### `POST /users/picture`
+
+Multipart profile-picture upload. Requires MinIO (`featureFlags.isMinioAvailable`) or returns **503**. Same MIME allowlist and **5 MB** limit as assets.
+
+- `subFolder`: `profile`
+- Object key: `{auth0Sub}/profile/avatar.{ext}` (png/jpg/gif/webp/svg from MIME). Re-upload overwrites the same key.
+- Sets `users.picture_url` to the returned `/content/...` path
+
+**Body:** `multipart/form-data` field `file`
 
 **Response `200`:** `{ success: true, user: UserDTO }`
 
@@ -539,9 +556,8 @@ Cannot change `auth0Id` or `isAdmin`.
 
 Deletes the current user. Before the DB delete:
 
-1. Loads the user’s assets
-2. Best-effort removes each MinIO object (skipped/logged if MinIO is unavailable; individual object failures do not block account deletion)
-3. Deletes the user row (CASCADE removes snippets, comments, favorites, asset rows)
+1. Best-effort lists and removes all MinIO objects under `{auth0Id}/` (library, `profile/`, `snippets/`; skipped/logged if MinIO is unavailable)
+2. Deletes the user row (CASCADE removes snippets, comments, favorites, asset rows)
 
 **Response `204`:** empty body
 
@@ -564,7 +580,7 @@ Deletes the current user. Before the DB delete:
     { "fileType": "css", "content": "h1 { color: red; }" },
     { "fileType": "js", "content": "console.log('hi')" }
   ],
-  "externalResources": [
+  "cdnResources": [
     { "resourceType": "css", "url": "https://cdn.example.com/lib.css" },
     { "resourceType": "js", "url": "https://cdn.example.com/lib.js" }
   ]
@@ -585,19 +601,25 @@ Full snippet including files. Private → owner only (else **403**).
 
 Owner only. Same optional fields as create; files may include `snippetFileID` to update an existing file.
 
-Protected (ignored) fields: `snippetId`, `auth0Id`, `shortId`, `parentShortId`.
+Protected (ignored) fields: `snippetId`, `auth0Id`, `shortId`, `parentShortId`, `snapshotUrl`.
+
+**Response `200`:** `{ success: true, snippet: SnippetDTO }`
+
+#### `POST /snippets/:snippetId/snapshot`
+
+Owner only. Requires MinIO or returns **503**. Multipart `file` (same MIME/size as assets). Stores `{auth0Sub}/snippets/{snippetId}.jpg` and sets `snapshotUrl`. Re-upload overwrites.
 
 **Response `200`:** `{ success: true, snippet: SnippetDTO }`
 
 #### `DELETE /snippets/:snippetId`
 
-Owner only. If the snippet is a fork, parent `forkCount` is decremented via parent `shortId` lookup.
+Owner only. If the snippet is a fork, parent `forkCount` is decremented via parent `shortId` lookup. Best-effort removes the MinIO snapshot (skipped if MinIO is off).
 
 **Response `204`:** empty body
 
 #### `POST /snippets/fork/:snippetId`
 
-Forks by **UUID** (`snippetId`), not shortId. Copies files and `externalResources`; sets `parentShortId` to the source short id. Cannot fork another user’s private snippet (**403**).
+Forks by **UUID** (`snippetId`), not shortId. Copies files and `cdnResources`; sets `parentShortId` to the source short id. Cannot fork another user’s private snippet (**403**).
 
 **Response `201`:** `{ success: true, snippet: SnippetDTO }`
 
@@ -633,7 +655,7 @@ Empty query returns `{ success: true, snippets: [], totalCount: 0 }`.
 
 #### `GET /snippets/:shortId/embed`
 
-**No JWT.** Returns `text/html` for a **public** pen (private → 404). Sets `Content-Security-Policy: frame-ancestors *` so the document can load in iframes. Inlines HTML/CSS/JS files and `externalResources` link/script tags.
+**No JWT.** Returns `text/html` for a **public** pen (private → 404). Sets `Content-Security-Policy: frame-ancestors *` so the document can load in iframes. Inlines HTML/CSS/JS files and `cdnResources` link/script tags.
 
 #### `POST /snippets/:snippetId/view`
 
@@ -734,17 +756,17 @@ There is **no** separate DELETE route for favorites.
 
 ---
 
-### Resource endpoints (MinIO)
+### Asset endpoints (MinIO)
 
 Require `featureFlags.isMinioAvailable === true` or return **503**.
 
-#### `GET /resources`
+#### `GET /assets`
 
-Current user’s assets. Paginated.
+Current user’s **library** assets (`general/` and other non-system prefixes). Paginated. Excludes `{auth0Id}/profile/` and `{auth0Id}/snippets/`.
 
 **Response `200`:** `{ success: true, assets: AssetDTO[], totalCount: number }`
 
-#### `POST /resources`
+#### `POST /assets`
 
 `multipart/form-data`:
 
@@ -758,6 +780,7 @@ Current user’s assets. Paginated.
 - Max size: **5 MB**
 - Allowed MIME: `image/png`, `image/jpeg`, `image/gif`, `image/webp`, `image/svg+xml`
 - Object key: `{auth0Sub}/{subFolder}/{sanitizedFileName}`
+- `subFolder` `profile` or `snippets`: uploaded to MinIO, **no** `assets` row (not listed in the library)
 - Public URL: path-style `/content/{segment-encoded key}` (each `/`-separated segment URI-encoded; nginx or Angular proxy serves `/content/`)
 
 **Response `201`:**
@@ -771,7 +794,7 @@ Current user’s assets. Paginated.
 }
 ```
 
-#### `DELETE /resources/:assetId`
+#### `DELETE /assets/:assetId`
 
 Deletes MinIO object + DB row. Owner only (**403** otherwise).
 
@@ -841,10 +864,11 @@ sequenceDiagram
 ### 7. Asset upload → use in HTML → delete
 
 1. Enable MinIO (`ENABLE_MINIO=true`) and ensure bucket/init succeeded
-2. `POST /resources` multipart with image → receive `url` like `/content/...`
+2. `POST /assets` multipart with image → receive `url` like `/content/...`
+3. Optionally `POST /users/picture` multipart → `users.picture_url` becomes `/content/{auth0Id}/profile/avatar.{ext}`
 3. Insert that URL into snippet HTML/CSS (`<img src="/content/...">`)
-4. `GET /resources` to show the user’s asset list in the UI
-5. `DELETE /resources/:assetId` when removing an unused asset
+4. `GET /assets` to show the user’s asset list in the UI
+5. `DELETE /assets/:assetId` when removing an unused asset
 
 In local `ng serve`, `proxy.conf.json` proxies both `/api` → API and `/content` → MinIO (MinIO must be running). Prod uses nginx `location /content/`.
 
@@ -886,7 +910,7 @@ Loaded from the repo root `.env` (Compose `env_file`) or process environment.
 | `MINIO_APP_PASSWORD` | (dev default) | Secret key |
 | `MINIO_BUCKET` | `content` | Bucket name |
 
-Runtime flag: `featureFlags.isMinioAvailable` — set only after a successful connect when MinIO is enabled.
+Runtime flag: `featureFlags.isMinioAvailable` — set after a successful connect when MinIO is enabled. Connection errors on SDK calls latch it off until API restart. Exposed on `GET /health` and `GET /api/v1/health`.
 
 ---
 
@@ -996,14 +1020,14 @@ curl -s "http://localhost:3000/api/v1/comments/$SNIPPET_UUID?page=1&limit=20" \
   -H "Authorization: Bearer $TOKEN"
 
 # Upload asset (MinIO enabled)
-curl -s -X POST http://localhost:3000/api/v1/resources \
+curl -s -X POST http://localhost:3000/api/v1/assets \
   -H "Authorization: Bearer $TOKEN" \
   -F "file=@./image.png" \
   -F "subFolder=general"
 
 # Delete asset
 curl -s -o /dev/null -w "%{http_code}\n" -X DELETE \
-  http://localhost:3000/api/v1/resources/$ASSET_UUID \
+  http://localhost:3000/api/v1/assets/$ASSET_UUID \
   -H "Authorization: Bearer $TOKEN"
 ```
 
@@ -1023,10 +1047,10 @@ Logger writes under `src/common/logs/` inside the container/workdir depending on
 |---------|----------------|
 | 401 on all routes | Missing/expired Bearer token or wrong audience |
 | 403 on snippet/profile | Private resource or not owner |
-| 503 on `/resources` | MinIO disabled or connection failed at boot |
+| 503 on `/assets` | MinIO disabled, connection failed at boot, or latched off after a connection error (until API restart) |
 | Empty favorites list | Fixed association mapping; rebuild/restart API if on old image |
 | Schema / missing column errors | Run migrations / baseline; recreate volume on fresh local DBs |
-| 401 on `/health` | Should not happen — health is registered before JWT |
+| 401 on `/health` or `/api/v1/health` | Should not happen — both are registered/skipped before JWT |
 
 ---
 

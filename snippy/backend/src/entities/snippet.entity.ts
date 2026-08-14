@@ -164,7 +164,14 @@ export class Snippets extends Model<Snippets> {
     allowNull: true,
     defaultValue: [],
   })
-  externalResources!: Array<{ resourceType: 'css' | 'js' | 'other'; url: string }>;
+  cdnResources!: Array<{ resourceType: 'css' | 'js' | 'other'; url: string }>;
+
+  @Column({
+    type: DataType.STRING(512),
+    allowNull: true,
+    defaultValue: null,
+  })
+  snapshotUrl?: string | null;
 
   // Relations
   @BelongsTo(() => Users, {

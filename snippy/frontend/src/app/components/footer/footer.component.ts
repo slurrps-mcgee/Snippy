@@ -68,14 +68,14 @@ export class FooterComponent {
     const html = snippet.snippetFiles.find(f => f.fileType === 'html')?.content ?? '';
     const css = snippet.snippetFiles.find(f => f.fileType === 'css')?.content ?? '';
     const js = snippet.snippetFiles.find(f => f.fileType === 'js')?.content ?? '';
-    const externalResources = snippet.externalResources ?? [];
+    const cdnResources = snippet.cdnResources ?? [];
 
-    const stylesheets = externalResources
+    const stylesheets = cdnResources
       .filter(res => res.resourceType === 'css')
       .map(res => `<link rel="stylesheet" href="${res.url}">`)
       .join('\n  ');
 
-    const scripts = externalResources
+    const scripts = cdnResources
       .filter(res => res.resourceType === 'js')
       .map(res => `<script src="${res.url}"><\/script>`)
       .join('\n  ');

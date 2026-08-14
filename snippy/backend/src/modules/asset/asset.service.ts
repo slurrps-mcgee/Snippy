@@ -3,17 +3,16 @@ import { ServicePayload } from '../../common/interfaces/servicePayload.interface
 import { ServiceResponse } from '../../common/interfaces/serviceResponse.interface';
 import { CustomError } from '../../common/exceptions/custom-error';
 import logger from '../../common/utilities/logger';
-import { minioClient } from '../../database/minio';
-import { ALLOWED_ASSET_MIME_TYPES, CreateResourceRequest, MAX_ASSET_SIZE_BYTES } from './dto/resource.dto';
+import { minioClient, latchMinioUnavailable, isMinioConnectionError } from '../../database/minio';
+import { ALLOWED_ASSET_MIME_TYPES, CreateAssetRequest, MAX_ASSET_SIZE_BYTES, isSystemSubFolder, snippetSnapshotObjectKey } from './dto/asset.dto';
 import { executeInTransaction } from '../../common/utilities/transaction';
 import {
     createAsset,
     deleteAsset,
-    findAllAssetsByUserId,
     findAssetsByUserId,
     findByAssetId,
     findByObjectKey,
-} from './resource.repo';
+} from './asset.repo';
 import { config, featureFlags } from '../../config';
 import { PaginationQuery, PaginationService } from '../../common/services/pagination.service';
 import { AssetDTO } from '../user/dto/user.dto';
@@ -35,7 +34,7 @@ function sanitizeSubFolder(subFolder?: string): string {
 }
 
 /** Encode each path segment so `/` stays as path separators for MinIO path-style URLs. */
-function buildContentUrl(objectKey: string): string {
+export function buildContentUrl(objectKey: string): string {
     const encoded = objectKey
         .split('/')
         .map((segment) => encodeURIComponent(segment))
@@ -47,7 +46,7 @@ function buildContentUrl(objectKey: string): string {
  * Upload a file to MinIO under a user folder and optional subfolder.
  */
 export async function uploadFileHandler(
-    payload: ServicePayload<CreateResourceRequest>
+    payload: ServicePayload<CreateAssetRequest>
 ): Promise<ServiceResponse<AssetDTO>> {
     if (!featureFlags.isMinioAvailable) {
         throw new CustomError('File upload is currently unavailable', 503);
@@ -87,6 +86,13 @@ export async function uploadFileHandler(
 
         const url = buildContentUrl(objectKey);
 
+        if (isSystemSubFolder(subFolder)) {
+            return {
+                message: 'File uploaded successfully',
+                url,
+            };
+        }
+
         const asset = await executeInTransaction(async (t) => {
             const existing = await findByObjectKey(userPrefix, objectKey, t);
             if (existing) {
@@ -114,6 +120,10 @@ export async function uploadFileHandler(
         };
     } catch (err) {
         if (err instanceof CustomError) throw err;
+        if (isMinioConnectionError(err)) {
+            latchMinioUnavailable(err);
+            throw new CustomError('File upload is currently unavailable', 503);
+        }
         logger.error('Failed to upload file to MinIO', err);
         throw new CustomError('File upload failed', 500);
     }
@@ -158,6 +168,10 @@ export async function deleteFileHandler(
         return { message: 'File deleted successfully' };
     } catch (err) {
         if (err instanceof CustomError) throw err;
+        if (isMinioConnectionError(err)) {
+            latchMinioUnavailable(err);
+            throw new CustomError('File delete is currently unavailable', 503);
+        }
         logger.error('Failed to delete file from MinIO', err);
         throw new CustomError('File delete failed', 500);
     }
@@ -186,26 +200,64 @@ export async function listAssetsHandler(
 }
 
 /**
- * Best-effort MinIO cleanup for all objects owned by a user.
+ * Best-effort MinIO cleanup for all objects under the user's prefix.
  * Does not throw if MinIO is unavailable or individual deletes fail.
  */
 export async function deleteUserMinioObjects(auth0Id: string): Promise<void> {
-    const assets = await findAllAssetsByUserId(auth0Id);
-
-    if (assets.length === 0) {
-        return;
-    }
-
     if (!featureFlags.isMinioAvailable) {
-        logger.warn(`MinIO unavailable — skipping object cleanup for ${assets.length} asset(s) of user ${auth0Id}`);
+        logger.warn(`MinIO unavailable — skipping object cleanup for user ${auth0Id}`);
         return;
     }
 
-    for (const asset of assets) {
+    const bucket = config!.minio.bucket!;
+    const prefix = `${auth0Id}/`;
+    let keys: string[] = [];
+    try {
+        keys = await listObjectKeys(bucket, prefix);
+    } catch (err) {
+        logger.error(`Failed to list MinIO objects for user ${auth0Id}`, err);
+        if (isMinioConnectionError(err)) {
+            latchMinioUnavailable(err);
+        }
+        return;
+    }
+
+    for (const objectKey of keys) {
         try {
-            await minioClient.removeObject(config!.minio.bucket!, asset.objectKey);
+            await minioClient.removeObject(bucket, objectKey);
         } catch (err) {
-            logger.error(`Failed to remove MinIO object ${asset.objectKey} for user ${auth0Id}`, err);
+            logger.error(`Failed to remove MinIO object ${objectKey} for user ${auth0Id}`, err);
+            if (isMinioConnectionError(err)) {
+                latchMinioUnavailable(err);
+                return;
+            }
         }
     }
+}
+
+export async function removeSnippetSnapshot(auth0Id: string, snippetId: string): Promise<void> {
+    if (!featureFlags.isMinioAvailable) {
+        return;
+    }
+    const objectKey = snippetSnapshotObjectKey(auth0Id, snippetId);
+    try {
+        await minioClient.removeObject(config!.minio.bucket!, objectKey);
+    } catch (err) {
+        logger.error(`Failed to remove snippet snapshot ${objectKey}`, err);
+        if (isMinioConnectionError(err)) {
+            latchMinioUnavailable(err);
+        }
+    }
+}
+
+function listObjectKeys(bucket: string, prefix: string): Promise<string[]> {
+    return new Promise((resolve, reject) => {
+        const keys: string[] = [];
+        const stream = minioClient.listObjectsV2(bucket, prefix, true);
+        stream.on('data', (obj) => {
+            if (obj.name) keys.push(obj.name);
+        });
+        stream.on('error', reject);
+        stream.on('end', () => resolve(keys));
+    });
 }

@@ -28,16 +28,37 @@ function isRetriableError(err: unknown): boolean {
   return false;
 }
 
-const retryPolicy = retry(handleWhen(isRetriableError), {
-  maxAttempts: 3,
-  backoff: new ExponentialBackoff({ initialDelay: 500, maxDelay: 5_000 }),
-});
+function isMinioRetriableError(err: unknown): boolean {
+  const anyErr = err as any;
+  const status: number | undefined =
+    anyErr?.status ??
+    anyErr?.statusCode ??
+    anyErr?.response?.status ??
+    anyErr?.error?.status;
+  // 503 means MinIO is latched off — retrying only delays save / upload.
+  if (status === 503) return false;
+  return isRetriableError(err);
+}
 
-const breakerPolicy = circuitBreaker(handleWhen(isRetriableError), {
-  halfOpenAfter: 10 * 1000,
-  breaker: new ConsecutiveBreaker(5),
-});
+function createHttpPolicy(retriable: (err: unknown) => boolean = isRetriableError) {
+  const retryPolicy = retry(handleWhen(retriable), {
+    maxAttempts: 3,
+    backoff: new ExponentialBackoff({ initialDelay: 500, maxDelay: 5_000 }),
+  });
 
-const defaultPolicy = wrap(breakerPolicy, retryPolicy);
+  const breakerPolicy = circuitBreaker(handleWhen(retriable), {
+    halfOpenAfter: 10 * 1000,
+    breaker: new ConsecutiveBreaker(5),
+  });
 
-export { defaultPolicy };
+  return wrap(breakerPolicy, retryPolicy);
+}
+
+/** Snippet / user / collection JSON API. */
+const defaultPolicy = createHttpPolicy();
+
+/** MinIO-backed routes — separate circuit so 503s do not trip CRUD. */
+const minioPolicy = createHttpPolicy(isMinioRetriableError);
+
+export { defaultPolicy, minioPolicy };
+export type HttpResiliencePolicy = typeof defaultPolicy;

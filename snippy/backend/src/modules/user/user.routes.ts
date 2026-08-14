@@ -1,5 +1,5 @@
 import express from 'express';
-import { getUserProfile, checkUsername, ensureUser, updateUser, getCurrentUserProfile, deleteUser } from './user.controller';
+import { getUserProfile, checkUsername, ensureUser, updateUser, getCurrentUserProfile, deleteUser, updateProfilePicture } from './user.controller';
 import { followUser, unfollowUser, getFollowers, getFollowing } from '../follow/follow.controller';
 import { authLimiter, publicReadLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
 
@@ -21,6 +21,8 @@ userRouter.get('/:userName', publicReadLimiter, getUserProfile);
 
 // Authentication endpoint - strictest limit
 userRouter.post('/', authLimiter, ensureUser);
+
+userRouter.post('/picture', writeLimiter, updateProfilePicture);
 
 // Write operations - lower limit
 userRouter.put('/', writeLimiter, updateUser);

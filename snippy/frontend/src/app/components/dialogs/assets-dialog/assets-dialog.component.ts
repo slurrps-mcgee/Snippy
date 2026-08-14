@@ -6,11 +6,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { firstValueFrom } from 'rxjs';
-import { ResourceApiService } from '@app/services/api/resource.api.service';
+import { AssetApiService } from '@app/services/api/asset.api.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
-import { getRuntimeEnv } from '@app/config/runtime-env';
 import { Assets } from '@app/interfaces/asset.interface';
+import { MinioStatusService } from '@app/services/ui/minio-status.service';
 import { MatDividerModule } from '@angular/material/divider';
 
 @Component({
@@ -30,13 +30,12 @@ import { MatDividerModule } from '@angular/material/divider';
 export class AssetsDialogComponent implements OnInit {
   dialogRef = inject(MatDialogRef<AssetsDialogComponent>);
 
-  private resourceApiService = inject(ResourceApiService);
+  private assetApiService = inject(AssetApiService);
   private snackbarService = inject(SnackbarService);
   private dialogService = inject(DialogService);
+  readonly minioEnabled = inject(MinioStatusService).enabled;
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
-
-  readonly minioEnabled = getRuntimeEnv().minio_enabled;
 
   assets = signal<Assets[]>([]);
   loading = signal(false);
@@ -44,7 +43,7 @@ export class AssetsDialogComponent implements OnInit {
   deletingId = signal<string | null>(null);
 
   ngOnInit(): void {
-    if (this.minioEnabled) {
+    if (this.minioEnabled()) {
       this.loadAssets();
     }
   }
@@ -52,7 +51,7 @@ export class AssetsDialogComponent implements OnInit {
   async loadAssets() {
     this.loading.set(true);
     try {
-      const res = await firstValueFrom(this.resourceApiService.list());
+      const res = await firstValueFrom(this.assetApiService.list());
       this.assets.set(res.assets ?? []);
     } catch {
       this.snackbarService.error('Failed to load assets');
@@ -72,7 +71,7 @@ export class AssetsDialogComponent implements OnInit {
 
     this.uploading.set(true);
     try {
-      const res = await firstValueFrom(this.resourceApiService.upload(file));
+      const res = await firstValueFrom(this.assetApiService.upload(file));
       if (res.asset) {
         this.assets.update(list => [res.asset!, ...list.filter(a => a.assetId !== res.asset!.assetId)]);
       }
@@ -96,7 +95,7 @@ export class AssetsDialogComponent implements OnInit {
       action: async () => {
         this.deletingId.set(asset.assetId);
         try {
-          await firstValueFrom(this.resourceApiService.delete(asset.assetId));
+          await firstValueFrom(this.assetApiService.delete(asset.assetId));
           this.assets.update(list => list.filter(a => a.assetId !== asset.assetId));
         } finally {
           this.deletingId.set(null);

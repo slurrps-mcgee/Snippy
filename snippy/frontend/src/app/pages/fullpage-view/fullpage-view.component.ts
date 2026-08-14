@@ -36,7 +36,7 @@ export class FullpageViewComponent implements OnInit, OnDestroy {
           cssFile?.content || '',
           jsFile?.content || '',
           previewUpdateType,
-          snippet.externalResources || []
+          snippet.cdnResources || []
         );
       }
     });

@@ -11,7 +11,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
 import { ExternalResourcesListComponent } from '@app/components/lists/external-resources-list/external-resources-list.component';
-import { ExternalResource } from '@app/interfaces/externalResource.interface';
+import { CdnResource } from '@app/interfaces/cdnResource.interface';
 import { Snippet } from '@app/interfaces/snippet.interface';
 import { DialogService } from '@app/services/ui/dialog.service';
 
@@ -45,8 +45,8 @@ export class SnippetSettingsDialogComponent {
   isPrivate: boolean;
   tags: string[];
   newTag: string = '';
-  cssResources: ExternalResource[] = [];
-  jsResources: ExternalResource[] = [];
+  cssResources: CdnResource[] = [];
+  jsResources: CdnResource[] = [];
   readonly guestMode: boolean;
 
   constructor() {
@@ -54,7 +54,7 @@ export class SnippetSettingsDialogComponent {
     this.description = this.data.description || '';
     this.isPrivate = this.data.isPrivate;
     this.tags = [...(this.data.tags || [])];
-    const allResources = [...(this.data.externalResources || [])];
+    const allResources = [...(this.data.cdnResources || [])];
     this.cssResources = allResources.filter(r => r.resourceType === 'css');
     this.jsResources = allResources.filter(r => r.resourceType === 'js');
   }
@@ -77,17 +77,17 @@ export class SnippetSettingsDialogComponent {
 
   onSave() {
     // Combine CSS and JS resources into one array, filter out empty URLs
-    const externalResources = [
+    const cdnResources = [
       ...this.cssResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'css' })),
       ...this.jsResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'js' }))
     ];
 
-    // Validate all resource URLs
-    const invalidUrls = externalResources.filter(r => !this.isValidUrl(r.url));
+    // Validate all CDN URLs
+    const invalidUrls = cdnResources.filter(r => !this.isValidUrl(r.url));
     if (invalidUrls.length > 0) {
       this.dialogService.error(
         'Invalid URL',
-        'One or more external resource URLs are invalid. Please enter valid URLs.'
+        'One or more CDN library URLs are invalid. Please enter valid URLs.'
       );
       return;
     }
@@ -96,7 +96,7 @@ export class SnippetSettingsDialogComponent {
       description: this.description,
       isPrivate: this.isPrivate,
       tags: this.tags,
-      externalResources
+      cdnResources
     });
   }
 

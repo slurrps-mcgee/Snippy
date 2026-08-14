@@ -9,7 +9,7 @@ import { SnippetDTO, SnippetListDTO, CreateSnippetRequest, UpdateSnippetRequest 
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { findByUsername } from "../user/user.repo";
-import { config } from "../../config";
+import { config, featureFlags } from "../../config";
 import { findFavoritedSnippetIds } from "../favorite/favorite.repo";
 import {
     createSnippet,
@@ -32,6 +32,10 @@ import { findSnippetView, upsertSnippetView } from "./snippetView.repo";
 import { SnippetListQuery } from "./dto/snippet.dto";
 import { Transaction } from "sequelize";
 import { findFollowingIds } from "../follow/follow.repo";
+import { minioClient, latchMinioUnavailable, isMinioConnectionError } from "../../database/minio";
+import logger from "../../common/utilities/logger";
+import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES, snippetSnapshotObjectKey } from "../asset/dto/asset.dto";
+import { buildContentUrl, removeSnippetSnapshot } from "../asset/asset.service";
 
 async function mapSnippetsWithFavorites(
     rows: Snippets[],
@@ -59,7 +63,7 @@ async function mapSnippetsWithFavorites(
  * Protected fields that cannot be updated through the updateSnippet endpoint
  * These fields are system-managed and should not be modified by users
  */
-const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId'] as const;
+const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId', 'snapshotUrl'] as const;
 
 //#region CREATE/UPDATE/DELETE
 // Create Snippet
@@ -129,7 +133,7 @@ export async function forkSnippetHandler(payload: ServicePayload<unknown, { snip
                 description: originalSnippet.description,
                 tags: originalSnippet.tags,
                 isPrivate: originalSnippet.isPrivate,
-                externalResources: originalSnippet.externalResources ?? [],
+                cdnResources: originalSnippet.cdnResources ?? [],
                 shortId: ''
             };
 
@@ -294,12 +298,80 @@ export async function deleteSnippetHandler(payload: ServicePayload<unknown, { sn
                 }
             }
 
+            await removeSnippetSnapshot(auth0Id, snippetId);
             await deleteSnippet(snippetId, t);
 
             return { message: "Snippet deleted successfully" };
         });
     } catch (err: any) {
         handleError(err, 'deleteSnippetHandler');
+    }
+}
+
+export async function uploadSnippetSnapshotHandler(
+    payload: ServicePayload<unknown, { snippetId: string }>
+): Promise<ServiceResponse<SnippetDTO>> {
+    if (!featureFlags.isMinioAvailable) {
+        throw new CustomError('File upload is currently unavailable', 503);
+    }
+
+    const auth0Id = payload.auth?.payload?.sub;
+    if (!auth0Id) {
+        throw new CustomError('Authentication required', 401);
+    }
+
+    const snippetId = payload.params?.snippetId;
+    if (!snippetId) {
+        throw new CustomError('Snippet ID required', 400);
+    }
+
+    const file = payload.file;
+    if (!file?.buffer || !file.mimetype) {
+        throw new CustomError('No file uploaded', 400);
+    }
+
+    if (file.buffer.length > MAX_ASSET_SIZE_BYTES) {
+        throw new CustomError('File exceeds maximum size of 5MB', 400);
+    }
+
+    if (file.mimetype !== 'image/jpeg' && !(ALLOWED_ASSET_MIME_TYPES as readonly string[]).includes(file.mimetype)) {
+        throw new CustomError('Unsupported file type. Allowed: png, jpeg, gif, webp, svg', 400);
+    }
+
+    try {
+        const snippet = await findBySnippetId(snippetId);
+        if (!snippet) {
+            throw new CustomError('Snippet not found', 404);
+        }
+        AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
+
+        const objectKey = snippetSnapshotObjectKey(auth0Id, snippetId);
+        await minioClient.putObject(
+            config!.minio.bucket!,
+            objectKey,
+            file.buffer,
+            file.buffer.length,
+            { 'Content-Type': file.mimetype, 'Cache-Control': 'no-cache' }
+        );
+
+        const snapshotUrl = buildContentUrl(objectKey);
+
+        return await executeInTransaction(async (t) => {
+            await updateSnippet(snippetId, { snapshotUrl, updatedAt: new Date() } as any, t);
+            const updated = await findBySnippetId(snippetId, t);
+            if (!updated) {
+                throw new CustomError('Snippet not found after snapshot update', 404);
+            }
+            return { snippet: SnippetMapper.toDTO(updated, auth0Id) };
+        }, 'uploadSnippetSnapshot');
+    } catch (err: any) {
+        if (err instanceof CustomError) throw err;
+        if (isMinioConnectionError(err)) {
+            latchMinioUnavailable(err);
+            throw new CustomError('File upload is currently unavailable', 503);
+        }
+        logger.error('Failed to upload snippet snapshot', err);
+        handleError(err, 'uploadSnippetSnapshotHandler');
     }
 }
 //#endregion
@@ -496,7 +568,7 @@ export async function getSnippetEmbedHtmlHandler(
         const css = files.find((f) => f.fileType === 'css')?.content ?? '';
         const js = files.find((f) => f.fileType === 'js')?.content ?? '';
 
-        const externalLinks = (snippet.externalResources || [])
+        const externalLinks = (snippet.cdnResources || [])
             .map((r) => {
                 if (r.resourceType === 'css') {
                     return `<link rel="stylesheet" href="${escapeHtmlAttr(r.url)}">`;

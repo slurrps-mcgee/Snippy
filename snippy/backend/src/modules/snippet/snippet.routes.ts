@@ -12,6 +12,7 @@ import {
     updateSnippetViewCount,
     getFeedSnippets,
     getSnippetEmbed,
+    uploadSnippetSnapshot,
 } from './snippet.controller';
 import { publicReadLimiter, searchLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
 
@@ -32,6 +33,7 @@ snippetRouter.get('/:shortId', publicReadLimiter, getSnippetByShortId);
 // Write operations - lower limit
 snippetRouter.post('/', writeLimiter, createSnippet);
 snippetRouter.post('/fork/:snippetId', writeLimiter, forkSnippet);
+snippetRouter.post('/:snippetId/snapshot', writeLimiter, uploadSnippetSnapshot);
 snippetRouter.put('/:snippetId', writeLimiter, updateSnippet);
 snippetRouter.post('/:snippetId/view', writeLimiter, updateSnippetViewCount);
 snippetRouter.delete('/:snippetId', writeLimiter, deleteSnippet);

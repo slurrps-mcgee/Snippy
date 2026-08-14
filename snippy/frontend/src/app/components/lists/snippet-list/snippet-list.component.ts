@@ -1,4 +1,4 @@
-import { Component, Input, Output, EventEmitter, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, Input, Output, EventEmitter, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { MatCardModule } from '@angular/material/card';
 import { PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
@@ -49,9 +49,29 @@ export class SnippetListComponent {
   private navigation = inject(NavigationService);
   private snippetActions = inject(SnippetActionsService);
   private followUi = inject(FollowUiService);
+  private readonly brokenSnapshots = signal(new Set<string>());
+
+  snapshotFailed(shortId: string): boolean {
+    return this.brokenSnapshots().has(shortId);
+  }
+
+  onSnapshotError(shortId: string): void {
+    this.brokenSnapshots.update((prev) => {
+      const next = new Set(prev);
+      next.add(shortId);
+      return next;
+    });
+  }
 
   openSnippet(snippet: SnippetList) {
     this.navigation.toSnippet(snippet.shortId, snippet.userName);
+  }
+
+  snapshotSrc(snippet: SnippetList): string {
+    const url = snippet.snapshotUrl ?? '';
+    if (!url) return url;
+    const version = snippet.updatedAt ? encodeURIComponent(snippet.updatedAt) : '';
+    return version ? `${url}${url.includes('?') ? '&' : '?'}v=${version}` : url;
   }
 
   goToProfile(userName: string | null | undefined, event: Event) {

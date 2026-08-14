@@ -539,7 +539,7 @@ Current version sources:
 | API crashes on boot | Missing `DB_PASS` or `AUTH0_DOMAIN` | Required by API config validation — set them and recreate the API container |
 | DB init / auth failures | Wrong `MYSQL_ROOT_PASSWORD` / `DB_PASS`, or volume from older credentials | Align env with existing volume, or `down -v` for a clean DB (destructive) |
 | `network NPM declared as external, but could not be found` | Network not created | `docker network create NPM` |
-| MinIO / assets unavailable | `ENABLE_MINIO` false or MinIO not running | Enable MinIO services and set `ENABLE_MINIO=true`; restart frontend so nginx/`env.js` update |
+| MinIO / assets unavailable | `ENABLE_MINIO` false, MinIO not running, or MinIO process exited | Give the `minio` service `restart: unless-stopped` (Portainer). Prefer a healthcheck that does not require `curl` (official images often lack it). After a connection failure the API latches MinIO off until **API restart**; the SPA probes `GET /api/v1/health` and latches Assets / Profile Image / snapshot-on-save until you restart the stack and reload |
 | Env changes ignored in browser | Stale `env.js` | Restart frontend container and hard-refresh the browser |
 
 ---

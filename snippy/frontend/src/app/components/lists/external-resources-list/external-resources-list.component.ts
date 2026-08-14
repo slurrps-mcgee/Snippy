@@ -9,7 +9,7 @@ import { Component, DestroyRef, EventEmitter, Input, Output, inject, OnInit, Cha
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { ExternalResource } from '@app/interfaces/externalResource.interface';
+import { CdnResource } from '@app/interfaces/cdnResource.interface';
 import { CdnLibraryHit } from '@app/interfaces/cdnLibrary.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { CdnApiService } from '@app/services/api/cdn.api.service';
@@ -43,9 +43,9 @@ import {
   styleUrl: './external-resources-list.component.scss',
 })
 export class ExternalResourcesListComponent implements OnInit {
-  @Input() resources: ExternalResource[] = [];
+  @Input() resources: CdnResource[] = [];
   @Input() resourceType: 'css' | 'js' = 'css';
-  @Output() resourcesChange = new EventEmitter<ExternalResource[]>();
+  @Output() resourcesChange = new EventEmitter<CdnResource[]>();
 
   private cdnApi = inject(CdnApiService);
   private snackbar = inject(SnackbarService);
@@ -158,7 +158,7 @@ export class ExternalResourcesListComponent implements OnInit {
     }
   }
 
-  drop(event: CdkDragDrop<ExternalResource[]>) {
+  drop(event: CdkDragDrop<CdnResource[]>) {
     moveItemInArray(this.resources, event.previousIndex, event.currentIndex);
     this.resourcesChange.emit(this.resources);
   }

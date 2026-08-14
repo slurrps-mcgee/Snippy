@@ -1,12 +1,15 @@
-import { Component, ViewChild, ElementRef, OnDestroy, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewChild, ElementRef, OnDestroy, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 
-import { ExternalResource } from '@app/interfaces/externalResource.interface';
+import { CdnResource } from '@app/interfaces/cdnResource.interface';
 import {
   ConsoleLevel,
   PreviewConsoleService,
 } from '@app/services/ui/preview-console.service';
+import { PreviewSnapshotService } from '@app/services/ui/preview-snapshot.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
+import { toJpeg } from 'html-to-image';
+import { MinioStatusService } from '@app/services/ui/minio-status.service';
 
 @Component({
   selector: 'app-snippet-preview',
@@ -15,10 +18,12 @@ import { fromEvent } from 'rxjs';
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-preview.component.scss',
 })
-export class SnippetPreviewComponent implements OnDestroy {
+export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
   @ViewChild('previewIframe') previewIframe?: ElementRef<HTMLIFrameElement>;
 
   private previewConsole = inject(PreviewConsoleService);
+  private previewSnapshot = inject(PreviewSnapshotService);
+  private minioStatus = inject(MinioStatusService);
   private destroyRef = inject(DestroyRef);
   private messageListenerAttached = false;
 
@@ -29,19 +34,24 @@ export class SnippetPreviewComponent implements OnDestroy {
     this.messageListenerAttached = true;
   }
 
+  ngAfterViewInit() {
+    if (!this.minioStatus.enabled()) return;
+    this.previewSnapshot.register(() => this.captureJpeg());
+  }
+
   updatePreview(
     html: string,
     css: string,
     js: string,
     previewUpdateType: string | null,
-    externalResources: ExternalResource[] = []
+    cdnResources: CdnResource[] = []
   ) {
     if (!this.previewIframe) return;
 
     if (previewUpdateType?.toLocaleLowerCase() === 'partial') {
       this.updateCssOnly(css);
     } else {
-      this.fullReload(html, css, js, externalResources);
+      this.fullReload(html, css, js, cdnResources);
     }
   }
 
@@ -49,7 +59,7 @@ export class SnippetPreviewComponent implements OnDestroy {
     html: string,
     css: string,
     js: string,
-    externalResources: ExternalResource[] = []
+    cdnResources: CdnResource[] = []
   ) {
     if (!this.previewIframe) return;
 
@@ -57,12 +67,12 @@ export class SnippetPreviewComponent implements OnDestroy {
 
     const iframe = this.previewIframe.nativeElement;
 
-    const stylesheets = externalResources
+    const stylesheets = cdnResources
       .filter(res => res.resourceType === 'css')
       .map(res => `<link rel="stylesheet" href="${res.url}">`)
       .join('\n');
 
-    const scripts = externalResources
+    const scripts = cdnResources
       .filter(res => res.resourceType === 'js')
       .map(res => `<script src="${res.url}"><\/script>`)
       .join('\n');
@@ -111,6 +121,7 @@ export class SnippetPreviewComponent implements OnDestroy {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
           ${stylesheets}
+          <style>html, body { margin: 0; min-height: 100%; height: 100%; }</style>
           <style id="snippet-style">${css}</style>
           ${consoleBridge}
         </head>
@@ -153,7 +164,46 @@ export class SnippetPreviewComponent implements OnDestroy {
   }
 
   ngOnDestroy() {
-    // takeUntilDestroyed handles the message listener
+    this.previewSnapshot.unregister();
     void this.messageListenerAttached;
+  }
+
+  private async captureJpeg(): Promise<Blob | null> {
+    const iframe = this.previewIframe?.nativeElement;
+    const doc = iframe?.contentDocument;
+    const root = doc?.documentElement;
+    if (!iframe || !doc || !root) return null;
+
+    try {
+      const srcWidth = Math.max(iframe.clientWidth, 1);
+      const srcHeight = Math.max(iframe.clientHeight, 1);
+      const pixelRatio = Math.min(1, 800 / Math.max(srcWidth, srcHeight));
+      const backgroundColor = this.snapshotBackground(doc);
+
+      const dataUrl = await toJpeg(root, {
+        quality: 0.8,
+        width: srcWidth,
+        height: srcHeight,
+        pixelRatio,
+        cacheBust: true,
+        backgroundColor,
+        style: {
+          width: `${srcWidth}px`,
+          height: `${srcHeight}px`,
+          margin: '0',
+          backgroundColor,
+        },
+      });
+      const res = await fetch(dataUrl);
+      return res.blob();
+    } catch {
+      return null;
+    }
+  }
+
+  private snapshotBackground(doc: Document): string {
+    const raw = doc.defaultView?.getComputedStyle(doc.body).backgroundColor ?? '';
+    const transparent = !raw || raw === 'transparent' || raw === 'rgba(0, 0, 0, 0)';
+    return transparent ? '#ffffff' : raw;
   }
 }

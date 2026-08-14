@@ -14,7 +14,7 @@ const createSnippetSchema = Joi.object({
             content: Joi.string().optional().allow(''),
         })
     ),
-    externalResources: Joi.array().items(
+    cdnResources: Joi.array().items(
         Joi.object({
             resourceType: Joi.string().valid('css', 'js', 'other').required(),
             url: Joi.string().uri().required(),
@@ -58,7 +58,7 @@ const updateSnippetSchema = Joi.object({
             content: Joi.string().optional().allow(''),
         })
     ).optional(),
-    externalResources: Joi.array().items(
+    cdnResources: Joi.array().items(
         Joi.object({
             resourceType: Joi.string().valid('css', 'js', 'other').required(),
             url: Joi.string().uri().required(),

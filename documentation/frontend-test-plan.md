@@ -43,7 +43,7 @@ Manual QA checklist for fully exercising the Angular frontend. Use this after UI
 - Collections create/open/delete/add/remove
 - Editor layouts, save, unsaved-changes guard, full-page preview
 - Assets upload/copy/delete (when MinIO enabled)
-- Settings profile / editor preferences / account privacy / username / delete account
+- Settings profile (including MinIO profile image when enabled) / editor preferences / account privacy / username / delete account
 - Embed player (tabs, editable, theme query param)
 - Server-side search (`q`) on lists and collections
 - Shared UI: pill tabs, glass cards, dialogs, snackbars
@@ -196,6 +196,7 @@ If any smoke case fails, stop and fix before full regression.
 | ID | Steps | Expected |
 |----|-------|----------|
 | E1 | Open `/public` | Sort header + snippet grid |
+| E1a | Cards with/without snapshot | JPEG thumb when `snapshotUrl` set; code placeholder otherwise |
 | E2 | Sort: Newest / Views / Favorites / Forks | List reorders; page resets to 1 |
 | E3 | Pagination | Page size and next/prev load new server pages |
 | E4 | Open another user’s public pen | Editor/view loads that snippet (not previous) |
@@ -268,6 +269,7 @@ On home / explore / following / profile lists:
 | ED3 | Format Code / Analyze Code (⋮ on pane) | Format mutates content; analyze opens alert dialog |
 | ED4 | Rename in header (owner) | Dirty; Save enabled |
 | ED5 | Save | Success snackbar; Save disabled until next edit |
+| ED5a | Save with MinIO on | List card later shows a preview thumb; Assets dialog does not list the snapshot |
 | ED6 | Layout menu: Left / Top / Right / Bottom | Panels rearrange; preference persists (localStorage) |
 | ED7 | Full Page View | Opens `/:user/fullpage/:id`; preview only; minimal header |
 | ED8 | Favorite / Comment / Fork in editor header | Same behavior as list |
@@ -314,6 +316,7 @@ On home / explore / following / profile lists:
 | AS2 | Upload image | Appears in grid; success snackbar |
 | AS3 | Copy URL | Success; URL usable in snippet HTML/CSS |
 | AS4 | Delete (confirm) | Removed from grid |
+| AS6 | After profile picture and snippet save | Assets grid does **not** show avatar or snippet snapshots |
 
 **When MinIO disabled**
 
@@ -329,6 +332,10 @@ On home / explore / following / profile lists:
 |----|-------|----------|
 | ST1 | Profile tab loads | Display name + bio filled when user arrives (including late load) |
 | ST2 | Edit profile → Save | Success; header/identity reflect new name |
+| ST2a | MinIO on: Profile Image section | Preview, Choose File, 500×500 / 5 MB hint, Remove |
+| ST2b | MinIO on: upload image | Success; avatar updates in Settings and header |
+| ST2c | MinIO on: Remove Profile Image | `pictureUrl` cleared; Gravatar fallback |
+| ST2d | MinIO off: Profile tab | No Profile Image block; display name / bio still present |
 | ST3 | Username availability | checking / available / taken / invalid / current hints |
 | ST4 | Update username | Success; routes/`@` handle new name |
 | ST5 | Editor tab → change theme/font | Live preview updates immediately |

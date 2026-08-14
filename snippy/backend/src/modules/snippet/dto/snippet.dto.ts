@@ -8,7 +8,7 @@ export interface SnippetFileDTO {
     content: string;
 }
 
-export interface ExternalResource {
+export interface CdnResource {
     resourceType: 'css' | 'js' | 'other';
     url: string;
 }
@@ -32,7 +32,9 @@ export interface SnippetDTO {
     userName?: string;
     displayName?: string;
     snippetFiles?: SnippetFileDTO[];
-    externalResources?: ExternalResource[];
+    cdnResources?: CdnResource[];
+    snapshotUrl?: string | null;
+    updatedAt?: string;
 }
 
 export type SnippetSort = 'newest' | 'views' | 'favorites' | 'forks';
@@ -54,6 +56,8 @@ export interface SnippetListDTO {
     isOwner: boolean;
     isFavorited?: boolean;
     isFollowing?: boolean;
+    snapshotUrl?: string | null;
+    updatedAt?: string;
 }
 
 export interface SnippetListQuery {
@@ -76,7 +80,7 @@ export interface CreateSnippetRequest {
         fileType: string;
         content: string;
     }>;
-    externalResources?: ExternalResource[];
+    cdnResources?: CdnResource[];
 }
 
 export interface UpdateSnippetRequest {
@@ -89,5 +93,5 @@ export interface UpdateSnippetRequest {
         fileType: string;
         content: string;
     }>;
-    externalResources?: ExternalResource[];
+    cdnResources?: CdnResource[];
 }

@@ -1,7 +1,7 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import { Snippet } from '@app/interfaces/snippet.interface';
-import { ExternalResource } from '@app/interfaces/externalResource.interface';
+import { CdnResource } from '@app/interfaces/cdnResource.interface';
 import { SnippetAPIService, SnippetSort } from '@app/services/api/snippet.api.service';
 import { FavoriteService } from '@app/services/api/favorite.api.service';
 import { SnippetListResponse } from '@app/interfaces/snippetListResponse.interface';
@@ -314,6 +314,29 @@ export class SnippetStoreService {
     this.snippetList.update(patchList);
     this.favoritesList.update(patchList);
   }
+
+  applySnapshotMeta(snippetId: string, snapshotUrl: string | null | undefined, updatedAt?: string) {
+    const patch = { snapshotUrl: snapshotUrl ?? null, updatedAt };
+    const current = this.snippet();
+    if (current?.snippetId === snippetId) {
+      this.snippet.set({ ...current, ...patch });
+      const original = this.originalSnippet();
+      if (original) {
+        this.originalSnippet.set({ ...original, ...patch });
+      }
+    }
+    const patchList = (list: SnippetListResponse | null) => {
+      if (!list) return list;
+      return {
+        ...list,
+        snippets: list.snippets.map(item =>
+          item.snippetId === snippetId ? { ...item, ...patch } : item
+        ),
+      };
+    };
+    this.snippetList.update(patchList);
+    this.favoritesList.update(patchList);
+  }
   //#endregion API Methods
 
   isDirty = computed(() => {
@@ -324,11 +347,11 @@ export class SnippetStoreService {
     if (s.description !== o.description) return true;
     if (s.isPrivate !== o.isPrivate) return true;
     if (s.tags.length !== o.tags.length) return true;
-    if (s.externalResources?.length !== o.externalResources?.length) return true;
-    for (let i = 0; i < (s.externalResources?.length || 0); i++) {
+    if (s.cdnResources?.length !== o.cdnResources?.length) return true;
+    for (let i = 0; i < (s.cdnResources?.length || 0); i++) {
       if (
-        s.externalResources![i].resourceType !== o.externalResources![i].resourceType ||
-        s.externalResources![i].url !== o.externalResources![i].url
+        s.cdnResources![i].resourceType !== o.cdnResources![i].resourceType ||
+        s.cdnResources![i].url !== o.cdnResources![i].url
       ) {
         return true;
       }
@@ -379,7 +402,7 @@ export class SnippetStoreService {
     description: string;
     isPrivate: boolean;
     tags: string[];
-    externalResources?: ExternalResource[];
+    cdnResources?: CdnResource[];
   }) {
     this.previewUpdateType.set('full');
     this.snippet.update(s => {
@@ -389,7 +412,7 @@ export class SnippetStoreService {
         description: settings.description,
         isPrivate: settings.isPrivate,
         tags: settings.tags,
-        externalResources: settings.externalResources ?? s.externalResources,
+        cdnResources: settings.cdnResources ?? s.cdnResources,
       };
     });
   }

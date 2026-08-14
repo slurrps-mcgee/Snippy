@@ -37,6 +37,7 @@ import { UserApiService } from '@app/services/api/user.api.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
+import { MinioStatusService } from '@app/services/ui/minio-status.service';
 import {
   EDITOR_FONT_KEYS,
   EditorFontKey,
@@ -105,6 +106,11 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private destroyRef = inject(DestroyRef);
 
   @ViewChild('previewHost') previewHost?: ElementRef<HTMLDivElement>;
+  @ViewChild('pictureInput') pictureInput?: ElementRef<HTMLInputElement>;
+
+  readonly minioEnabled = inject(MinioStatusService).enabled;
+  readonly avatarFallback = 'https://www.gravatar.com/avatar/?d=mp';
+  private readonly maxPictureBytes = 5 * 1024 * 1024;
 
   get user() {
     return this.authStore.user;
@@ -114,6 +120,12 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   displayName = '';
   bio = '';
   profileSaving = signal(false);
+  pictureUploading = signal(false);
+  pictureRemoving = signal(false);
+
+  get avatarPreviewUrl(): string {
+    return this.user()?.pictureUrl || this.avatarFallback;
+  }
 
   // Account tab
   userName = '';
@@ -324,6 +336,51 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
         return javascript();
       default:
         return html();
+    }
+  }
+
+  triggerPictureUpload() {
+    this.pictureInput?.nativeElement.click();
+  }
+
+  async onPictureSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file || this.pictureUploading()) return;
+
+    if (file.size > this.maxPictureBytes) {
+      this.snackbar.error('Maximum file size is 5 MB');
+      return;
+    }
+
+    this.pictureUploading.set(true);
+    try {
+      const res = await firstValueFrom(this.userApi.uploadPicture(file));
+      if (res?.user) {
+        this.authStore.setUserFromApi(res.user);
+      }
+      this.snackbar.success('Profile image updated');
+    } catch {
+      this.snackbar.error('Failed to upload profile image');
+    } finally {
+      this.pictureUploading.set(false);
+    }
+  }
+
+  async removePicture() {
+    if (!this.user()?.pictureUrl || this.pictureRemoving()) return;
+    this.pictureRemoving.set(true);
+    try {
+      const res = await firstValueFrom(this.userApi.updateProfile({ pictureUrl: null }));
+      if (res?.user) {
+        this.authStore.setUserFromApi(res.user);
+      }
+      this.snackbar.success('Profile image removed');
+    } catch {
+      this.snackbar.error('Failed to remove profile image');
+    } finally {
+      this.pictureRemoving.set(false);
     }
   }
 

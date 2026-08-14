@@ -4,7 +4,7 @@ import { AngularSplitModule } from 'angular-split';
 import { SnippetEditorComponent } from '@app/components/editor/snippet-editor/snippet-editor.component';
 import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
-import { ExternalResource } from '@app/interfaces/externalResource.interface';
+import { CdnResource } from '@app/interfaces/cdnResource.interface';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetSaveUIService } from '@app/services/ui/snippet-save-ui.service';
 import { EditorUiService } from '@app/services/ui/editor-ui.service';
@@ -70,7 +70,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
         cssFile?.content || '',
         jsFile?.content || '',
         previewUpdateType,
-        snippet.externalResources || []
+        snippet.cdnResources || []
       );
     });
 
@@ -131,7 +131,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
         { fileType: 'css', content: guest ? 'body {\n  font-family: system-ui, sans-serif;\n  padding: 2rem;\n}\n' : '' },
         { fileType: 'js', content: guest ? 'console.log("Welcome to Snippy");\n' : '' },
       ],
-      externalResources: [],
+      cdnResources: [],
     }, false);
     this.snippetStoreService.previewUpdateType.set('full');
     this.snippetStoreService.loading.set(false);
@@ -142,17 +142,17 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
     css: string,
     js: string,
     previewUpdateType: string | null,
-    externalResources: ExternalResource[] = []
+    cdnResources: CdnResource[] = []
   ) {
     if (!this.previewComponent) {
       setTimeout(() => {
         if (this.previewComponent) {
-          this.previewComponent.updatePreview(html, css, js, previewUpdateType, externalResources);
+          this.previewComponent.updatePreview(html, css, js, previewUpdateType, cdnResources);
         }
       }, 100);
       return;
     }
 
-    this.previewComponent.updatePreview(html, css, js, previewUpdateType, externalResources);
+    this.previewComponent.updatePreview(html, css, js, previewUpdateType, cdnResources);
   }
 }

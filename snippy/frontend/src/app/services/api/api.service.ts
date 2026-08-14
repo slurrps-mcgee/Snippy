@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
-import { Observable, defer, from, throwError } from 'rxjs';
+import { Observable, defer, from } from 'rxjs';
 import { firstValueFrom } from 'rxjs';
-import { defaultPolicy } from './resilience.service';
+import { defaultPolicy, HttpResiliencePolicy } from './resilience.service';
 import { getRuntimeEnv } from '@app/config/runtime-env';
 
 export type ApiOptions = {
@@ -11,6 +11,7 @@ export type ApiOptions = {
     body?: any;
     params?: Record<string, any>;
     headers?: Record<string, string>;
+    policy?: HttpResiliencePolicy;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -20,7 +21,10 @@ export class ApiService {
 
     request<T = any>(opts: ApiOptions): Observable<T> {
         const url = `${this.apiBase}${opts.path.startsWith('/') ? '' : '/'}${opts.path}`;
-        const headers = new HttpHeaders(opts.headers || {});
+        const isFormData = typeof FormData !== 'undefined' && opts.body instanceof FormData;
+        const headers = isFormData
+            ? undefined
+            : new HttpHeaders(opts.headers || {});
 
         let params = new HttpParams();
         if (opts.params) {
@@ -31,25 +35,27 @@ export class ApiService {
         }
 
         const method = (opts.method || 'GET').toUpperCase();
+        const policy = opts.policy ?? defaultPolicy;
 
         // Create a fresh HttpClient call per attempt so cockatiel can retry failed responses
         const runOnce = () => {
+            const options = headers ? { headers, params } : { params };
             switch (method) {
                 case 'GET':
-                    return firstValueFrom(this.http.get<T>(url, { headers, params }));
+                    return firstValueFrom(this.http.get<T>(url, options));
                 case 'POST':
-                    return firstValueFrom(this.http.post<T>(url, opts.body, { headers, params }));
+                    return firstValueFrom(this.http.post<T>(url, opts.body, options));
                 case 'PUT':
-                    return firstValueFrom(this.http.put<T>(url, opts.body, { headers, params }));
+                    return firstValueFrom(this.http.put<T>(url, opts.body, options));
                 case 'PATCH':
-                    return firstValueFrom(this.http.patch<T>(url, opts.body, { headers, params }));
+                    return firstValueFrom(this.http.patch<T>(url, opts.body, options));
                 case 'DELETE':
-                    return firstValueFrom(this.http.delete<T>(url, { headers, params }));
+                    return firstValueFrom(this.http.delete<T>(url, options));
                 default:
                     return Promise.reject(new Error(`Unsupported method ${method}`));
             }
         };
 
-        return defer(() => from(defaultPolicy.execute(() => runOnce())));
+        return defer(() => from(policy.execute(() => runOnce())));
     }
 }

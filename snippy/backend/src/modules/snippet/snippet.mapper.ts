@@ -45,7 +45,9 @@ export class SnippetMapper {
             userName: (snippet as any).user?.userName,
             displayName: (snippet as any).user?.displayName,
             snippetFiles: snippet.snippetFiles?.map(file => this.fileToDTO(file)),
-            externalResources: snippet.externalResources ?? [],
+            cdnResources: snippet.cdnResources ?? [],
+            snapshotUrl: snippet.snapshotUrl ?? null,
+            updatedAt: this.updatedAtIso(snippet),
         };
     }
 
@@ -78,12 +80,17 @@ export class SnippetMapper {
             isFollowing: followingAuth0Ids && !isOwner
                 ? followingAuth0Ids.has(snippet.auth0Id)
                 : undefined,
+            snapshotUrl: snippet.snapshotUrl ?? null,
+            updatedAt: this.updatedAtIso(snippet),
         };
     }
 
-    /**
-     * Map snippet file to DTO
-     */
+    private static updatedAtIso(snippet: Snippets): string {
+        const value = snippet.updatedAt;
+        if (value instanceof Date) return value.toISOString();
+        return value ? String(value) : new Date().toISOString();
+    }
+
     static fileToDTO(file: SnippetFiles): SnippetFileDTO {
         return {
             snippetFileID: file.snippetFileID,

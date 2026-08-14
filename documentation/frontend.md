@@ -84,7 +84,7 @@ Typed access: [`src/app/config/runtime-env.ts`](../snippy/frontend/src/app/confi
 | `api_base` | `ApiService` base path (default `/api/v1`) |
 | `auth0_domain` / `auth0_client_id` | `provideAuth0` |
 | `auth0_audience` | Auth0 API audience (default `http://localhost:3000`) |
-| `minio_enabled` | Assets dialog / nginx MinIO proxy path |
+| `minio_enabled` | Initial Assets / Profile Image / snapshot-on-save. `MinioStatusService` may latch this off from `GET /api/v1/health` or MinIO **503** until the SPA is reloaded after a stack restart |
 
 Auth0 redirect after login: `window.location.origin + '/home'`.
 
@@ -270,7 +270,7 @@ Central hub for the open pen, list pages, favorites, dirty tracking, and preview
 | `error` | `string \| null` | Last error message |
 | `isDirty` | **computed** | Compares `snippet` vs `originalSnippet` |
 
-`isDirty` watches: `name`, `description`, `isPrivate`, `tags`, `externalResources` (type + url), and each `snippetFiles[].content`.
+`isDirty` watches: `name`, `description`, `isPrivate`, `tags`, `cdnResources` (type + url), and each `snippetFiles[].content`.
 
 #### Loaders
 
@@ -291,7 +291,7 @@ Central hub for the open pen, list pages, favorites, dirty tracking, and preview
 | `setSnippet(s, updatePreview?)` | Sets `snippet` + deep-clones into `originalSnippet`; optionally `'full'` preview |
 | `updateSnippetFile(type, content)` | Patches file; html/js → `'full'`, css → `'partial'` |
 | `updateSnippetName` | Updates name; `'full'` preview |
-| `updateSnippetSettings` | description / privacy / tags / externalResources; `'full'` |
+| `updateSnippetSettings` | description / privacy / tags / cdnResources; `'full'` |
 | `updateSnippetCounts` / `patchSnippetCounts` | Fork/view/comment/favorite counts on detail + lists |
 | `bumpCommentCount` | ± commentCount on detail + both lists |
 | `saveSnippet` | POST (new) or PUT (existing `snippetId`); refreshes baseline |
@@ -353,6 +353,8 @@ Path: [`services/api/api.service.ts`](../snippy/frontend/src/app/services/api/ap
 - Base URL from `getRuntimeEnv().api_base`
 - `request({ path, method, body, params, headers })` → HttpClient
 - Wrapped in cockatiel policy ([`resilience.service.ts`](../snippy/frontend/src/app/services/api/resilience.service.ts)): retry on 5xx/network, circuit breaker
+- Optional `policy` on `request()` — default `defaultPolicy` for JSON CRUD; `minioPolicy` is a **separate** circuit for MinIO-backed routes (`/assets`, `POST /users/picture`, `POST /snippets/:id/snapshot`). It does **not** retry HTTP **503** (latched MinIO). Those calls also go through `MinioStatusService.latchOnError`.
+- FormData bodies omit `Content-Type` so the browser sets the multipart boundary
 - **Does not** attach Authorization — Auth0 `AuthHttpInterceptor` does for `/api/*` and `/api/v1/*`
 
 ### Endpoint map
@@ -360,13 +362,13 @@ Path: [`services/api/api.service.ts`](../snippy/frontend/src/app/services/api/ap
 | Service | Responsibilities |
 |---------|------------------|
 | **AuthAPIService** | `POST /users` (sync), `GET /users/me` |
-| **UserApiService** | `GET /users/:userName`, `PUT /users`, `GET /users/check-username/:userName`, `DELETE /users` |
-| **SnippetAPIService** | Load/create/update/fork/view/delete/search; me / public / feed / user lists |
+| **UserApiService** | `GET /users/:userName`, `PUT /users`, `POST /users/picture` (multipart), `GET /users/check-username/:userName`, `DELETE /users` |
+| **SnippetAPIService** | Load/create/update/fork/view/delete/search; me / public / feed / user lists; `POST /snippets/:id/snapshot` (`minioPolicy`) |
 | **FavoriteService** | `POST /favorites/:snippetId`, `GET /favorites` |
 | **CommentService** | CRUD under `/comments/...` |
 | **FollowApiService** | `POST` / `DELETE /users/:userName/follow` |
 | **CollectionApiService** | me / user / one; create/delete; add/remove snippets |
-| **ResourceApiService** | List/upload/delete assets (`POST` uses multipart `FormData`, bypasses generic JSON helper) |
+| **AssetApiService** | List/upload/delete assets via `minioPolicy` (`GET`/`DELETE /assets`, `POST /assets` multipart) |
 
 ---
 
@@ -374,11 +376,12 @@ Path: [`services/api/api.service.ts`](../snippy/frontend/src/app/services/api/ap
 
 | Service | Role |
 |---------|------|
+| **MinioStatusService** | `enabled` signal from `minio_enabled`. On boot, if true, probes `GET /api/v1/health`. `disable()` latches false (and `window.__env.minio_enabled`). Asset / picture / snapshot **503** or MinIO circuit-open also latch. Does not auto-re-enable. |
 | **DialogService** | Opens Material dialogs with size presets `sm`–`xl`, always merges `panelClass: snippy-dialog`, `maxHeight: 85vh`. Helpers: `confirm`, `confirmAndRun`, `alert` / typed variants. `provideDialogDefaults()` sets global MAT defaults. |
 | **SnackbarService** | Typed snackbars (success / error / …), bottom-end |
 | **NavigationService** | Canonical URLs: home, settings, new snippet, profile, snippet, parent fork, collection, `fullPageUrl` |
 | **SnippetActionsService** | Fork-and-open, open comments, add-to-collection, optimistic favorite, store favorite, delete-with-confirm |
-| **SnippetSaveUIService** | Save if dirty → snackbar → for new pens navigate to `/:userName/snippet/:shortId` |
+| **SnippetSaveUIService** | Save if dirty → (if MinIO still enabled) `PreviewSnapshotService` JPEG POST → snackbar → for new pens navigate to `/:userName/snippet/:shortId`. Snapshot failures are logged and ignored; MinIO **503** latches uploads off. |
 | **FollowUiService** | Follow / unfollow + snackbar; returns updated `isFollowing` |
 | **EditorUiService** | Editor layout signal (above) |
 
@@ -394,7 +397,7 @@ Prefer these services from lists, header, and footer so behavior stays consisten
 | **User home** | `/home` | Tabs: `loadUserSnippets`, `loadMine` collections, `loadFavorites`; each owns a `ListPageState`; create collection dialog; Projects = coming soon |
 | **Snippet feed** | `/public`, `/following` | Same page; `data.feed` selects `loadPublicSnippets` vs `loadFeedSnippets`; sort via `SortPageHeaderComponent` |
 | **Profile** | `/:username` | `UserApiService.getByUserName` → local profile signal; public pens + collections; follow via `FollowUiService` |
-| **Settings** | `/settings` | Hydrate from `AuthStore.user`. **Profile** (display name, bio); **Editor** (live CodeMirror preview + prefs → `PUT /users`); **Account** (username, privacy toggle, delete → confirm → logout) |
+| **Settings** | `/settings` | Hydrate from `AuthStore.user`. **Profile** (optional Profile Image when MinIO is enabled at runtime, display name, bio); **Editor** (live CodeMirror preview + prefs → `PUT /users`); **Account** (username, privacy toggle, delete → confirm → logout) |
 | **Collection detail** | `/collections/:shortId` | `loadOne`; search reloads API; client-side page slice of embedded snippets; owner can remove |
 | **Snippet web view** | `/snippet`, `/:user/snippet/:id` | Load or blank template; CodeMirror + preview; Ctrl+S; clear store on destroy |
 | **Try (guest)** | `/try` | Same editor UI without AuthGuard; prefs = defaults until login |
@@ -446,8 +449,8 @@ Tall dialog CSS grows to a capped height, scrolls content, pins Cancel/Save, and
 | Fork | Header / footer / lists | `SnippetActionsService.forkAndOpen` |
 | Comments | Stat bar / lists | `CommentDialogComponent` |
 | Favorite | Stat bar / lists | Optimistic + `favoriteSnippet` |
-| Assets | Footer / user menu | `AssetsDialogComponent` (MinIO / `minio_enabled`) |
-| Export ZIP | Footer | JSZip: full HTML shell + `style.css` / `script.js` + external resources |
+| Assets | Footer / user menu | `AssetsDialogComponent` (hidden/unavailable after MinIO latch) |
+| Export ZIP | Footer | JSZip: full HTML shell + `style.css` / `script.js` + CDN libraries |
 | Embed | Footer / actions | `EmbedDialogComponent` — iframe URL with tabs, editable, theme |
 | Account editor prefs | `/settings` → Editor | Persisted on user; applied to all CodeMirror panes |
 | Views | Effect in web-view / fullpage | One `recordView` per navigation for non-owners |
@@ -497,6 +500,10 @@ Editors hold a `Compartment` and reconfigure when `preferences()` changes:
 - Settings Editor tab preview
 
 Device layout (`EditorUiService` / `localStorage.editorLayout`) is separate and not synced to the server.
+
+### Settings → Profile tab
+
+Display name and bio save via `PUT /users`. When `MinioStatusService.enabled()` is true, a **Profile Image** block appears above those fields (omitted entirely when MinIO is off or latched). Choose File → `POST /users/picture` (same image MIME list and 5 MB cap as assets) → `AuthStore.setUserFromApi`. Remove → `PUT /users` with `pictureUrl: null`. Preview uses `user.pictureUrl` or the Gravatar mystery-person fallback.
 
 ### Settings → Editor tab
 
@@ -551,7 +558,7 @@ Theme is **URL-only** (same as `editable`) — not stored on the snippet.
 - `snippetStore.previewUpdateType()`
 - `editorUi.layout()` (forces remount when split orientation changes)
 
-It resolves html/css/js files + `externalResources` and calls [`SnippetPreviewComponent.updatePreview`](../snippy/frontend/src/app/components/editor/snippet-preview/snippet-preview.component.ts):
+It resolves html/css/js files + `cdnResources` and calls [`SnippetPreviewComponent.updatePreview`](../snippy/frontend/src/app/components/editor/snippet-preview/snippet-preview.component.ts):
 
 | `previewUpdateType` | Behavior |
 |---------------------|----------|
@@ -683,11 +690,11 @@ Identity: `snippetId?`, `shortId`, `name`, `description`, `tags`, `isPrivate`
 Social: `forkCount`, `viewCount`, `commentCount`, `favoriteCount`, `isFavorited?`  
 Graph: `parentShortId`, `parentName?`, `parentUserName?`  
 Ownership: `isOwner`, `userName?`, `displayName`  
-Payload: `snippetFiles[]`, `externalResources?`
+Payload: `snippetFiles[]`, `cdnResources?`, `snapshotUrl?`
 
 ### `SnippetList`
 
-Card row shape (no file bodies): counts + `isFollowing?` for follow UI on feeds/profiles.
+Card row shape (no file bodies): counts + `isFollowing?` for follow UI on feeds/profiles; `snapshotUrl?` for list thumbs.
 
 ### `User`
 
@@ -699,7 +706,7 @@ Card row shape (no file bodies): counts + `isFollowing?` for follow UI on feeds/
 
 Ids, name, description, `isPrivate`, `isOwner`, `snippetCount?`, `containsSnippet?`, optional embedded `snippets`
 
-Also see: `Comment`, `Assets`, `ExternalResource`, `SnippetFile`, and `*Response` wrappers (`success`, payload fields).
+Also see: `Comment`, `Assets`, `CdnResource`, `SnippetFile`, and `*Response` wrappers (`success`, payload fields).
 
 ---
 

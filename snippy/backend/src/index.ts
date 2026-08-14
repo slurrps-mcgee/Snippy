@@ -39,18 +39,25 @@ app.use(globalLimiter);
 
 app.use(express.json());
 
-// Liveness probe — public (no JWT)
-app.get('/health', (_req, res) => {
+function sendHealth(_req: express.Request, res: express.Response) {
   res.status(200).json({
     status: 'ok',
     minio: featureFlags.isMinioAvailable,
   });
-});
+}
+
+// Liveness probe — public (no JWT). `/api/v1/health` is for the SPA (nginx only proxies `/api/`).
+app.get('/health', sendHealth);
+app.get('/api/v1/health', sendHealth);
 
 // JWT Middleware to protect /api/v1 routes — except public snippet read + embed HTML
 app.use((req, res, next) => {
+  const path = req.originalUrl.split('?')[0];
+  if (path === '/api/v1/health' || path === '/health') {
+    return next();
+  }
+
   if (req.method === 'GET') {
-    const path = req.originalUrl.split('?')[0];
     const isPublicEmbed = /^\/api\/v1\/snippets\/[^/]+\/embed\/?$/.test(path);
     const isPublicSnippetGet =
       /^\/api\/v1\/snippets\/(?!(?:me|public|feed|search|user)(?:\/|$))[^/]+\/?$/.test(path);

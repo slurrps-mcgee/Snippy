@@ -1,4 +1,4 @@
-import { ExternalResource } from "./externalResource.interface";
+import { CdnResource } from "./cdnResource.interface";
 import { SnippetFile } from "./snippetfile.interface";
 
 export interface Snippet {
@@ -20,5 +20,7 @@ export interface Snippet {
     userName?: string;
     displayName: string;
     snippetFiles: SnippetFile[];
-    externalResources?: ExternalResource[];
+    cdnResources?: CdnResource[];
+    snapshotUrl?: string | null;
+    updatedAt?: string;
 }

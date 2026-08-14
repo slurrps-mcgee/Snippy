@@ -3,6 +3,7 @@ import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/ro
 import { filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
+import { MinioStatusService } from '@app/services/ui/minio-status.service';
 import { FooterComponent } from '@app/components/footer/footer.component';
 import { PageHeaderComponent } from '@app/components/headers/page-header/page-header.component';
 import { PreviewConsolePanelComponent } from '@app/components/editor/preview-console-panel/preview-console-panel.component';
@@ -24,6 +25,7 @@ import { HeaderMode } from '@app/interfaces/header-mode';
 export class AppComponent implements OnInit {
   title = 'Snippy';
   private authStoreService = inject(AuthStoreService);
+  private minioStatus = inject(MinioStatusService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
@@ -36,6 +38,7 @@ export class AppComponent implements OnInit {
 
   ngOnInit() {
     this.syncHeaderMode();
+    void this.minioStatus.enabled();
     this.router.events
       .pipe(
         filter((e): e is NavigationEnd => e instanceof NavigationEnd),

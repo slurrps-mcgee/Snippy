@@ -15,4 +15,6 @@ export interface SnippetList {
     parentShortId?: string | null;
     parentName?: string | null;
     parentUserName?: string | null;
+    snapshotUrl?: string | null;
+    updatedAt?: string;
 }

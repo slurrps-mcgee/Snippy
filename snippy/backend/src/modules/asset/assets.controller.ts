@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
-import { uploadFileHandler, deleteFileHandler, listAssetsHandler } from './resource.service';
+import { uploadFileHandler, deleteFileHandler, listAssetsHandler } from './asset.service';
 import multer from 'multer';
-import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from './dto/resource.dto';
+import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from './dto/asset.dto';
 import { CustomError } from '../../common/exceptions/custom-error';
 
 const upload = multer({
@@ -18,9 +18,9 @@ const upload = multer({
 
 /**
  * @swagger
- * /resources:
+ * /assets:
  *   get:
- *     tags: [Resource]
+ *     tags: [Asset]
  *     summary: List current user's uploaded assets
  *     security:
  *       - bearerAuth: []
@@ -41,10 +41,10 @@ export async function listAssets(req: Request, res: Response, next: NextFunction
 
 /**
  * @swagger
- * /resources:
+ * /assets:
  *   post:
- *     tags: [Resource]
- *     summary: Upload a file resource
+ *     tags: [Asset]
+ *     summary: Upload a file asset
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -77,10 +77,10 @@ export const uploadFile = [
 
 /**
  * @swagger
- * /resources/{assetId}:
+ * /assets/{assetId}:
  *   delete:
- *     tags: [Resource]
- *     summary: Delete a file resource by asset ID
+ *     tags: [Asset]
+ *     summary: Delete a file asset by asset ID
  *     security:
  *       - bearerAuth: []
  *     parameters:

@@ -1,4 +1,4 @@
-import { Transaction } from "sequelize";
+import { Transaction, Op } from "sequelize";
 import { Assets } from "../../entities/asset.entity";
 
 export async function createAsset(
@@ -33,6 +33,16 @@ export async function findByObjectKey(
     return await Assets.findOne({ where: { auth0Id, objectKey }, transaction });
 }
 
+function libraryWhere(auth0Id: string) {
+    return {
+        auth0Id,
+        [Op.and]: [
+            { objectKey: { [Op.notLike]: `${auth0Id}/profile/%` } },
+            { objectKey: { [Op.notLike]: `${auth0Id}/snippets/%` } },
+        ],
+    };
+}
+
 export async function findAssetsByUserId(
     auth0Id: string,
     offset?: number,
@@ -40,7 +50,7 @@ export async function findAssetsByUserId(
     transaction?: Transaction
 ): Promise<{ rows: Assets[]; count: number }> {
     return await Assets.findAndCountAll({
-        where: { auth0Id },
+        where: libraryWhere(auth0Id),
         order: [['created_at', 'DESC']],
         offset,
         limit,

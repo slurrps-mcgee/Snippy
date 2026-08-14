@@ -5,6 +5,15 @@
   <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
     @for (snippet of snippets; track snippet.shortId) {
     <mat-card class="list-card h-full cursor-pointer" (click)="openSnippet(snippet)">
+      <div class="list-card-thumb">
+        @if (snippet.snapshotUrl && !snapshotFailed(snippet.shortId)) {
+        <img [src]="snapshotSrc(snippet)" [alt]="snippet.name" (error)="onSnapshotError(snippet.shortId)" />
+        } @else {
+        <div class="list-card-thumb__placeholder">
+          <mat-icon>code</mat-icon>
+        </div>
+        }
+      </div>
       <mat-card-header>
         <mat-card-title>{{ snippet.name }}</mat-card-title>
         <mat-card-subtitle class="flex flex-col gap-1.5 text-slate-400">

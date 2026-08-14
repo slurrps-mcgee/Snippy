@@ -12,8 +12,12 @@ import {
     searchSnippetsHandler,
     getFeedSnippetsHandler,
     getSnippetEmbedHtmlHandler,
+    uploadSnippetSnapshotHandler,
 } from "./snippet.service";
 import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validator';
+import multer from 'multer';
+import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from '../asset/dto/asset.dto';
+import { CustomError } from '../../common/exceptions/custom-error';
 
 /**
  * @swagger
@@ -136,6 +140,62 @@ export async function deleteSnippet(req: Request, res: Response, next: NextFunct
         next(error);
     }
 }
+
+const snapshotUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_ASSET_SIZE_BYTES },
+  fileFilter: (_req, file, cb) => {
+    if ((ALLOWED_ASSET_MIME_TYPES as readonly string[]).includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new CustomError('Unsupported file type. Allowed: png, jpeg, gif, webp, svg', 400));
+    }
+  },
+});
+
+/**
+ * @swagger
+ * /snippets/{snippetId}/snapshot:
+ *   post:
+ *     tags:
+ *       - Snippet
+ *     summary: Upload a preview snapshot for a snippet (MinIO)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: snippetId
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               file:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       '200':
+ *         description: Snapshot stored
+ *       '503':
+ *         description: MinIO unavailable
+ */
+export const uploadSnippetSnapshot = [
+  snapshotUpload.single('file'),
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { snippet } = await uploadSnippetSnapshotHandler(req);
+      res.status(200).json({ success: true, snippet });
+    } catch (error) {
+      next(error);
+    }
+  },
+];
+
 
 /**
  * @swagger

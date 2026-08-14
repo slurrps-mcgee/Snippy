@@ -12,6 +12,37 @@
       (selectedIndexChange)="onSettingsTabChange($event)">
       <mat-tab label="Profile">
         <div class="glass-card dark-glass mt-4 space-y-4">
+          @if (minioEnabled()) {
+          <div class="profile-image">
+            <p class="section-label">Profile Image</p>
+            <div class="profile-image__row">
+              <img class="profile-image__preview" [src]="avatarPreviewUrl" alt="Profile image" width="96" height="96" />
+              <div class="profile-image__actions">
+                <input #pictureInput type="file" hidden
+                  accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml"
+                  (change)="onPictureSelected($event)" />
+                <button mat-stroked-button type="button" (click)="triggerPictureUpload()"
+                  [disabled]="pictureUploading() || pictureRemoving()">
+                  @if (pictureUploading()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                  } @else {
+                  Choose File
+                  }
+                </button>
+                <button mat-button color="warn" type="button" (click)="removePicture()"
+                  [disabled]="!user()?.pictureUrl || pictureUploading() || pictureRemoving()">
+                  @if (pictureRemoving()) {
+                  <mat-spinner diameter="18"></mat-spinner>
+                  } @else {
+                  Remove Profile Image
+                  }
+                </button>
+              </div>
+            </div>
+            <p class="profile-image__hint">Ideal size is 500×500. Maximum file size is 5 MB.</p>
+          </div>
+          }
+
           <mat-form-field appearance="outline" class="w-full">
             <mat-label>Display name</mat-label>
             <input matInput [(ngModel)]="displayName" maxlength="100" />

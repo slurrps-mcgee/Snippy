@@ -35,7 +35,7 @@ const updateUserSchema = Joi.object({
     userName: Joi.string().max(50).optional(),
     displayName: Joi.string().max(100).optional(),
     bio: Joi.string().max(500).optional(),
-    pictureUrl: Joi.string().uri().optional(),
+    pictureUrl: Joi.string().uri().optional().allow(null, ''),
     isPrivate: Joi.boolean().optional(),
     editorPreferences: editorPreferencesSchema,
 });

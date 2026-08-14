@@ -27,6 +27,34 @@
   margin-top: 0.75rem;
 }
 
+.profile-image__row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.profile-image__preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 9999px;
+  object-fit: cover;
+  background: rgba(148, 163, 184, 0.15);
+}
+
+.profile-image__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.profile-image__hint {
+  margin: 0.75rem 0 0;
+  font-size: 0.8125rem;
+  color: var(--text-soft);
+}
+
 .section-label {
   margin: 0 0 0.75rem;
   font-size: 0.75rem;

@@ -8,7 +8,7 @@ import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
 import { config } from "../../config";
-import { deleteUserMinioObjects } from "../resource/resource.service";
+import { deleteUserMinioObjects, uploadFileHandler } from "../asset/asset.service";
 import { countFollowers, countFollowing, findFollow } from "../follow/follow.repo";
 import { mergeEditorPreferences } from "../../common/utilities/editor-preferences";
 /**
@@ -39,10 +39,12 @@ export async function ensureUserHandler(payload: ServicePayload<EnsureUserReques
                 // Build a patch only for allowed fields
                 const patch: any = {};
 
-                // Update picture_url if different and not empty this usually updates from Auth0 profile only as no bucket for images yet
+                // Sync Auth0 picture unless the user already uploaded a MinIO avatar
                 if (pictureUrl && pictureUrl !== user.pictureUrl) {
-                    // Optionally check last_synced_at or last_modified_by to avoid clobbering manual changes
-                    patch.pictureUrl = pictureUrl;
+                    const isMinioPicture = (user.pictureUrl ?? '').startsWith('/content/');
+                    if (!isMinioPicture) {
+                        patch.pictureUrl = pictureUrl;
+                    }
                 }
 
                 if (Object.keys(patch).length) {
@@ -116,6 +118,9 @@ export async function updateUserHandler(payload: ServicePayload<UpdateUserReques
             }
 
             const updatePatch: Record<string, unknown> = { ...patch };
+            if (patch.pictureUrl === '') {
+                updatePatch.pictureUrl = null;
+            }
             if (patch.editorPreferences) {
                 updatePatch.editorPreferences = mergeEditorPreferences({
                     ...(existing.editorPreferences as object | null),
@@ -234,13 +239,62 @@ export async function getCurrentUserHandler(payload: ServicePayload<unknown>): P
     }
 }
 
-// export async function updateProfilePictureHandler(payload: ServicePayload<{ pictureUrl: string }>): Promise<ServiceResponse<UserDTO>> {
-//     try {
-//         return new 
-//     } catch (err: any) {
-//         handleError(err, 'updateProfilePictureHandler');
-//     }
-// }
+export async function updateProfilePictureHandler(
+    payload: ServicePayload<{ subFolder?: string }>
+): Promise<ServiceResponse<UserDTO>> {
+    const auth0Id = payload.auth?.payload?.sub;
+    if (!auth0Id) {
+        throw new CustomError('Authentication required', 401);
+    }
+
+    if (!payload.file) {
+        throw new CustomError('No file uploaded', 400);
+    }
+
+    const ext = mimeToAvatarExtension(payload.file.mimetype);
+    if (!ext) {
+        throw new CustomError('Unsupported file type. Allowed: png, jpeg, gif, webp, svg', 400);
+    }
+
+    payload.file.originalname = `avatar${ext}`;
+    payload.body = { subFolder: 'profile' };
+
+    const uploaded = await uploadFileHandler(payload);
+    const pictureUrl = uploaded.url as string | undefined;
+    if (!pictureUrl) {
+        throw new CustomError('File upload failed', 500);
+    }
+
+    try {
+        return await executeInTransaction(async (t) => {
+            await updateUser(auth0Id, { pictureUrl } as any, t);
+            const user = await findById(auth0Id, t);
+            if (!user) {
+                throw new CustomError('User not found after picture update', 404);
+            }
+            return { user: UserMapper.toDTO(user, true) };
+        }, 'updateProfilePicture');
+    } catch (err: any) {
+        handleError(err, 'updateProfilePictureHandler');
+    }
+}
+
+function mimeToAvatarExtension(mimetype?: string): string | null {
+    switch (mimetype) {
+        case 'image/png':
+            return '.png';
+        case 'image/jpeg':
+            return '.jpg';
+        case 'image/gif':
+            return '.gif';
+        case 'image/webp':
+            return '.webp';
+        case 'image/svg+xml':
+            return '.svg';
+        default:
+            return null;
+    }
+}
 
 export async function checkUserNameAvailabilityHandler(payload: ServicePayload<unknown, { userName: string }>): Promise<ServiceResponse<{ available: boolean }>> {
     try {

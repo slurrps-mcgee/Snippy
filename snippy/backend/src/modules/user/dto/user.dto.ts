@@ -31,7 +31,7 @@ export interface UpdateUserRequest {
     userName?: string;
     displayName?: string;
     bio?: string | null;
-    pictureUrl?: string;
+    pictureUrl?: string | null;
     isPrivate?: boolean;
     editorPreferences?: Partial<EditorPreferences>;
 }

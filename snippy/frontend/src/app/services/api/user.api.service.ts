@@ -5,11 +5,14 @@ import { ApiService } from './api.service';
 import { UserResponse } from '@app/interfaces/userResponse.interface';
 import { User } from '@app/interfaces/user.interface';
 import { getRuntimeEnv } from '@app/config/runtime-env';
+import { minioPolicy } from './resilience.service';
+import { MinioStatusService } from '@app/services/ui/minio-status.service';
 
 @Injectable({ providedIn: 'root' })
 export class UserApiService {
   private api = inject(ApiService);
   private http = inject(HttpClient);
+  private minioStatus = inject(MinioStatusService);
   private readonly apiBase = getRuntimeEnv().api_base;
 
   getByUserName(userName: string): Observable<UserResponse> {
@@ -25,6 +28,20 @@ export class UserApiService {
       method: 'PUT',
       body,
     });
+  }
+
+  /** Multipart upload via minioPolicy (retry + dedicated circuit). */
+  uploadPicture(file: File): Observable<UserResponse> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.minioStatus.latchOnError(
+      this.api.request<UserResponse>({
+        path: '/users/picture',
+        method: 'POST',
+        body: form,
+        policy: minioPolicy,
+      })
+    );
   }
 
   checkUsername(userName: string): Observable<{ success: boolean; available: boolean }> {

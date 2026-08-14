@@ -1,7 +1,7 @@
 <h2 mat-dialog-title>My Assets</h2>
 
 <mat-dialog-content>
-  @if (!minioEnabled) {
+  @if (!minioEnabled()) {
   <div class="dialog-empty">
     <mat-icon>cloud_off</mat-icon>
     <p>Asset uploads are currently unavailable.</p>
