@@ -414,6 +414,8 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 
 ### DTOs (reference)
 
+These TypeScript DTOs (under `modules/*/dto/`) plus mappers are the **API JSON contract**. Express controllers return `Promise<void>` and `res.json(...)`; they do not share a compile-time package with the Angular SPA. The frontend keeps duplicated view interfaces (`snippy/frontend/src/app/interfaces/`). Do not add a SteamStats-style shared workspace for container independence — version HTTP/OpenAPI if services split later. See [frontend contracts](./frontend.md#contracts-spa-vs-api).
+
 **UserDTO**
 
 ```ts

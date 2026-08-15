@@ -5,27 +5,30 @@ Developer guide for the Angular SPA in [`snippy/frontend`](../snippy/frontend). 
 ## Table of contents
 
 1. [Overview](#overview)
-2. [Project setup](#project-setup)
-3. [Folder structure](#folder-structure)
-4. [App shell & header modes](#app-shell--header-modes)
-5. [Routing](#routing)
-6. [Authentication flow](#authentication-flow)
-7. [State management (signals)](#state-management-signals)
-8. [API layer](#api-layer)
-9. [UI services](#ui-services)
-10. [Pages & data flows](#pages--data-flows)
-11. [Snippet editing flow](#snippet-editing-flow)
-12. [Editor preferences & themes](#editor-preferences--themes)
-13. [Embed player](#embed-player)
-14. [Preview system](#preview-system)
-15. [Save, dirty tracking & navigation](#save-dirty-tracking--navigation)
-16. [Lists, feeds & pagination](#lists-feeds--pagination)
-17. [Dialogs](#dialogs)
-18. [Styles & design system](#styles--design-system)
-19. [Key interfaces](#key-interfaces)
-20. [End-to-end data flow](#end-to-end-data-flow)
-21. [Common gotchas](#common-gotchas)
-22. [Related docs](#related-docs)
+2. [Layering & collaboration](#layering--collaboration)
+3. [Project setup](#project-setup)
+4. [Folder structure](#folder-structure)
+5. [App shell & header modes](#app-shell--header-modes)
+6. [Routing](#routing)
+7. [Authentication flow](#authentication-flow)
+8. [State management (signals)](#state-management-signals)
+9. [API layer](#api-layer)
+10. [UI services](#ui-services)
+11. [Collaboration flows](#collaboration-flows)
+12. [Pages & data flows](#pages--data-flows)
+13. [Snippet editing flow](#snippet-editing-flow)
+14. [Editor preferences & themes](#editor-preferences--themes)
+15. [Embed player](#embed-player)
+16. [Preview system](#preview-system)
+17. [Save, dirty tracking & navigation](#save-dirty-tracking--navigation)
+18. [Lists, feeds & pagination](#lists-feeds--pagination)
+19. [Dialogs](#dialogs)
+20. [Styles & design system](#styles--design-system)
+21. [Key interfaces](#key-interfaces)
+22. [Contracts (SPA vs API)](#contracts-spa-vs-api)
+23. [End-to-end data flow](#end-to-end-data-flow)
+24. [Common gotchas](#common-gotchas)
+25. [Related docs](#related-docs)
 
 ---
 
@@ -43,11 +46,71 @@ Users can create, edit, preview, share, favorite, comment on, fork, and organize
 | Auth | `@auth0/auth0-angular` |
 | UI | `@angular/material`, `@angular/cdk` |
 | Editor | `codemirror`, `@codemirror/lang-*`, `theme-one-dark`, `angular-split` |
-| Export | `jszip` |
+| Export / capture | `jszip`, `html-to-image` |
 | Resilience | `cockatiel` (retry + circuit breaker on HTTP) |
 | Styling | `tailwindcss` ^4 + Material M3 theme (violet / cyan, dark) |
 
 **Path alias:** `@app/*` → `src/app/*` (`tsconfig.json`).
+
+---
+
+## Layering & collaboration
+
+HTTP does not start in templates. Pages and lists call **UI services** or **stores**; stores (and a few dialogs) call **domain API services**; those go through **`ApiService`**.
+
+```mermaid
+flowchart TD
+  Page[Page Header List]
+  UI[UI services]
+  Store[Signal stores]
+  ApiSvc[Domain API services]
+  Http[ApiService plus Auth0 plus cockatiel]
+  Backend["/api/v1"]
+  Cdn[CdnApiService]
+  Cdnjs[cdnjs]
+  Minio[MinioStatusService]
+  Health["GET /api/v1/health"]
+
+  Page --> UI
+  Page --> Store
+  UI --> Store
+  Store --> ApiSvc
+  UI --> ApiSvc
+  ApiSvc --> Http
+  Http --> Backend
+  Page --> Cdn
+  Cdn --> Cdnjs
+  Minio --> Health
+  ApiSvc --> Minio
+```
+
+### Rules of thumb
+
+| Layer | Owns | Must not |
+|-------|------|----------|
+| **Pages** | When to load, one `ListPageState` per list/tab, route params, destroy cleanup | Call `HttpClient` or assemble `/api/v1` URLs |
+| **Presentational lists** (`SnippetListComponent`, `CollectionListComponent`) | Cards, toolbar, paginator; emit / call UI services | Inject domain API services |
+| **UI services** | Dialogs, snackbars, navigation, fork/favorite/follow/save chrome | Duplicate store HTTP |
+| **Stores** | Domain signals and HTTP for that domain; generation counters; dirty tracking | Open Material dialogs (except via a UI service) |
+| **Domain `*ApiService`** | Path, method, params, `minioPolicy` / latch | Own UI state |
+| **`ApiService`** | Base URL, cockatiel, FormData headers | Auth tokens (Auth0 interceptor) |
+
+**Stores** (root singletons): `AuthStoreService`, `SnippetStoreService`, `CollectionStoreService`. Layout is a small fourth signal store: `EditorUiService`.
+
+**Not stores:** comments (`CommentService` inside `CommentDialogComponent`), follow (`FollowUiService` → `FollowApiService`), assets (`AssetApiService` in the assets dialog), CDN search (`CdnApiService` → cdnjs).
+
+### Who injects whom
+
+| Consumer | Reads / calls |
+|----------|----------------|
+| `AppComponent` | `AuthStoreService` (boot sync), `MinioStatusService` (health probe) |
+| `PageHeaderComponent` | `AuthStore`, `SnippetStore` (name, dirty, save, stats), `EditorUiService`, `SnippetSaveUIService`, `SnippetActionsService`, `DialogService` |
+| `FooterComponent` | `SnippetStore.snippet()?.snippetId` to switch legal vs Fork/Export/Assets |
+| `SnippetListComponent` | `NavigationService`, `SnippetActionsService`, `FollowUiService`; thumbs `onerror` → placeholder |
+| `UserHomePage` / feeds / profile | `ListPageState` + store loaders; templates bind store getters |
+| `SnippetWebView` / `FullpageView` | `loadSnippet` / `setSnippet` / preview effect / `clearSnippet` on destroy |
+| `SettingsPage` | `AuthStore.user`, `UserApiService`, `MinioStatusService.enabled()` |
+| Dialogs | `DialogService.open`; then store or API as below |
 
 ---
 
@@ -64,7 +127,7 @@ index.html
 
 - [`src/main.ts`](../snippy/frontend/src/main.ts) — application entry
 - [`src/app/app.config.ts`](../snippy/frontend/src/app/app.config.ts) — zone, router, animations, HttpClient + `AuthHttpInterceptor`, `provideAuth0`, `provideDialogDefaults()`
-- [`src/app/app.component.ts`](../snippy/frontend/src/app/app.component.ts) — shell; injects `AuthStoreService` so Auth0→backend sync starts at bootstrap
+- [`src/app/app.component.ts`](../snippy/frontend/src/app/app.component.ts) — shell; injects `AuthStoreService` so Auth0→backend sync starts at bootstrap, and `MinioStatusService` so the health probe runs immediately
 
 ### Runtime configuration (`/env.js`)
 
@@ -119,7 +182,7 @@ src/app/
 ├── config/                 # runtime-env.ts
 ├── editor/                 # preferences types, service, CodeMirror factory, themes/
 ├── guards/                 # unsaved-changes.guard.ts
-├── interfaces/
+├── interfaces/             # SPA view types (not the API DTO modules)
 ├── pages/                  # home, user-home, feeds, profile, settings,
 │                           # collection-detail, snippet-web-view, fullpage-view,
 │                           # embed-player-page, privacy-policy, terms
@@ -127,7 +190,8 @@ src/app/
 │   ├── api/                # HTTP wrappers + resilience
 │   ├── stores/             # auth, snippet, collection (signal stores)
 │   └── ui/                 # dialog, snackbar, navigation, editor-ui,
-│                           # follow-ui, snippet-actions, snippet-save-ui
+│                           # follow-ui, snippet-actions, snippet-save-ui,
+│                           # preview-snapshot, preview-console, minio-status
 └── utils/                  # list-page-state.ts
 ```
 
@@ -214,19 +278,29 @@ Auth0 loginWithRedirect
 
 ### `AuthStoreService` ([`services/stores/auth.store.service.ts`](../snippy/frontend/src/app/services/stores/auth.store.service.ts))
 
+Constructor subscription: `isAuthenticated$` → if false, `clearUserState`; if true, take one Auth0 `user$` → `AuthAPIService.syncBackendUser` → `setUser`. Failures log and leave `user` null.
+
 | Member | Kind | Meaning |
 |--------|------|---------|
 | `user` | `signal<User \| null>` | Backend profile (null until sync succeeds); includes `editorPreferences` when present |
 | `isAuthenticated` | `computed` | `!!user()` — **backend** user present |
 | `syncing` | `signal<boolean>` | Auth0→backend sync in flight |
 | `patchUser` | method | Merge fields after settings save |
-| `setUserFromApi` | method | Replace cached user (also used after editor prefs / privacy save) |
+| `setUserFromApi` | method | Replace cached user (picture, prefs, privacy, username) |
 | `logout` | method | Clear store + Auth0 `returnTo: origin` |
 | `refreshUserFromBackend` | method | `GET /users/me` |
 
 **Critical:** Auth0 `AuthGuard` can activate a route before `user()` is set. Anything that needs `userName`, ownership, or API identity must wait on `AuthStoreService.user()` / `isAuthenticated`, not Auth0 alone.
 
-Editor preferences ride along on `POST /users` (ensure) and `GET /users/me` / `PUT /users` responses — no separate preferences endpoint. After login sync, `EditorPreferencesService` reads them from `AuthStore.user`.
+| Consumer | Why |
+|----------|-----|
+| Settings | Hydrate form from `user()`; `setUserFromApi` after PUT / picture |
+| `NavigationService.toSnippet` | Owner fallback `authStore.user()?.userName` |
+| `EditorPreferencesService` | Reads `user.editorPreferences` |
+| `SnippetWebView` | Save UI `userGetter`; wait for user on existing-pen routes |
+| User menu | Logout; confirm if `SnippetStore.isDirty()` |
+
+Editor preferences ride along on `POST /users` (ensure) and `GET /users/me` / `PUT /users` responses — no separate preferences endpoint.
 
 Login entry points: landing header, home CTA. Logout: user menu (confirms if editor is dirty).
 
@@ -235,16 +309,6 @@ Login entry points: landing header, home CTA. Logout: user menu (confirms if edi
 ## State management (signals)
 
 Domain state lives in three root-provided **store services**. UI chrome layout has a small fourth signal store (`EditorUiService`). Prefer updating stores; presentational components read signals and emit events.
-
-### Mental model
-
-```text
-Page / header / list action
-  → UI service (optional) or store method
-  → API service (HttpClient + Auth interceptor + cockatiel)
-  → store signals updated
-  → templates / effects re-run
-```
 
 Stale-response protection: list/detail loaders bump generation counters (`listGeneration`, `favoritesGeneration`, `detailGeneration`, collection equivalents) and ignore outdated responses.
 
@@ -270,19 +334,21 @@ Central hub for the open pen, list pages, favorites, dirty tracking, and preview
 | `error` | `string \| null` | Last error message |
 | `isDirty` | **computed** | Compares `snippet` vs `originalSnippet` |
 
-`isDirty` watches: `name`, `description`, `isPrivate`, `tags`, `cdnResources` (type + url), and each `snippetFiles[].content`.
+`isDirty` watches: `name`, `description`, `isPrivate`, `tags`, `cdnResources` (type + url), and each `snippetFiles[].content`. Snapshot URL / `updatedAt` patches via `applySnapshotMeta` update both `snippet` and `originalSnippet` so capture does not mark the pen dirty.
+
+`setSnippet` **resets** `originalSnippet` (dirty becomes false). `updateSnippetFile` / `updateSnippetName` / `updateSnippetSettings` patch `snippet` only.
 
 #### Loaders
 
 | Method | API | Writes |
 |--------|-----|--------|
-| `loadSnippet(shortId)` | `GET /snippets/:shortId` | `snippet` + `originalSnippet` via `setSnippet(..., true)` |
-| `loadUserSnippets` | `GET /snippets/me` | `snippetList` |
+| `loadSnippet(shortId)` | `GET /snippets/:shortId` | `snippet` + `originalSnippet` via `setSnippet(..., true)`; bumps `detailGeneration` |
+| `loadUserSnippets` | `GET /snippets/me` | `snippetList` (`listGeneration`) |
 | `loadPublicSnippets` | `GET /snippets/public` | `snippetList` |
 | `loadFeedSnippets` | `GET /snippets/feed` | `snippetList` |
 | `loadUserPublicSnippets` | `GET /snippets/user/:userName` | `snippetList` |
-| `loadFavorites` | `GET /favorites` | `favoritesList` |
-| `searchSnippets` | search endpoint | `snippetList` |
+| `loadFavorites` | `GET /favorites` | `favoritesList` (`favoritesGeneration`) |
+| `searchSnippets` | `GET /snippets/search` | `snippetList` |
 
 #### Mutations
 
@@ -292,20 +358,28 @@ Central hub for the open pen, list pages, favorites, dirty tracking, and preview
 | `updateSnippetFile(type, content)` | Patches file; html/js → `'full'`, css → `'partial'` |
 | `updateSnippetName` | Updates name; `'full'` preview |
 | `updateSnippetSettings` | description / privacy / tags / cdnResources; `'full'` |
-| `updateSnippetCounts` / `patchSnippetCounts` | Fork/view/comment/favorite counts on detail + lists |
+| `updateSnippetCounts` / `patchSnippetCounts` | Fork/view/comment/favorite counts on detail + both lists |
 | `bumpCommentCount` | ± commentCount on detail + both lists |
-| `saveSnippet` | POST (new) or PUT (existing `snippetId`); refreshes baseline |
-| `deleteSnippet` | DELETE + list cleanup |
-| `favoriteSnippet` | Toggle favorite; optimistic list/detail updates |
-| `forkSnippet` | POST fork; bumps forkCount on current if matching |
-| `recordView` | Non-blocking view count |
-| `clearSnippet` | Nulls open pen (call on editor/fullpage destroy) |
+| `applySnapshotMeta` | `snapshotUrl` + `updatedAt` on detail + lists + original baseline |
+| `saveSnippet` | POST (new) or PUT (existing `snippetId`); refreshes baseline from response |
+| `deleteSnippet` | DELETE + remove from `snippetList` + `clearSnippet` |
+| `favoriteSnippet` | Toggle via `FavoriteService`; patch counts; add/remove favorites list row |
+| `forkSnippet` | POST fork; bumps `forkCount` on current detail if ids match |
+| `recordView` | Non-blocking; patches `viewCount` if `counted` |
+| `clearSnippet` | Nulls open pen, bumps `detailGeneration` (call on editor/fullpage destroy) |
 
-**Ownership rule:** Editor and fullpage views call `clearSnippet()` on destroy so list pages do not keep a stale open pen in the store.
+#### Caller map
 
-#### Who consumes it
-
-Editor / fullpage pages, feed / home / profile lists, page header, footer, `SnippetActionsService`, `SnippetSaveUIService`, `unsavedChangesGuard`, comment dialog, snippet editor, user menu (dirty logout).
+| Caller | Methods |
+|--------|---------|
+| User home / feeds / profile | List loaders; templates read `snippetList` / `favoritesList` |
+| `SnippetWebView` / `FullpageView` | `loadSnippet` or `setSnippet` (blank template); file/name/settings updates; `recordView`; `clearSnippet` on destroy |
+| `SnippetSaveUIService` | `saveSnippet` then snapshot |
+| `SnippetActionsService` | `forkSnippet`, `favoriteSnippet`, `deleteSnippet` |
+| Header / footer / stat bar | Read `snippet()`, `isDirty()`, counts |
+| `CommentDialogComponent` | `bumpCommentCount` after create/delete |
+| `PreviewSnapshotService` | `applySnapshotMeta` after JPEG POST |
+| `unsavedChangesGuard` / user menu | `isDirty()` |
 
 ---
 
@@ -322,13 +396,21 @@ Path: [`services/stores/collection.store.service.ts`](../snippy/frontend/src/app
 
 | Method | Role |
 |--------|------|
-| `loadMine` | Current user’s collections (`snippetId` optional for “contains” flags) |
+| `loadMine` | Current user’s collections (`snippetId` optional for `containsSnippet` flags) |
 | `loadUser` | Public collections for a profile |
-| `loadOne` | Detail by `shortId` (+ optional search `q`) |
-| `create` / `delete` | CRUD |
-| `addSnippet` / `removeSnippet` | Membership |
+| `loadOne` | Detail by `shortId` (+ optional search `q`); writes `activeCollection` |
+| `create` / `delete` | CRUD; prepend/remove from `collections` |
+| `addSnippet` / `removeSnippet` | Membership; updates list `containsSnippet` / `snippetCount` and detail `snippets` |
 
-Consumers: user-home, profile, collection-detail, create / add-to-collection dialogs.
+Generation: `listGeneration` on mine/user lists; `detailGeneration` on `loadOne`.
+
+| Caller | Methods |
+|--------|---------|
+| User home | `loadMine` + `create` (create dialog) |
+| Profile | `loadUser` |
+| Collection detail | `loadOne` (search reloads API); `removeSnippet` |
+| Add-to-collection dialog | `loadMine(..., snippetId)` then `addSnippet` |
+| Collection create dialog | `create` (can nest from add-to-collection) |
 
 ---
 
@@ -339,8 +421,9 @@ Path: [`services/ui/editor-ui.service.ts`](../snippy/frontend/src/app/services/u
 | Signal | Role |
 |--------|------|
 | `layout` | `'top' \| 'bottom' \| 'left' \| 'right'` — persisted as `localStorage.editorLayout` |
+| `guestMode` | True on `/try` (no save / Ctrl+S no-op) |
 
-`setLayout` updates the signal and storage. Page header toggles layout; snippet web-view remounts split + preview when it changes.
+`setLayout` updates the signal and storage. Page header toggles layout; snippet web-view remounts split + preview when it changes. Not synced to the server (unlike editor font/theme prefs).
 
 ---
 
@@ -359,16 +442,17 @@ Path: [`services/api/api.service.ts`](../snippy/frontend/src/app/services/api/ap
 
 ### Endpoint map
 
-| Service | Responsibilities |
-|---------|------------------|
-| **AuthAPIService** | `POST /users` (sync), `GET /users/me` |
-| **UserApiService** | `GET /users/:userName`, `PUT /users`, `POST /users/picture` (multipart), `GET /users/check-username/:userName`, `DELETE /users` |
-| **SnippetAPIService** | Load/create/update/fork/view/delete/search; me / public / feed / user lists; `POST /snippets/:id/snapshot` (`minioPolicy`) |
-| **FavoriteService** | `POST /favorites/:snippetId`, `GET /favorites` |
-| **CommentService** | CRUD under `/comments/...` |
-| **FollowApiService** | `POST` / `DELETE /users/:userName/follow` |
-| **CollectionApiService** | me / user / one; create/delete; add/remove snippets |
-| **AssetApiService** | List/upload/delete assets via `minioPolicy` (`GET`/`DELETE /assets`, `POST /assets` multipart) |
+| Service | Responsibilities | Typical callers |
+|---------|------------------|-----------------|
+| **AuthAPIService** | `POST /users` (sync), `GET /users/me` | `AuthStore` only |
+| **UserApiService** | `GET /users/:userName`, `PUT /users`, `POST /users/picture` (`minioPolicy` + latch), `GET /users/check-username/:userName`, `DELETE /users` | Profile page, Settings |
+| **SnippetAPIService** | Load/create/update/fork/view/delete/search; me / public / feed / user lists; `POST /snippets/:id/snapshot` (`minioPolicy` + latch) | `SnippetStore`; snapshot via `PreviewSnapshotService` |
+| **FavoriteService** | `POST /favorites/:snippetId`, `GET /favorites` | `SnippetStore` |
+| **CommentService** | CRUD under `/comments/...` | `CommentDialogComponent` (no comment store) |
+| **FollowApiService** | `POST` / `DELETE /users/:userName/follow` | `FollowUiService` |
+| **CollectionApiService** | me / user / one; create/delete; add/remove snippets | `CollectionStore` |
+| **AssetApiService** | List/upload/delete via `minioPolicy` + latch | `AssetsDialogComponent` |
+| **CdnApiService** | **Not** `/api/v1` — searches [cdnjs](https://api.cdnjs.com) and resolves library URLs | `ExternalResourcesListComponent` in snippet settings |
 
 ---
 
@@ -376,33 +460,132 @@ Path: [`services/api/api.service.ts`](../snippy/frontend/src/app/services/api/ap
 
 | Service | Role |
 |---------|------|
-| **MinioStatusService** | `enabled` signal from `minio_enabled`. On boot, if true, probes `GET /api/v1/health`. `disable()` latches false (and `window.__env.minio_enabled`). Asset / picture / snapshot **503** or MinIO circuit-open also latch. Does not auto-re-enable. |
+| **MinioStatusService** | `enabled` signal from `minio_enabled`. On boot, if true, probes `GET /api/v1/health`. `disable()` latches false (and `window.__env.minio_enabled`). Asset / picture / snapshot **503** or MinIO circuit-open also latch. Does not auto-re-enable. `latchOnError` skips HTTP after latch (no 3× retry). |
 | **DialogService** | Opens Material dialogs with size presets `sm`–`xl`, always merges `panelClass: snippy-dialog`, `maxHeight: 85vh`. Helpers: `confirm`, `confirmAndRun`, `alert` / typed variants. `provideDialogDefaults()` sets global MAT defaults. |
 | **SnackbarService** | Typed snackbars (success / error / …), bottom-end |
 | **NavigationService** | Canonical URLs: home, settings, new snippet, profile, snippet, parent fork, collection, `fullPageUrl` |
 | **SnippetActionsService** | Fork-and-open, open comments, add-to-collection, optimistic favorite, store favorite, delete-with-confirm |
-| **SnippetSaveUIService** | Save if dirty → (if MinIO still enabled) `PreviewSnapshotService` JPEG POST → snackbar → for new pens navigate to `/:userName/snippet/:shortId`. Snapshot failures are logged and ignored; MinIO **503** latches uploads off. |
-| **FollowUiService** | Follow / unfollow + snackbar; returns updated `isFollowing` |
-| **EditorUiService** | Editor layout signal (above) |
+| **SnippetSaveUIService** | Save if dirty → (if MinIO still enabled) `PreviewSnapshotService` JPEG POST → snackbar → for new pens `NavigationService.toSnippet`. Snapshot failures are logged and ignored; MinIO **503** latches uploads off. |
+| **PreviewSnapshotService** | Registers capture fn from `SnippetPreviewComponent`; `toJpeg` of iframe; `SnippetAPIService.uploadSnapshot`; `applySnapshotMeta` |
+| **PreviewConsoleService** | Iframe `postMessage` console lines for the editor console panel |
+| **FollowUiService** | Follow / unfollow + snackbar; returns updated `isFollowing` (no follow store) |
+| **EditorUiService** | Editor layout + guest mode (above) |
 
 Prefer these services from lists, header, and footer so behavior stays consistent.
 
 ---
 
+## Collaboration flows
+
+### Save (header / Ctrl+S)
+
+```text
+PageHeader or SnippetWebView Ctrl+S
+  → SnippetSaveUIService.saveSnippetWithUI(store, userGetter)
+       → no-op if !isDirty()
+       → store.saveSnippet()  → POST /snippets or PUT /snippets/:snippetId
+       → originalSnippet refreshed (isDirty false)
+       → if MinioStatusService.enabled() and snippetId:
+            PreviewSnapshotService.captureAndUpload
+              → registered captureJpeg (html-to-image)
+              → POST /snippets/:snippetId/snapshot (latchOnError)
+              → applySnapshotMeta
+       → snackbar success
+       → if new shortId: NavigationService.toSnippet(shortId, userName)
+```
+
+Guests (`EditorUiService.guestMode`) skip Ctrl+S. Snapshot errors do not fail the save snackbar.
+
+### Favorite
+
+**List card** (owns its row object):
+
+```text
+SnippetListComponent → SnippetActionsService.toggleFavoriteOptimistic
+  → flip isFavorited / favoriteCount on the card
+  → store.favoriteSnippet(snippetId) → POST /favorites/:id
+  → patchSnippetCounts on detail + lists; add/remove favoritesList row
+  → on error: rollback card + snackbar
+```
+
+**Editor header / stat bar** (renders from `snippet()` signal): `toggleFavorite(snippetId)` → store only (no local card mutate).
+
+### Fork
+
+```text
+Header / footer / list → SnippetActionsService.forkAndOpen(snippetId)
+  → store.forkSnippet → POST /snippets/:id/fork
+  → bump forkCount on current detail if ids match
+  → snackbar → NavigationService.toSnippet(new shortId, userName)
+```
+
+### Follow
+
+No store. Profile header and list “Follow @user” call `FollowUiService.toggle(userName, isFollowing)` → `FollowApiService` POST/DELETE → snackbar → caller patches `isFollowing` on the profile signal or list row.
+
+### Comments
+
+```text
+Stat bar / list → SnippetActionsService.openComments
+  → DialogService.open(CommentDialogComponent)
+       → CommentService list/create/delete
+       → bumpCommentCount(+1 / -1) on SnippetStore
+```
+
+### Collections
+
+```text
+List “Add to collection”
+  → AddToCollectionDialog
+       → CollectionStore.loadMine(page, limit, snippetId)  // containsSnippet flags
+       → addSnippet(collectionId, snippetId)
+
+User home “New collection”
+  → CollectionCreateDialog → CollectionStore.create
+  (can nest from add-to-collection)
+```
+
+### MinIO latch
+
+```text
+App start: MinioStatusService.enabled = env.minio_enabled
+  → if true: GET /api/v1/health (ignore network/4xx)
+  → minio: false → disable()
+
+Asset / picture / snapshot:
+  → if already disabled: throw 503 locally (no HTTP, no retry)
+  → else ApiService + minioPolicy; on 503 or open circuit → disable()
+
+UI: Assets dialog and Settings Profile Image read enabled()
+List thumbs: img (error) → placeholder (nginx /content 502)
+```
+
+Does not flip back until API + SPA restart / reload.
+
+### Preview + console
+
+See [Preview system](#preview-system). `SnippetPreviewComponent` registers capture with `PreviewSnapshotService` when MinIO is enabled at `ngAfterViewInit`. Iframe console messages go to `PreviewConsoleService`.
+
+### CDN libraries
+
+Snippet settings CSS/JS tabs use `ExternalResourcesListComponent` → `CdnApiService.searchLibraries` / `resolveLibraryUrl` (cdnjs) → parent saves via `updateSnippetSettings({ cdnResources })` then `SnippetSaveUIService`.
+
+---
+
 ## Pages & data flows
 
-| Page | Route | Data flow |
-|------|-------|-----------|
-| **Home** | `''` | Marketing + capabilities; Auth0 login; if authenticated → `/home` |
-| **User home** | `/home` | Tabs: `loadUserSnippets`, `loadMine` collections, `loadFavorites`; each owns a `ListPageState`; create collection dialog; Projects = coming soon |
-| **Snippet feed** | `/public`, `/following` | Same page; `data.feed` selects `loadPublicSnippets` vs `loadFeedSnippets`; sort via `SortPageHeaderComponent` |
-| **Profile** | `/:username` | `UserApiService.getByUserName` → local profile signal; public pens + collections; follow via `FollowUiService` |
-| **Settings** | `/settings` | Hydrate from `AuthStore.user`. **Profile** (optional Profile Image when MinIO is enabled at runtime, display name, bio); **Editor** (live CodeMirror preview + prefs → `PUT /users`); **Account** (username, privacy toggle, delete → confirm → logout) |
-| **Collection detail** | `/collections/:shortId` | `loadOne`; search reloads API; client-side page slice of embedded snippets; owner can remove |
-| **Snippet web view** | `/snippet`, `/:user/snippet/:id` | Load or blank template; CodeMirror + preview; Ctrl+S; clear store on destroy |
-| **Try (guest)** | `/try` | Same editor UI without AuthGuard; prefs = defaults until login |
-| **Embed player** | `/embed/:shortId` | Public iframe player; query params for tabs / editable / theme |
-| **Fullpage view** | `/:user/fullpage/:id` | Preview only; record view if not owner; clear on destroy |
+| Page | Route | Who loads what |
+|------|-------|----------------|
+| **Home** | `''` | Marketing; Auth0 login; if Auth0 session → `/home` |
+| **User home** | `/home` | Three `ListPageState`s: `loadUserSnippets`, `loadMine` collections, `loadFavorites`. Create collection dialog. Projects tab = coming soon. Bind store getters; do not keep a local snippet array. |
+| **Snippet feed** | `/public`, `/following` | One `ListPageState<SnippetSort>`. `data.feed === 'following'` → `loadFeedSnippets`; else `loadPublicSnippets`. Sort via `SortPageHeaderComponent` → `state.onSortChange`. |
+| **Profile** | `/:username` | Local `profileUser` signal from `UserApiService.getByUserName` (not AuthStore). `isSelf` vs `AuthStore.user`. Pens: `loadUserPublicSnippets`; collections: `loadUser`. Follow: `FollowUiService` patches `profileUser`. |
+| **Settings** | `/settings` | Hydrate from `AuthStore.user`. Profile Image only if `MinioStatusService.enabled()`. Display name / bio / username / privacy / editor prefs → `UserApiService.updateProfile` → `setUserFromApi`. Delete account → confirm → `DELETE /users` → logout. |
+| **Collection detail** | `/collections/:shortId` | `loadOne(shortId, q)`; search reloads API; `ListPageState.setPage` slices embedded `snippets` client-side. Owner remove → `removeSnippet`. |
+| **Snippet web view** | `/snippet`, `/:user/snippet/:id` | No shortId: blank untitled template `setSnippet(..., true)` with `isOwner: true`. With shortId: `loadSnippet`. Ctrl+S → save UI. `clearSnippet` on destroy. Guest `/try`: `setGuestMode(true)`. |
+| **Try (guest)** | `/try` | Same editor UI without AuthGuard; prefs = defaults until login; no persist |
+| **Embed player** | `/embed/:shortId` | Public iframe player; query params for tabs / editable / theme; does not use snippet store dirty tracking |
+| **Fullpage view** | `/:user/fullpage/:id` | `loadSnippet`; preview only; `recordView` if not owner; `clearSnippet` on destroy |
 | **Privacy / Terms** | `/privacy`, `/terms` | Static legal; landing header; linked from footer |
 
 ---
@@ -449,7 +632,7 @@ Tall dialog CSS grows to a capped height, scrolls content, pins Cancel/Save, and
 | Fork | Header / footer / lists | `SnippetActionsService.forkAndOpen` |
 | Comments | Stat bar / lists | `CommentDialogComponent` |
 | Favorite | Stat bar / lists | Optimistic + `favoriteSnippet` |
-| Assets | Footer / user menu | `AssetsDialogComponent` (hidden/unavailable after MinIO latch) |
+| Assets | Footer / user menu | `AssetsDialogComponent` (unavailable after MinIO latch) |
 | Export ZIP | Footer | JSZip: full HTML shell + `style.css` / `script.js` + CDN libraries |
 | Embed | Footer / actions | `EmbedDialogComponent` — iframe URL with tabs, editable, theme |
 | Account editor prefs | `/settings` → Editor | Persisted on user; applied to all CodeMirror panes |
@@ -582,6 +765,7 @@ User edits store fields
        → SnippetSaveUIService.saveSnippetWithUI
             → store.saveSnippet (POST or PUT)
             → originalSnippet refreshed (isDirty → false)
+            → optional snapshot POST
             → snackbar success
             → if new: navigate to /:userName/snippet/:shortId
 ```
@@ -603,7 +787,7 @@ Leaving the editor with dirty state:
 
 Path: [`utils/list-page-state.ts`](../snippy/frontend/src/app/utils/list-page-state.ts)
 
-One instance per list surface (page or tab). Default `pageSize` = **6**.
+One instance per list surface (page or tab). Default `pageSize` = **6**. The page constructs it with a loader closure that reads `page` / `pageSize` / `query` / `sort` and calls the matching store method.
 
 | API | Behavior |
 |-----|----------|
@@ -617,7 +801,7 @@ One instance per list surface (page or tab). Default `pageSize` = **6**.
 
 ### Presentational pieces
 
-- **`SnippetListComponent`** — cards, toolbar, empty state, paginator; wires navigation + `SnippetActionsService` + follow
+- **`SnippetListComponent`** — cards, toolbar, empty state, paginator; wires navigation + `SnippetActionsService` + follow; snapshot `onerror` → placeholder
 - **`CollectionListComponent`** — same pattern; create / open / delete outputs
 - **`ListToolbarComponent`** — search submits on Enter
 - **`ListPaginatorComponent`** / **`ListEmptyStateComponent`**
@@ -632,7 +816,7 @@ One instance per list surface (page or tab). Default `pageSize` = **6**.
 - `data.feed === 'public'` → Explore / `loadPublicSnippets`
 - `data.feed === 'following'` → Following / `loadFeedSnippets`
 
-Sort options come from `SnippetSort` on the snippet API service.
+Sort options come from `SnippetSort` on the snippet API service (`newest` \| `views` \| `favorites` \| `forks`).
 
 ---
 
@@ -682,15 +866,17 @@ Tokens live in `:root` (e.g. `--dialog-surface`, `--text-link`, `--brand-violet`
 
 ## Key interfaces
 
+SPA types under [`src/app/interfaces/`](../snippy/frontend/src/app/interfaces/) are **client views** of API DTOs. They are close but not the same types — see [Contracts](#contracts-spa-vs-api). Backend shapes: [`documentation/backend.md`](./backend.md) DTOs.
+
 ### `Snippet`
 
 [`interfaces/snippet.interface.ts`](../snippy/frontend/src/app/interfaces/snippet.interface.ts)
 
-Identity: `snippetId?`, `shortId`, `name`, `description`, `tags`, `isPrivate`  
+Identity: `snippetId?` (optional for unsaved pens), `shortId`, `name`, `description`, `tags`, `isPrivate`  
 Social: `forkCount`, `viewCount`, `commentCount`, `favoriteCount`, `isFavorited?`  
 Graph: `parentShortId`, `parentName?`, `parentUserName?`  
 Ownership: `isOwner`, `userName?`, `displayName`  
-Payload: `snippetFiles[]`, `cdnResources?`, `snapshotUrl?`
+Payload: `snippetFiles[]`, `cdnResources?`, `snapshotUrl?`, `updatedAt?`
 
 ### `SnippetList`
 
@@ -710,30 +896,50 @@ Also see: `Comment`, `Assets`, `CdnResource`, `SnippetFile`, and `*Response` wra
 
 ---
 
+## Contracts (SPA vs API)
+
+Snippy does **not** use a shared TypeScript package (unlike a SteamStats-style `@steamstats/shared` workspace). That is intentional.
+
+**Runtime independence** is already how containers work: API, nginx SPA, MySQL, and MinIO are separate images. The API can boot without MinIO; the SPA latches MinIO off. Independent deploys do **not** require a shared `.ts` file.
+
+A compile-time shared package would **couple builds**: every image would need the workspace root and `npm ci` like SteamStats Dockerfiles. That makes later extraction into microservices harder, not easier.
+
+Express controllers return `Promise<void>` and `res.json(...)`. Typed Fastify `Promise<SteamGameDetails>` is a different framework. Snippy’s JSON contract lives in **service handlers + mappers + DTOs** (for example [`snippet.dto.ts`](../snippy/backend/src/modules/snippet/dto/snippet.dto.ts) `SnippetDTO`). The SPA duplicates a **view** type (`Snippet`) with looser fields (optional `snippetId` for new pens).
+
+For a future split into services: version **HTTP JSON** (existing Swagger / OpenAPI), not an npm package every service must compile. Optional later: generate SPA types from OpenAPI. Until then, treat API DTOs as source of truth and keep SPA interfaces aligned by hand (and theme allowlists in both codebases).
+
+---
+
 ## End-to-end data flow
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
 │ AppComponent                                                    │
-│  AuthStoreService sync · PageHeader · RouterOutlet · Footer     │
+│  AuthStore sync · MinioStatus probe · PageHeader · Outlet · Footer │
 └─────────────────────────────────────────────────────────────────┘
          │                         │                      │
          ▼                         ▼                      ▼
-   Auth0 + POST /users      Route → Page              snippet()?
-         │                         │                 Fork/Export/Assets
+   Auth0 + POST /users      Route → Page              snippet()?.snippetId
+         │                         │                 Fork / Export / Assets
          ▼                         ▼
    user / isAuthenticated   ListPageState + loaders
                                    │
-                    ┌──────────────┼──────────────┐
-                    ▼              ▼              ▼
-            SnippetStore   CollectionStore   FollowUi / Actions
-                    │              │
-                    ▼              ▼
-              ApiService + AuthHttpInterceptor + cockatiel
-                    │
-                    ▼
-                 Backend /api/v1
+              ┌────────────────────┼────────────────────┐
+              ▼                    ▼                    ▼
+       SnippetStore         CollectionStore      FollowUi / Actions
+              │                    │                    │
+              ▼                    ▼                    ▼
+         SnippetAPI /          CollectionAPI       FollowAPI / CommentAPI
+         FavoriteAPI
+              │
+              ▼
+        ApiService + AuthHttpInterceptor + cockatiel
+              │
+              ▼
+           Backend /api/v1
 ```
+
+Side paths: `CdnApiService` → cdnjs; MinIO uploads through `minioPolicy` + `MinioStatusService`.
 
 ### Editor signal loop
 
@@ -744,7 +950,7 @@ CodeMirror change
   → effect in SnippetWebView
   → SnippetPreviewComponent (partial CSS or full srcdoc)
   → isDirty computed true
-  → Save → POST/PUT → setSnippet baseline → isDirty false
+  → Save → POST/PUT → baseline refresh → optional snapshot → isDirty false
 ```
 
 ---
@@ -766,6 +972,8 @@ CodeMirror change
 13. **Generation counters** — don’t assume the latest HTTP response wins if a newer load already started; trust the store’s generation checks.
 14. **Theme allowlists** — adding a CodeMirror theme requires updating both FE and BE `EDITOR_THEME_KEYS` or `PUT /users` will reject the theme.
 15. **Embed `theme` is URL-only** — it does not change the author’s saved editor preferences.
+16. **Do not import backend DTO modules in the SPA** — keep client interfaces; see [Contracts](#contracts-spa-vs-api).
+17. **MinIO latch is one-way** — after `disable()`, reload the SPA only after the API (and MinIO) have been restarted.
 
 ---
 
