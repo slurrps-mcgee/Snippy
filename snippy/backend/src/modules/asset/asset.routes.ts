@@ -1,5 +1,5 @@
 import express from 'express';
-import { uploadFile, deleteFile, listAssets } from './assets.controller';
+import { uploadFile, deleteFile, listAssets } from './asset.controller';
 import { publicReadLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
 
 const assetRouter = express.Router();
