@@ -884,7 +884,7 @@ Card row shape (no file bodies): counts + `isFollowing?` for follow UI on feeds/
 
 ### `User`
 
-`userName`, `displayName`, `bio?`, `pictureUrl?`, `isAdmin?`, `isPrivate?`, `editorPreferences?`, `isFollowing?`, `followerCount?`, `followingCount?`, `assets?`
+`userName`, `displayName`, `bio?`, `pictureUrl?`, `isPrivate?`, `editorPreferences?`, `isFollowing?`, `followerCount?`, `followingCount?`, `assets?`
 
 `editorPreferences` is owner-only from the API (merged with defaults). See [`editor/editor-preferences.ts`](../snippy/frontend/src/app/editor/editor-preferences.ts).
 

@@ -6,7 +6,6 @@ export interface User {
   displayName: string | null;
   bio?: string | null;
   pictureUrl?: string | null;
-  isAdmin?: boolean;
   isPrivate?: boolean;
   editorPreferences?: EditorPreferences;
   isFollowing?: boolean;

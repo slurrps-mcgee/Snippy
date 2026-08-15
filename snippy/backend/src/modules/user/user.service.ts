@@ -3,7 +3,7 @@ import { UserMapper } from "./user.mapper";
 import { UserDTO, EnsureUserRequest, UpdateUserRequest } from "./dto/user.dto";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
-import { findById, findByUsername, haveUsers, updateUser, createUser, deleteUser } from "./user.repo";
+import { findById, findByUsername, updateUser, createUser, deleteUser } from "./user.repo";
 import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { AuthorizationService } from "../../common/services/authorization.service";
@@ -53,9 +53,6 @@ export async function ensureUserHandler(payload: ServicePayload<EnsureUserReques
                 }
             }
             else {
-                // Check if any users exist to set isAdmin flag to true for the first user
-                const usersExist = await haveUsers(t);
-                
                 const details = {
                     name: payload?.body?.name,
                     pictureUrl: payload?.body?.pictureUrl
@@ -67,7 +64,7 @@ export async function ensureUserHandler(payload: ServicePayload<EnsureUserReques
                     displayName: details.name,
                     bio: null,
                     pictureUrl: details.pictureUrl,
-                    isAdmin: usersExist ? false : true
+                    isAdmin: false
                 } as any, t);
 
                 if (!createdUser) throw new CustomError('Failed to create user', 500);

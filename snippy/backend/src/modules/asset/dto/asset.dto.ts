@@ -2,6 +2,14 @@ export interface CreateAssetRequest {
     subFolder?: string;
 }
 
+export interface AssetDTO {
+    assetId: string;
+    fileName: string;
+    fileType: string;
+    url: string;
+    objectKey?: string;
+}
+
 export const ALLOWED_ASSET_MIME_TYPES = [
     'image/png',
     'image/jpeg',

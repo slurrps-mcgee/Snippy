@@ -3,18 +3,19 @@ import { handleError } from "../../common/utilities/error";
 import { executeInTransaction } from "../../common/utilities/transaction";
 import { PaginationService, PaginationQuery } from "../../common/services/pagination.service";
 import { createFavorite, deleteFavorite, findFavoriteSnippetsByUser, findFavoriteSnippetByUserAndSnippet } from "./favorite.repo";
-import { Snippets } from "../../entities/snippet.entity";
 import { SnippetMapper } from "../snippet/snippet.mapper";
 import { ServicePayload } from "../../common/interfaces/servicePayload.interface";
 import { ServiceResponse } from "../../common/interfaces/serviceResponse.interface";
 import { SnippetListDTO } from "../snippet/dto/snippet.dto";
+import { FavoriteMapper } from "./favorite.mapper";
+import { FavoriteStatusDTO, FavoriteToggleDTO } from "./dto/favorite.dto";
 import { decrementSnippetFavoriteCount, findBySnippetId, incrementSnippetFavoriteCount } from "../snippet/snippet.repo";
 
 //#region Favorite CREATE/DELETE
 // Create Favorite Handler
 export async function favoriteHandler(
     payload: ServicePayload<unknown, { snippetId: string }>
-): Promise<ServiceResponse<never>> {
+): Promise<ServiceResponse<FavoriteToggleDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         var isFavorited = false;
@@ -56,10 +57,10 @@ export async function favoriteHandler(
             }
 
             const updatedSnippet = await findBySnippetId(snippetId, t);
-            return {
+            return FavoriteMapper.toToggleDTO(
                 isFavorited,
-                favoriteCount: updatedSnippet?.favoriteCount ?? snippet.favoriteCount
-            };
+                updatedSnippet?.favoriteCount ?? snippet.favoriteCount
+            );
         });
 
     } catch (error) {
@@ -101,7 +102,7 @@ export async function getFavoriteSnippetsByUserHandler(
 // Check if snippet is favorited by current user
 export async function isFavoriteHandler(
     payload: ServicePayload<unknown, { snippetId: string }>
-): Promise<ServiceResponse<never>> {
+): Promise<ServiceResponse<FavoriteStatusDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -115,7 +116,7 @@ export async function isFavoriteHandler(
 
         return await executeInTransaction(async (t) => {
             const existing = await findFavoriteSnippetByUserAndSnippet(auth0Id, snippetId, t);
-            return { isFavorited: !!existing };
+            return FavoriteMapper.toStatusDTO(!!existing);
         });
     } catch (error) {
         return handleError(error, 'isFavorite');

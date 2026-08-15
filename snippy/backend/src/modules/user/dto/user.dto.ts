@@ -3,13 +3,15 @@
  */
 
 import { EditorPreferences } from '../../../common/utilities/editor-preferences';
+import { AssetDTO } from '../../asset/dto/asset.dto';
+
+export type { AssetDTO };
 
 export interface UserDTO {
     userName: string;
     displayName: string | null;
     bio: string | null;
     pictureUrl: string | null;
-    isAdmin?: boolean;
     isPrivate?: boolean;
     editorPreferences?: EditorPreferences;
     isFollowing?: boolean;
@@ -24,7 +26,6 @@ export interface CreateUserRequest {
     displayName?: string;
     bio?: string | null;
     pictureUrl?: string;
-    isAdmin?: boolean;
 }
 
 export interface UpdateUserRequest {
@@ -39,12 +40,4 @@ export interface UpdateUserRequest {
 export interface EnsureUserRequest {
     name?: string;
     pictureUrl?: string;
-}
-
-export interface AssetDTO {
-    assetId: string;
-    fileName: string;
-    fileType: string;
-    url: string;
-    objectKey?: string;
 }

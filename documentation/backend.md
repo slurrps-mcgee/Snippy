@@ -92,6 +92,10 @@ Client
 
 **Do not leak Sequelize entities to clients.** Always return mapped DTOs.
 
+Mappers exist when the module owns a client JSON shape. If it does not return its own table row, reuse another mapper: favorite lists use `SnippetMapper`; follow lists use `UserMapper`; favorite toggle uses a small `FavoriteMapper` (`isFavorited` / `favoriteCount`). Extra repos are only for a second table (e.g. `snippetView.repo.ts`). Follow routes stay on `user.routes.ts`.
+
+Swagger JSDoc is collected from `src/modules/**/*.controller.ts` (dev) and `dist/modules/**/*.controller.js` (compiled). The glob is relative to `common/utilities` (`../../modules/...`).
+
 ---
 
 ## Startup Workflow
@@ -153,7 +157,7 @@ Assets      — BelongsTo Users; unique (auth0_id, object_key)
 | `auth0Id` | PK = Auth0 JWT `sub` |
 | `userName` | Unique; auto-generated on create if needed |
 | `displayName`, `bio`, `pictureUrl` | Profile |
-| `isAdmin` | First registered user becomes admin |
+| `isAdmin` | Column kept (`is_admin`) but **unused** — reserved for a future moderation UI. Not returned on DTOs. New users are created with `false`. |
 | `isPrivate` | Private profiles return 403 to non-owners |
 | `editorPreferences` | JSON (`editor_preferences`); null → merged defaults on owner responses |
 
@@ -424,7 +428,6 @@ These TypeScript DTOs (under `modules/*/dto/`) plus mappers are the **API JSON c
   displayName: string | null;
   bio: string | null;
   pictureUrl: string | null;
-  isAdmin?: boolean;      // owner responses only
   isPrivate?: boolean;    // owner responses only
   editorPreferences?: EditorPreferences; // owner responses only; always merged with defaults
   isFollowing?: boolean;  // when viewing another user
@@ -463,7 +466,7 @@ Defaults and allowlists live in [`common/utilities/editor-preferences.ts`](../sn
 
 #### `GET /users/me`
 
-Returns the authenticated user’s profile including `isAdmin`, `isPrivate`, `editorPreferences` (merged with defaults), `followerCount`, `followingCount`, and `assets`.
+Returns the authenticated user’s profile including `isPrivate`, `editorPreferences` (merged with defaults), `followerCount`, `followingCount`, and `assets`.
 
 **Response `200`:** `{ success: true, user: UserDTO }`
 
@@ -502,7 +505,6 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
 }
 ```
 
-- First user in the database is created with `isAdmin: true`
 - Username may be auto-generated from adjective+noun helper
 - Existing users: Auth0 `pictureUrl` is **not** applied when the stored value already starts with `/content/` (MinIO avatar). First-time create still uses the Auth0 picture.
 
@@ -534,7 +536,7 @@ Called after Auth0 login to create the DB row if missing, or sync allowed profil
 }
 ```
 
-Cannot change `auth0Id` or `isAdmin`.
+Cannot change `auth0Id` or `isAdmin` (stripped if sent; `isAdmin` is unused).
 
 `pictureUrl` may be `null` to clear a custom avatar. Relative `/content/` URLs are set by `POST /users/picture`, not this URI field.
 
@@ -972,7 +974,7 @@ Test scripts capture `userName`, `snippetId`, `shortId`, `commentId`, `forkSnipp
 
 ### Swagger
 
-In non-production, open `http://localhost:3000/api-docs` (mounted before JWT).
+In non-production, open `http://localhost:3000/api-docs` (mounted before JWT). Spec paths come from JSDoc on `modules/**/*.controller.ts` (see glob in [`swagger.ts`](../snippy/backend/src/common/utilities/swagger.ts)).
 
 ### Inspect JWT
 

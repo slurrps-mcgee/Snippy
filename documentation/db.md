@@ -89,7 +89,7 @@ Legend:
 | `display_name` | VARCHAR(255) | NULL | User's display name |
 | `bio` | TEXT | NULL | User biography/description |
 | `picture_url` | VARCHAR(255) | NULL | Profile picture URL (Auth0 or `/content/{auth0Id}/profile/avatar.*`) |
-| `is_admin` | BOOLEAN | DEFAULT: false | Admin flag for future admin features |
+| `is_admin` | BOOLEAN | DEFAULT: false | Unused / reserved (not exposed on the API) |
 | `is_private` | BOOLEAN | DEFAULT: false | Privacy setting for user profile |
 | `editor_preferences` | JSON | NULL | CodeMirror editor prefs bag; null → app merges defaults |
 | `created_at` | TIMESTAMP | NOT NULL | Account creation timestamp |

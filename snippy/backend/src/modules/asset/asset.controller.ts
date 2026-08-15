@@ -3,6 +3,7 @@ import { uploadFileHandler, deleteFileHandler, listAssetsHandler } from './asset
 import multer from 'multer';
 import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from './dto/asset.dto';
 import { CustomError } from '../../common/exceptions/custom-error';
+import { validateAssetId, validateAssetSubFolder } from './asset.validator';
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -67,6 +68,7 @@ export const uploadFile = [
   upload.single('file'),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
+      validateAssetSubFolder(req.body ?? {});
       const { message, url, asset } = await uploadFileHandler(req);
       res.status(201).json({ success: true, message, url, asset });
     } catch (err) {
@@ -96,6 +98,7 @@ export const uploadFile = [
  */
 export async function deleteFile(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
+    validateAssetId(req.params);
     await deleteFileHandler(req);
     res.status(204).end();
   } catch (err) {

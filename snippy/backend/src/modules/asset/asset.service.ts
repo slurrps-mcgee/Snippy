@@ -15,9 +15,8 @@ import {
 } from './asset.repo';
 import { config, featureFlags } from '../../config';
 import { PaginationQuery, PaginationService } from '../../common/services/pagination.service';
-import { AssetDTO } from '../user/dto/user.dto';
-import { UserMapper } from '../user/user.mapper';
-import { Assets } from '../../entities/asset.entity';
+import { AssetDTO } from './dto/asset.dto';
+import { AssetMapper } from './asset.mapper';
 
 function sanitizeFileName(originalName: string): string {
     const base = path.basename(originalName).replace(/[^\w.\-]+/g, '_');
@@ -115,7 +114,7 @@ export async function uploadFileHandler(
 
         return {
             message: 'File uploaded successfully',
-            asset: UserMapper.toAssetDTO(asset),
+            asset: AssetMapper.toDTO(asset),
             url,
         };
     } catch (err) {
@@ -194,7 +193,7 @@ export async function listAssetsHandler(
 
     const { rows, count } = await findAssetsByUserId(auth0Id, offset, limit);
     return {
-        assets: rows.map((asset: Assets) => UserMapper.toAssetDTO(asset)),
+        assets: AssetMapper.toDTOs(rows),
         totalCount: count,
     };
 }

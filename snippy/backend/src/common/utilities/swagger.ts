@@ -28,8 +28,9 @@ const options = {
     },
   },
   apis: [
-    path.resolve(__dirname, '../modules/**/*.controller.ts'),
-  ], // Path to controller files with JSDoc swagger comments
+    path.resolve(__dirname, '../../modules/**/*.controller.ts'),
+    path.resolve(__dirname, '../../modules/**/*.controller.js'),
+  ],
 };
 
 const swaggerSpec = swaggerJSDoc(options);

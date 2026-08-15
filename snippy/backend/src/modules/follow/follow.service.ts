@@ -7,6 +7,7 @@ import { ServiceResponse } from '../../common/interfaces/serviceResponse.interfa
 import { findByUsername } from '../user/user.repo';
 import { UserMapper } from '../user/user.mapper';
 import { UserDTO } from '../user/dto/user.dto';
+import { FollowStatusDTO } from './dto/follow.dto';
 import {
     createFollow,
     deleteFollow,
@@ -17,7 +18,7 @@ import {
 
 export async function followUserHandler(
     payload: ServicePayload<unknown, { userName: string }>
-): Promise<ServiceResponse<never>> {
+): Promise<ServiceResponse<FollowStatusDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {
@@ -58,7 +59,7 @@ export async function followUserHandler(
 
 export async function unfollowUserHandler(
     payload: ServicePayload<unknown, { userName: string }>
-): Promise<ServiceResponse<never>> {
+): Promise<ServiceResponse<FollowStatusDTO>> {
     try {
         const auth0Id = payload.auth?.payload?.sub;
         if (!auth0Id) {

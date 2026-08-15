@@ -74,6 +74,7 @@ export class Users extends Model<Users> {
     allowNull: false,
     defaultValue: false
   })
+  /** Unused / reserved — not exposed on UserDTO. */
   isAdmin!: boolean;
 
   @Column({
