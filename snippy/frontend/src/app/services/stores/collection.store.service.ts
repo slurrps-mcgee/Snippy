@@ -1,7 +1,15 @@
 import { Injectable, signal, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { CollectionApiService } from '@app/services/api/collection.api.service';
-import { Collection } from '@app/interfaces/collection.interface';
+import { Api } from '@app/api/generated/api';
+import {
+  addSnippetToCollection,
+  createCollection,
+  deleteCollection,
+  getCollection,
+  getMyCollections,
+  getUserCollections,
+  removeSnippetFromCollection,
+} from '@app/api/generated/functions';
+import type { Collection } from '@app/api/generated/models/collection';
 
 @Injectable({ providedIn: 'root' })
 export class CollectionStoreService {
@@ -11,7 +19,7 @@ export class CollectionStoreService {
   error = signal<string | null>(null);
   activeCollection = signal<Collection | null>(null);
 
-  private api = inject(CollectionApiService);
+  private api = inject(Api);
   private listGeneration = 0;
   private detailGeneration = 0;
 
@@ -20,7 +28,7 @@ export class CollectionStoreService {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getMyCollections(page, limit, snippetId, q));
+      const res = await this.api.invoke(getMyCollections, { page, limit, snippetId, q });
       if (gen !== this.listGeneration) return;
       this.collections.set(res.collections ?? []);
       this.totalCount.set(res.totalCount ?? 0);
@@ -39,7 +47,7 @@ export class CollectionStoreService {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getUserCollections(userName, page, limit, q));
+      const res = await this.api.invoke(getUserCollections, { userName, page, limit, q });
       if (gen !== this.listGeneration) return;
       this.collections.set(res.collections ?? []);
       this.totalCount.set(res.totalCount ?? 0);
@@ -58,7 +66,7 @@ export class CollectionStoreService {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getCollection(shortId, q));
+      const res = await this.api.invoke(getCollection, { shortId, q });
       if (gen !== this.detailGeneration) return undefined;
       this.activeCollection.set(res.collection ?? null);
       return res.collection;
@@ -73,7 +81,7 @@ export class CollectionStoreService {
   }
 
   async create(body: { name: string; description?: string | null; isPrivate?: boolean }) {
-    const res = await firstValueFrom(this.api.createCollection(body));
+    const res = await this.api.invoke(createCollection, { body });
     if (res.collection) {
       const created = {
         ...res.collection,
@@ -87,7 +95,7 @@ export class CollectionStoreService {
   }
 
   async delete(collectionId: string) {
-    await firstValueFrom(this.api.deleteCollection(collectionId));
+    await this.api.invoke(deleteCollection, { collectionId });
     this.collections.update(list => list.filter(c => c.collectionId !== collectionId));
     this.totalCount.update(n => Math.max(0, n - 1));
     if (this.activeCollection()?.collectionId === collectionId) {
@@ -96,7 +104,10 @@ export class CollectionStoreService {
   }
 
   async addSnippet(collectionId: string, snippetId: string) {
-    const res = await firstValueFrom(this.api.addSnippet(collectionId, snippetId));
+    const res = await this.api.invoke(addSnippetToCollection, {
+      collectionId,
+      body: { snippetId },
+    });
     const updated = res.collection;
 
     this.collections.update(list =>
@@ -129,7 +140,7 @@ export class CollectionStoreService {
   }
 
   async removeSnippet(collectionId: string, snippetId: string) {
-    await firstValueFrom(this.api.removeSnippet(collectionId, snippetId));
+    await this.api.invoke(removeSnippetFromCollection, { collectionId, snippetId });
 
     this.collections.update(list =>
       list.map(c => {

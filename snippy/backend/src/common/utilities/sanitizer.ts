@@ -32,24 +32,3 @@ export const sanitizeInputArray = (inputs: string[] | null | undefined): string[
 
     return inputs.map(input => sanitizeInput(input) ?? '').filter(input => input.length > 0);
 };
-
-/**
- * Sanitize user-generated content while allowing limited markdown-style formatting
- * Useful for descriptions that might benefit from basic formatting
- * @param input - The string to sanitize
- * @returns Sanitized string with limited HTML allowed
- */
-export const sanitizeWithLimitedHTML = (input: string | null | undefined): string | null => {
-    if (!input || typeof input !== 'string') {
-        return input ?? null;
-    }
-
-    // Allow only safe HTML tags for basic formatting
-    const sanitized = DOMPurify.sanitize(input, {
-        ALLOWED_TAGS: ['b', 'i', 'em', 'strong', 'code', 'pre', 'br'],
-        ALLOWED_ATTR: [],
-        KEEP_CONTENT: true,
-    });
-
-    return sanitized.trim();
-};

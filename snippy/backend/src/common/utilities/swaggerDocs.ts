@@ -12,6 +12,9 @@ export function setupSwaggerDocs(app: Express) {
     return;
   }
 
+  app.get('/api-docs.json', (_req, res) => {
+    res.json(swaggerSpec);
+  });
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-  logger.info('Swagger UI available at /api-docs');
+  logger.info('Swagger UI available at /api-docs (spec at /api-docs.json)');
 }

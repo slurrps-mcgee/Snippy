@@ -39,8 +39,8 @@ export async function updateCollection(req: Request, res: Response, next: NextFu
 
 export async function deleteCollection(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { message } = await deleteCollectionHandler(req);
-        res.status(200).json({ success: true, message });
+        await deleteCollectionHandler(req);
+        res.status(204).end();
     } catch (error) {
         next(error);
     }
@@ -85,8 +85,8 @@ export async function addSnippetToCollection(req: Request, res: Response, next: 
 
 export async function removeSnippetFromCollection(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-        const { message } = await removeSnippetFromCollectionHandler(req);
-        res.status(200).json({ success: true, message });
+        await removeSnippetFromCollectionHandler(req);
+        res.status(204).end();
     } catch (error) {
         next(error);
     }

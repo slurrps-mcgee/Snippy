@@ -7,6 +7,7 @@ export interface SnippetStats {
   viewCount?: number;
   favoriteCount?: number;
   commentCount?: number;
+  embedCount?: number;
   isFavorited?: boolean;
 }
 

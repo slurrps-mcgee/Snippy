@@ -5,6 +5,13 @@
     <mat-icon>visibility</mat-icon>
     <span>{{ stats.viewCount }}</span>
   </button>
+  @if (stats.embedCount != null) {
+  <button matButton="tonal" class="stat-btn" matTooltip="Embeds" matTooltipPosition="above"
+    (click)="$event.stopPropagation()" disabled>
+    <mat-icon>code</mat-icon>
+    <span>{{ stats.embedCount }}</span>
+  </button>
+  }
   <button matButton="tonal" class="stat-btn" [matTooltip]="stats.isFavorited ? 'Unfavorite' : 'Favorite'"
     matTooltipPosition="above" (click)="favorite.emit($event)">
     <mat-icon>{{ stats.isFavorited ? 'favorite' : 'favorite_border' }}</mat-icon>

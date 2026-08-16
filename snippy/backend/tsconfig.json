@@ -19,7 +19,6 @@
             // "noFallthroughCasesInSwitch": true,
             // "noPropertyAccessFromIndexSignature": true,
             "strict": true,
-            "jsx": "react-jsx",
             "verbatimModuleSyntax": false,
             "isolatedModules": true,
             "noUncheckedSideEffectImports": true,
@@ -35,6 +34,7 @@
             "src/**/*.ts"
         ],
         "exclude": [
-            "node_modules"
+            "node_modules",
+            "src/**/*.test.ts"
         ]
     }

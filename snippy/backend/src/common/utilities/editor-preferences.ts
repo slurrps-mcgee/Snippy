@@ -1,3 +1,7 @@
+/**
+ * Keep theme/font keys in sync with snippy/frontend/src/app/editor/editor-preferences.ts.
+ * Do not extract a shared package — HTTP JSON is the contract.
+ */
 export const EDITOR_THEME_KEYS = ['one-dark', 'light', 'dracula'] as const;
 export type EditorThemeKey = (typeof EDITOR_THEME_KEYS)[number];
 

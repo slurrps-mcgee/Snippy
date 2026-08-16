@@ -18,9 +18,9 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 })
 export class ListPaginatorComponent {
   @Input() total = 0;
-  @Input() pageSize = 6;
+  @Input() pageSize = 12;
   @Input() pageIndex = 0;
-  @Input() pageSizeOptions = [6, 12, 24];
+  @Input() pageSizeOptions = [12, 24, 48];
   @Input() hideWhenSinglePage = false;
   @Output() pageChange = new EventEmitter<PageEvent>();
 }

@@ -4,40 +4,35 @@ import { setupSwaggerDocs } from './common/utilities/swaggerDocs';
 import router from './routes/routes';
 import helmet from 'helmet';
 import { globalLimiter } from './common/middleware/rate-limit.service';
-import { connectDBWithRetry } from './database/sequelize';
+import { connectDBWithRetry, sequelize } from './database/sequelize';
 import { errorHandler } from './common/middleware/error-handler';
+import { requestIdMiddleware, requestLogMiddleware } from './common/middleware/request-id';
 import { version } from '../package.json';
 import logger from './common/utilities/logger';
 import { auth0Check } from './common/middleware/auth0.service';
 import cookie from 'cookie-parser';
 import { config, featureFlags, validateConfig } from './config';
-import { connectMinioWithRetry } from './database/minio';
+import { connectMinioWithRetry, minioClient } from './database/minio';
 
-// Validate required environment variables
 validateConfig();
 
 const app = express();
 app.set('trust proxy', 1);
 
-// Swagger setup
 setupSwaggerDocs(app);
 
+app.use(requestIdMiddleware);
 app.use(cookie());
-
-//Security middleware
 app.use(helmet());
-
-// CORS setup — only allow frontend
 app.use(cors({
   origin: config.frontend.url,
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+  exposedHeaders: ['X-Request-Id'],
   credentials: true
 }));
-
-// Global rate limiting - baseline protection
 app.use(globalLimiter);
-
-app.use(express.json());
+app.use(express.json({ limit: '2mb' }));
+app.use(requestLogMiddleware);
 
 function sendHealth(_req: express.Request, res: express.Response) {
   res.status(200).json({
@@ -46,24 +41,52 @@ function sendHealth(_req: express.Request, res: express.Response) {
   });
 }
 
-// Liveness probe — public (no JWT). `/api/v1/health` is for the SPA (nginx only proxies `/api/`).
+async function sendReady(_req: express.Request, res: express.Response) {
+  try {
+    await sequelize.authenticate();
+    if (config.minio.enableMinIO) {
+      await minioClient.listBuckets();
+      if (!featureFlags.isMinioAvailable) {
+        res.status(503).json({ status: 'not_ready', database: true, minio: false });
+        return;
+      }
+    }
+    res.status(200).json({
+      status: 'ready',
+      database: true,
+      minio: featureFlags.isMinioAvailable,
+    });
+  } catch (error) {
+    logger.error('Readiness check failed', error);
+    res.status(503).json({ status: 'not_ready', database: false, minio: featureFlags.isMinioAvailable });
+  }
+}
+
+const publicProbePaths = new Set([
+  '/health',
+  '/api/v1/health',
+  '/ready',
+  '/api/v1/ready',
+]);
+
 app.get('/health', sendHealth);
 app.get('/api/v1/health', sendHealth);
+app.get('/ready', sendReady);
+app.get('/api/v1/ready', sendReady);
 
-// JWT Middleware to protect /api/v1 routes — except public snippet read + embed HTML
 app.use((req, res, next) => {
   const path = req.originalUrl.split('?')[0];
-  if (path === '/api/v1/health' || path === '/health') {
+  if (publicProbePaths.has(path)) {
     return next();
   }
 
   if (req.method === 'GET') {
     const isPublicEmbed = /^\/api\/v1\/snippets\/[^/]+\/embed\/?$/.test(path);
+    const isPublicShare = /^\/api\/v1\/snippets\/shared\/[^/]+\/?$/.test(path);
     const isPublicSnippetGet =
-      /^\/api\/v1\/snippets\/(?!(?:me|public|feed|search|user)(?:\/|$))[^/]+\/?$/.test(path);
+      /^\/api\/v1\/snippets\/(?!(?:me|public|feed|search|user|shared)(?:\/|$))[^/]+\/?$/.test(path);
 
-    if (isPublicEmbed || isPublicSnippetGet) {
-      // Optional auth: attach identity when a valid token is present; ignore missing/invalid tokens
+    if (isPublicEmbed || isPublicShare || isPublicSnippetGet) {
       return auth0Check(req as any, res as any, ((_err?: unknown) => next()) as any);
     }
   }
@@ -71,45 +94,38 @@ app.use((req, res, next) => {
   return auth0Check(req as any, res as any, next as any);
 });
 
-// Routes
 app.use('/api/v1', router);
-
-// Error handling middleware should be the last middleware
 app.use(errorHandler);
 
-// Start the server after ensuring DB connection
 const startServer = async () => {
   try {
-    // Connect to the database - must succeed before starting server
     await connectDBWithRetry();
-    logger.info('✅ Database connection established.');
+    logger.info('Database connection established.');
 
-    if(config.minio.enableMinIO) {
-      logger.info('⚠️  MinIO integration enabled - attempting connection...');
+    if (config.minio.enableMinIO) {
+      logger.info('MinIO integration enabled - attempting connection...');
       await connectMinioWithRetry()
         .then(() => {
           featureFlags.isMinioAvailable = true;
         })
         .catch(error => {
-          logger.error('❌ MinIO connection failed:', error);
+          logger.error('MinIO connection failed', error);
           logger.error('MinIO integration is enabled but connection failed - server will start without MinIO functionality');
           featureFlags.isMinioAvailable = false;
         });
     } else {
-      logger.info('⚠️  MinIO integration disabled - skipping connection');
+      logger.info('MinIO integration disabled - skipping connection');
       featureFlags.isMinioAvailable = false;
     }
-    
-    // Start the Express server
+
     app.listen(config.server.port, () => {
-      logger.info(`🚀 Snippy API v${version} started on port ${config.server.port}`);
+      logger.info(`Snippy API v${version} started on port ${config.server.port}`);
     });
   } catch (error) {
-    logger.error('❌ Failed to start server:', error);
+    logger.error('Failed to start server', error);
     logger.error('Database connection required - server will not start');
-    process.exit(1); // Exit with error code to prevent silent failures
+    process.exit(1);
   }
 };
 
-// Invoke the function to start the server
 startServer();

@@ -34,6 +34,8 @@ export interface SnippetDTO {
     snippetFiles?: SnippetFileDTO[];
     cdnResources?: CdnResource[];
     snapshotUrl?: string | null;
+    embedCount?: number;
+    shareToken?: string | null;
     updatedAt?: string;
 }
 
@@ -57,6 +59,7 @@ export interface SnippetListDTO {
     isFavorited?: boolean;
     isFollowing?: boolean;
     snapshotUrl?: string | null;
+    embedCount?: number;
     updatedAt?: string;
 }
 

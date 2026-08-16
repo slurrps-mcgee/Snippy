@@ -3,7 +3,7 @@ import { Users } from '../../entities/user.entity';
 import { Snippets } from '../../entities/snippet.entity';
 import { Collections } from '../../entities/collection.entity';
 import { customAlphabet } from 'nanoid';
-import { shortIdRetryPolicy, usernameRetryPolicy } from './resiliance';
+import { shortIdRetryPolicy, usernameRetryPolicy } from './resilience';
 import { findByShortId } from '../../modules/snippet/snippet.repo';
 import { FileType } from '../constants/app.constants';
 import { config } from '../../config';

@@ -4,7 +4,7 @@ import { AngularSplitModule } from 'angular-split';
 import { SnippetEditorComponent } from '@app/components/editor/snippet-editor/snippet-editor.component';
 import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
-import { CdnResource } from '@app/interfaces/cdnResource.interface';
+import { CdnResource } from '@app/api/generated/models/cdn-resource';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetSaveUIService } from '@app/services/ui/snippet-save-ui.service';
 import { EditorUiService } from '@app/services/ui/editor-ui.service';
@@ -42,6 +42,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   snippetId: string | null = null;
   error: string | null = null;
   private viewRecorded = false;
+  private previewTimer: ReturnType<typeof setTimeout> | null = null;
 
   @HostListener('window:keydown.control.s', ['$event'])
   onSaveShortcut(event: Event) {
@@ -61,17 +62,20 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
 
       if (!previewUpdateType || !snippet?.snippetFiles) return;
 
-      const htmlFile = snippet.snippetFiles.find(f => f.fileType === 'html');
-      const cssFile = snippet.snippetFiles.find(f => f.fileType === 'css');
-      const jsFile = snippet.snippetFiles.find(f => f.fileType === 'js');
+      const html = snippet.snippetFiles.find(f => f.fileType === 'html')?.content || '';
+      const css = snippet.snippetFiles.find(f => f.fileType === 'css')?.content || '';
+      const js = snippet.snippetFiles.find(f => f.fileType === 'js')?.content || '';
+      const cdn = snippet.cdnResources || [];
 
-      this.updatePreview(
-        htmlFile?.content || '',
-        cssFile?.content || '',
-        jsFile?.content || '',
-        previewUpdateType,
-        snippet.cdnResources || []
-      );
+      if (previewUpdateType === 'partial') {
+        this.updatePreview(html, css, js, 'partial', cdn);
+        return;
+      }
+
+      if (this.previewTimer) clearTimeout(this.previewTimer);
+      this.previewTimer = setTimeout(() => {
+        this.updatePreview(html, css, js, 'full', cdn);
+      }, 200);
     });
 
     effect(() => {
@@ -86,17 +90,24 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
 
   ngOnInit(): void {
     const guest = !!this.route.snapshot.data['guest'];
-    this.editorUi.setGuestMode(guest);
+    const share = !!this.route.snapshot.data['share'];
+    this.editorUi.setGuestMode(guest || share);
 
     this.route.paramMap
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         const id = params.get('id');
+        const token = params.get('token');
         this.snippetId = id;
         this.viewRecorded = false;
         this.error = null;
 
-        if (id && !guest) {
+        if (share && token) {
+          void this.snippetStoreService.loadSharedSnippet(token).then(() => {
+            const snip = this.snippetStoreService.snippet();
+            this.editorUi.setGuestMode(!snip?.isOwner);
+          });
+        } else if (id && !guest) {
           void this.snippetStoreService.loadSnippet(id);
         } else {
           this.initBlankSnippet(guest);
@@ -105,6 +116,10 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   ngOnDestroy(): void {
+    if (this.previewTimer) {
+      clearTimeout(this.previewTimer);
+      this.previewTimer = null;
+    }
     this.editorUi.setGuestMode(false);
     this.previewConsole.setOpen(false);
     this.previewConsole.clear();

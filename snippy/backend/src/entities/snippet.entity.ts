@@ -173,6 +173,23 @@ export class Snippets extends Model<Snippets> {
   })
   snapshotUrl?: string | null;
 
+  @Column({
+    field: 'share_token',
+    type: DataType.STRING(32),
+    allowNull: true,
+    unique: true,
+    defaultValue: null,
+  })
+  shareToken?: string | null;
+
+  @Column({
+    field: 'embed_count',
+    type: DataType.INTEGER,
+    allowNull: false,
+    defaultValue: 0,
+  })
+  embedCount!: number;
+
   // Relations
   @BelongsTo(() => Users, {
     foreignKey: 'auth0Id',

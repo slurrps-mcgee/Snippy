@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatSelectModule } from '@angular/material/select';
-import { SnippetSort } from '@app/services/api/snippet.api.service';
+import { SnippetSort } from '@app/services/stores/snippet.store.service';
 
 export interface SortOption {
   value: SnippetSort;

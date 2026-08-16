@@ -12,10 +12,11 @@ import { CollectionStoreService } from '@app/services/stores/collection.store.se
 import { CollectionCreateDialogComponent } from '@app/components/dialogs/collection-create-dialog/collection-create-dialog.component';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { NavigationService } from '@app/services/ui/navigation.service';
-import { Collection } from '@app/interfaces/collection.interface';
+import { Collection } from '@app/api/generated/models/collection';
 import { UserIdentityHeaderComponent } from '@app/components/modules/user-identity-header/user-identity-header.component';
 import { AsyncStateComponent } from '@app/components/async-state/async-state.component';
 import { ListPageState } from '@app/utils/list-page-state';
+import { SnackbarService } from '@app/services/ui/snackbar.service';
 
 @Component({
   selector: 'app-user-home-page',
@@ -39,6 +40,7 @@ export class UserHomePageComponent implements OnInit {
   private collectionStore = inject(CollectionStoreService);
   private dialogService = inject(DialogService);
   private navigation = inject(NavigationService);
+  private snackbar = inject(SnackbarService);
 
   snippetState = new ListPageState(() => this.loadUserSnippets());
   collectionState = new ListPageState(() => this.loadCollections());
@@ -49,14 +51,17 @@ export class UserHomePageComponent implements OnInit {
   get snippets() { return this.snippetStoreService.snippetList()?.snippets ?? []; }
   get total() { return this.snippetStoreService.snippetList()?.totalCount ?? 0; }
   get isLoading() { return this.snippetStoreService.loading(); }
+  get listError() { return this.snippetStoreService.error(); }
 
   get collections() { return this.collectionStore.collections(); }
   get collectionsTotal() { return this.collectionStore.totalCount(); }
   get collectionsLoading() { return this.collectionStore.loading(); }
+  get collectionsError() { return this.collectionStore.error(); }
 
   get favorites() { return this.snippetStoreService.favoritesList()?.snippets ?? []; }
   get favoritesTotal() { return this.snippetStoreService.favoritesList()?.totalCount ?? 0; }
   get favoritesLoading() { return this.snippetStoreService.favoritesLoading(); }
+  get favoritesError() { return this.snippetStoreService.error(); }
 
   ngOnInit() {
     void this.loadUserSnippets();
@@ -69,7 +74,7 @@ export class UserHomePageComponent implements OnInit {
     try {
       await this.snippetStoreService.loadUserSnippets(page, pageSize, query);
     } catch (error) {
-      console.error('Error loading user snippets:', error);
+      this.snackbar.error('Failed to load snippets');
     }
   }
 
@@ -78,7 +83,7 @@ export class UserHomePageComponent implements OnInit {
     try {
       await this.collectionStore.loadMine(page, pageSize, undefined, query);
     } catch (error) {
-      console.error('Error loading collections:', error);
+      this.snackbar.error('Failed to load collections');
     }
   }
 
@@ -87,7 +92,7 @@ export class UserHomePageComponent implements OnInit {
     try {
       await this.snippetStoreService.loadFavorites(page, pageSize, query);
     } catch (error) {
-      console.error('Error loading favorites:', error);
+      this.snackbar.error('Failed to load favorites');
     }
   }
 
@@ -96,10 +101,13 @@ export class UserHomePageComponent implements OnInit {
   }
 
   openCollection(c: Collection) {
+    if (!c.shortId) return;
     this.navigation.toCollection(c.shortId);
   }
 
   deleteCollection(c: Collection) {
+    if (!c.collectionId) return;
+    const collectionId = c.collectionId;
     return this.dialogService.confirmAndRun({
       confirm: {
         title: 'Delete Collection',
@@ -107,7 +115,7 @@ export class UserHomePageComponent implements OnInit {
         confirmText: 'Delete',
         cancelText: 'Cancel',
       },
-      action: () => this.collectionStore.delete(c.collectionId),
+      action: () => this.collectionStore.delete(collectionId),
       success: 'Collection deleted',
       error: 'Failed to delete collection',
     });

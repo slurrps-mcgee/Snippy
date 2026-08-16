@@ -1,9 +1,9 @@
-import { Transaction, Sequelize, Op, WhereOptions, Order } from "sequelize";
+import { Transaction, Op, WhereOptions, Order } from "sequelize";
 import { Snippets } from "../../entities/snippet.entity";
 import { SnippetFiles } from "../../entities/snippetFile.entity";
 import { Users } from "../../entities/user.entity";
 import { SnippetSort } from "./dto/snippet.dto";
-import { buildLikeSearchCondition } from "../../common/utilities/searchCondition";
+import { buildFullTextSearchCondition, buildJsonContainsTagCondition } from "../../common/utilities/searchCondition";
 
 export function resolveSnippetOrder(sort?: string): Order {
     switch (sort) {
@@ -19,17 +19,8 @@ export function resolveSnippetOrder(sort?: string): Order {
     }
 }
 
-function buildTagCondition(tag?: string): WhereOptions | undefined {
-    if (!tag?.trim()) {
-        return undefined;
-    }
-    const sanitized = tag.trim().replace(/[%_\\]/g, '\\$&');
-    // Exact tag string somewhere in JSON array serialization, e.g. "demo"
-    return Sequelize.where(
-        Sequelize.cast(Sequelize.col('Snippets.tags'), 'CHAR'),
-        Op.like,
-        `%"${sanitized}"%`
-    );
+function buildTagCondition(tag?: string, tableAlias: string = 'Snippets'): WhereOptions | undefined {
+    return buildJsonContainsTagCondition(tag, tableAlias);
 }
 
 /**
@@ -41,15 +32,7 @@ function buildTagCondition(tag?: string): WhereOptions | undefined {
  * Returns `null` when `q` is empty so callers can leave existing behavior unchanged.
  */
 export function buildTextSearchCondition(q?: string | null, tableAlias: string = 'Snippets'): WhereOptions | null {
-    return buildLikeSearchCondition(
-        q,
-        [
-            { name: 'name' },
-            { name: 'description' },
-            { name: 'tags', cast: 'CHAR' },
-        ],
-        tableAlias
-    );
+    return buildFullTextSearchCondition(q, tableAlias);
 }
 
 /** Owner user + optional parent snippet (with parent owner) for list/detail DTO mapping. */
@@ -122,41 +105,41 @@ export async function findBySnippetId(
     snippetId: string,
     transaction?: Transaction
 ): Promise<Snippets | null> {
-    try {
-        return await Snippets.findByPk(snippetId, {
-            include: [
-                SnippetFiles,
-                { model: Users, attributes: ['userName', 'displayName'] }
-            ],
-            transaction
-        });
-    } catch (error) {
-        return await Snippets.findOne({
-            where: { snippetId },
-            transaction
-        });
-    }
+    return await Snippets.findByPk(snippetId, {
+        include: [
+            SnippetFiles,
+            { model: Users, attributes: ['userName', 'displayName'] }
+        ],
+        transaction
+    });
 }
 
 export async function findByShortId(
     shortId: string,
     transaction?: Transaction
 ): Promise<Snippets | null> {
-    try {
-        return await Snippets.findOne({
-            where: { shortId },
-            include: [
-                SnippetFiles,
-                ...snippetWithParentInclude(),
-            ],
-            transaction
-        });
-    } catch (error) {
-        return await Snippets.findOne({
-            where: { shortId },
-            transaction
-        });
-    }
+    return await Snippets.findOne({
+        where: { shortId },
+        include: [
+            SnippetFiles,
+            ...snippetWithParentInclude(),
+        ],
+        transaction
+    });
+}
+
+export async function findByShareToken(
+    shareToken: string,
+    transaction?: Transaction
+): Promise<Snippets | null> {
+    return await Snippets.findOne({
+        where: { shareToken },
+        include: [
+            SnippetFiles,
+            ...snippetWithParentInclude(),
+        ],
+        transaction
+    });
 }
 
 export async function searchSnippets(
@@ -320,6 +303,13 @@ export async function incrementSnippetViewCount(
     transaction?: Transaction
 ): Promise<void> {
     await Snippets.increment("viewCount", { where: { snippetId }, transaction });
+}
+
+export async function incrementSnippetEmbedCount(
+    snippetId: string,
+    transaction?: Transaction
+): Promise<void> {
+    await Snippets.increment("embedCount", { where: { snippetId }, transaction });
 }
 
 export async function incrementSnippetCommentCount(

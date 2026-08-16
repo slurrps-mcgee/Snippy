@@ -1,6 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { FollowApiService } from '@app/services/api/follow.api.service';
+import { Api } from '@app/api/generated/api';
+import { followUser, unfollowUser } from '@app/api/generated/functions';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 
 /**
@@ -9,14 +9,14 @@ import { SnackbarService } from '@app/services/ui/snackbar.service';
  */
 @Injectable({ providedIn: 'root' })
 export class FollowUiService {
-  private followApi = inject(FollowApiService);
+  private api = inject(Api);
   private snackbar = inject(SnackbarService);
 
   async toggle(userName: string, isFollowing: boolean): Promise<boolean | null> {
     try {
       const res = isFollowing
-        ? await firstValueFrom(this.followApi.unfollow(userName))
-        : await firstValueFrom(this.followApi.follow(userName));
+        ? await this.api.invoke(unfollowUser, { userName })
+        : await this.api.invoke(followUser, { userName });
       const nowFollowing = res.isFollowing ?? !isFollowing;
       this.snackbar.success(
         nowFollowing ? `Following @${userName}` : `Unfollowed @${userName}`

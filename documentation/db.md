@@ -19,10 +19,14 @@ The Snippy database is a relational MySQL database managed through Sequelize ORM
 
 **Core Entities:**
 - **users** - User accounts linked to Auth0
-- **snippets** - Code snippets with metadata
+- **snippets** - Code snippets with metadata (including `share_token` and `embed_count`)
 - **snippet_files** - Individual code files within snippets (HTML, CSS, JS)
 - **favorites** - Join table for user favorite snippets
 - **comments** - Comments on snippets
+- **follows** - User follow graph
+- **collections** / **collection_snippets** - Ordered playlists of pens
+- **assets** - MinIO object metadata
+- **snippet_views** - Unique view ledger
 
 ---
 
@@ -157,6 +161,9 @@ Added by migration [`20260813143000-005-add-user-editor-preferences.js`](../snip
 | `comment_count` | INT | DEFAULT: 0 | Number of comments |
 | `cdnResources` | JSON | DEFAULT: [] | CDN libraries (`resourceType` + `url`) |
 | `snapshotUrl` | VARCHAR(512) | NULL | List preview JPEG (`/content/{auth0Id}/snippets/{snippetId}.jpg`) |
+| `share_token` | VARCHAR(32) | UNIQUE, NULL | Secret share-link token (`GET /snippets/shared/:token`) |
+| `embed_count` | INT | DEFAULT: 0 | Embed player loads |
+| `tags_text` | TEXT | GENERATED STORED | `CAST(tags AS CHAR)` for FULLTEXT |
 | `created_at` | TIMESTAMP | NOT NULL | Creation timestamp |
 | `updated_at` | TIMESTAMP | NOT NULL | Last update timestamp |
 
@@ -176,11 +183,15 @@ INDEX idx_snippets_auth0_private (auth0_id, is_private)
 INDEX idx_snippets_private_created (is_private, created_at)
 INDEX idx_snippets_name_search (name)
 INDEX idx_snippets_description_search (description)
+UNIQUE KEY (share_token)
+FULLTEXT INDEX idx_snippets_ft_search (name, description, tags_text)
 ```
 
 Column `cdnResources` was renamed from `externalResources` by [`20260814001500-006-rename-external-resources-to-cdn-resources.js`](../snippy/backend/src/database/migrations/20260814001500-006-rename-external-resources-to-cdn-resources.js).
 
 `snapshotUrl` added by [`20260814020000-007-add-snippet-snapshot-url.js`](../snippy/backend/src/database/migrations/20260814020000-007-add-snippet-snapshot-url.js).
+
+`tags_text`, FULLTEXT, `share_token`, and `embed_count` added by [`20260815180000-008-search-share-embed.js`](../snippy/backend/src/database/migrations/20260815180000-008-search-share-embed.js). Search uses FULLTEXT on `name, description, tags_text` (LIKE fallback for tokens shorter than 3 characters). Tag filters use `JSON_CONTAINS`.
 
 **Sample Data:**
 ```json
@@ -549,7 +560,9 @@ Indexes are created on columns used in:
 - `parent_snippet_short_id` - Find snippet forks
 - `is_private, created_at` - Public feed queries
 - `view_count`, `fork_count`, `favorite_count` - Trending queries
-- `name`, `description` - Full-text search
+- `name`, `description` - Prefix LIKE fallback for short search tokens
+- `name, description, tags_text` - FULLTEXT (`idx_snippets_ft_search`)
+- `share_token` - Unique secret share-link lookup
 
 **snippet_files table:**
 - `snippet_id, file_type` - Unique constraint (fetch specific file type)

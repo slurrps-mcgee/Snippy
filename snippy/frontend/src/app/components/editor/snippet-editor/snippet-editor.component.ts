@@ -47,10 +47,10 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
       if (snippet?.snippetFiles) {
         const file = snippet.snippetFiles.find(f => f.fileType === this.editorType);
         if (file && file.content !== this.code()) {
-          this.code.set(file.content);
+          this.code.set(file.content ?? '');
           // Update editor content if it's already initialized
           if (this.editorInstance) {
-            this.updateEditorContent(file.content);
+            this.updateEditorContent(file.content ?? '');
           }
         }
       }

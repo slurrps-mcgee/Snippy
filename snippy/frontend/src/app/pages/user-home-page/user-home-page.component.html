@@ -8,7 +8,7 @@
 
     <mat-tab-group mat-stretch-tabs="false" mat-align-tabs="start">
       <mat-tab label="Snippets">
-        <app-async-state class="mt-4 block" [loading]="isLoading" loadingText="Loading snippets...">
+        <app-async-state class="mt-4 block" [loading]="isLoading" [error]="listError" loadingText="Loading snippets...">
           <app-snippet-list class="mt-4 block" [snippets]="snippets" [total]="total"
             [pageSize]="snippetState.pageSize" [pageIndex]="snippetState.pageIndex"
             (searchChange)="snippetState.onSearch($event)" (pageChange)="snippetState.onPageChange($event)">
@@ -17,7 +17,7 @@
       </mat-tab>
 
       <mat-tab label="Collections">
-        <app-async-state class="mt-4 block" [loading]="collectionsLoading" loadingText="Loading collections...">
+        <app-async-state class="mt-4 block" [loading]="collectionsLoading" [error]="collectionsError" loadingText="Loading collections...">
           <app-collection-list class="mt-4 block" [collections]="collections" [total]="collectionsTotal"
             [pageSize]="collectionState.pageSize" [pageIndex]="collectionState.pageIndex" [showNewButton]="true"
             [showDelete]="true" (searchChange)="collectionState.onSearch($event)"
@@ -28,7 +28,7 @@
       </mat-tab>
 
       <mat-tab label="Favorites">
-        <app-async-state class="mt-4 block" [loading]="favoritesLoading" loadingText="Loading favorites...">
+        <app-async-state class="mt-4 block" [loading]="favoritesLoading" [error]="favoritesError" loadingText="Loading favorites...">
           <app-snippet-list class="mt-4 block" [snippets]="favorites" [total]="favoritesTotal"
             [pageSize]="favoritesState.pageSize" [pageIndex]="favoritesState.pageIndex" [showNewButton]="false"
             (searchChange)="favoritesState.onSearch($event)" (pageChange)="favoritesState.onPageChange($event)">

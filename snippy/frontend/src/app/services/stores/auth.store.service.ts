@@ -1,9 +1,10 @@
 import { Injectable, signal, computed, inject, DestroyRef } from '@angular/core';
 import { AuthService } from '@auth0/auth0-angular';
-import { of, tap, take, catchError, switchMap, EMPTY, filter, finalize, firstValueFrom } from 'rxjs';
+import { of, tap, take, catchError, switchMap, EMPTY, filter, finalize, from } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { AuthAPIService } from '@app/services/api/auth.api.service';
-import { User } from '@app/interfaces/user.interface';
+import { Api } from '@app/api/generated/api';
+import { ensureUser, getCurrentUser } from '@app/api/generated/functions';
+import type { User } from '@app/api/generated/models/user';
 
 @Injectable({ providedIn: 'root' })
 export class AuthStoreService {
@@ -20,7 +21,7 @@ export class AuthStoreService {
   readonly syncing = signal(false);
 
   private auth0Service = inject(AuthService);
-  private authApiService = inject(AuthAPIService);
+  private api = inject(Api);
   private destroyRef = inject(DestroyRef);
 
   constructor() {
@@ -39,10 +40,14 @@ export class AuthStoreService {
             filter((profile): profile is NonNullable<typeof profile> => !!profile),
             take(1),
             switchMap((profile) =>
-              this.authApiService.syncBackendUser(profile).pipe(
+              from(
+                this.api.invoke(ensureUser, {
+                  body: { name: profile?.name, pictureUrl: profile?.picture },
+                })
+              ).pipe(
                 tap((res) => {
-                  const user = res?.user ?? res;
-                  if (user) this.setUser(user as User);
+                  const user = res?.user;
+                  if (user) this.setUser(user);
                 }),
                 catchError((err) => {
                   console.warn('User sync failed', err);
@@ -81,7 +86,7 @@ export class AuthStoreService {
 
   public async refreshUserFromBackend() {
     try {
-      const res = await firstValueFrom(this.authApiService.getCurrentUser());
+      const res = await this.api.invoke(getCurrentUser);
       if (res?.user) this.setUser(res.user);
     } catch {
       console.warn('User refresh failed');

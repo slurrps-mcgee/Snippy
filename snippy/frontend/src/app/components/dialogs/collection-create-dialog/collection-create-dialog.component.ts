@@ -9,7 +9,7 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CollectionStoreService } from '@app/services/stores/collection.store.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
-import { Collection } from '@app/interfaces/collection.interface';
+import { Collection } from '@app/api/generated/models/collection';
 import { MatDividerModule } from '@angular/material/divider';
 
 const DESCRIPTION_MAX_LENGTH = 2500;

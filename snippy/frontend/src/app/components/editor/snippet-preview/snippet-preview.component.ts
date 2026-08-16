@@ -1,6 +1,6 @@
 import { Component, ViewChild, ElementRef, OnDestroy, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
 
-import { CdnResource } from '@app/interfaces/cdnResource.interface';
+import { CdnResource } from '@app/api/generated/models/cdn-resource';
 import {
   ConsoleLevel,
   PreviewConsoleService,

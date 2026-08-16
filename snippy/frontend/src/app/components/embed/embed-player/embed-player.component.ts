@@ -14,10 +14,10 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
-import { SnippetAPIService } from '@app/services/api/snippet.api.service';
-import { Snippet } from '@app/interfaces/snippet.interface';
-import { CdnResource } from '@app/interfaces/cdnResource.interface';
+import { Api } from '@app/api/generated/api';
+import { getSnippetByShortId } from '@app/api/generated/functions';
+import { Snippet } from '@app/api/generated/models/snippet';
+import { CdnResource } from '@app/api/generated/models/cdn-resource';
 import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { EmbedCodePaneComponent } from '@app/components/embed/embed-code-pane/embed-code-pane.component';
 import { EDITOR_THEME_KEYS, EditorThemeKey } from '@app/editor/editor-preferences';
@@ -43,7 +43,7 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   @ViewChild(SnippetPreviewComponent) preview?: SnippetPreviewComponent;
 
   private route = inject(ActivatedRoute);
-  private api = inject(SnippetAPIService);
+  private api = inject(Api);
   private destroyRef = inject(DestroyRef);
 
   loading = signal(true);
@@ -147,8 +147,9 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
     this.loading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.api.getSnippet(shortId));
+      const res = await this.api.invoke(getSnippetByShortId, { shortId });
       const snip = res.snippet;
+      if (!snip) throw new Error('not found');
       this.snippet.set(snip);
       this.html.set(snip.snippetFiles?.find(f => f.fileType === 'html')?.content ?? '');
       this.css.set(snip.snippetFiles?.find(f => f.fileType === 'css')?.content ?? '');

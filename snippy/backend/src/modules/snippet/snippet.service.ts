@@ -26,7 +26,9 @@ import {
     getUserPublicSnippets,
     searchSnippets,
     findByShortId,
+    findByShareToken,
     getFeedSnippets,
+    incrementSnippetEmbedCount,
 } from "./snippet.repo";
 import { findSnippetView, upsertSnippetView } from "./snippetView.repo";
 import { SnippetListQuery } from "./dto/snippet.dto";
@@ -34,6 +36,7 @@ import { Transaction } from "sequelize";
 import { findFollowingIds } from "../follow/follow.repo";
 import { minioClient, latchMinioUnavailable, isMinioConnectionError } from "../../database/minio";
 import logger from "../../common/utilities/logger";
+import { nanoid } from 'nanoid';
 import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES, snippetSnapshotObjectKey } from "../asset/dto/asset.dto";
 import { buildContentUrl, removeSnippetSnapshot } from "../asset/asset.service";
 
@@ -63,7 +66,7 @@ async function mapSnippetsWithFavorites(
  * Protected fields that cannot be updated through the updateSnippet endpoint
  * These fields are system-managed and should not be modified by users
  */
-const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId', 'snapshotUrl'] as const;
+const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId', 'snapshotUrl', 'shareToken', 'embedCount'] as const;
 
 //#region CREATE/UPDATE/DELETE
 // Create Snippet
@@ -109,7 +112,6 @@ export async function forkSnippetHandler(payload: ServicePayload<unknown, { snip
         }
 
         const originalSnippetId = payload.params?.snippetId;
-        ;
 
         if (!originalSnippetId) {
             throw new CustomError("Original snippet ID required", 400);
@@ -410,6 +412,92 @@ export async function getSnippetByShortIdHandler(payload: ServicePayload<unknown
         handleError(err, 'getSnippetHandler');
     }
 }
+
+export async function getSnippetByShareTokenHandler(
+    payload: ServicePayload<unknown, { token: string }>
+): Promise<ServiceResponse<SnippetDTO>> {
+    const auth0Id = payload.auth?.payload?.sub;
+    const token = payload.params?.token;
+    if (!token) {
+        throw new CustomError('Share token required', 400);
+    }
+
+    try {
+        return await executeInTransaction(async (t) => {
+            const snippet = await findByShareToken(token, t);
+            if (!snippet) {
+                throw new CustomError('Snippet not found', 404);
+            }
+
+            let isFavorited: boolean | undefined;
+            if (auth0Id) {
+                const favoritedIds = await findFavoritedSnippetIds(auth0Id, [snippet.snippetId], t);
+                isFavorited = favoritedIds.has(snippet.snippetId);
+            }
+
+            return { snippet: SnippetMapper.toDTO(snippet, auth0Id, isFavorited) };
+        });
+    } catch (err: any) {
+        handleError(err, 'getSnippetByShareTokenHandler');
+    }
+}
+
+export async function createSnippetShareLinkHandler(
+    payload: ServicePayload<unknown, { snippetId: string }>
+): Promise<ServiceResponse<{ shareToken: string }>> {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        if (!auth0Id) {
+            throw new CustomError('Authentication required', 401);
+        }
+        const snippetId = payload.params?.snippetId;
+        if (!snippetId) {
+            throw new CustomError('Snippet ID required', 400);
+        }
+
+        return await executeInTransaction(async (t) => {
+            const snippet = await findBySnippetId(snippetId, t);
+            if (!snippet) {
+                throw new CustomError('Snippet not found', 404);
+            }
+            AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
+            const shareToken = snippet.shareToken || nanoid(21);
+            if (!snippet.shareToken) {
+                await updateSnippet(snippetId, { shareToken }, t);
+            }
+            return { shareToken };
+        });
+    } catch (err: any) {
+        handleError(err, 'createSnippetShareLinkHandler');
+    }
+}
+
+export async function revokeSnippetShareLinkHandler(
+    payload: ServicePayload<unknown, { snippetId: string }>
+): Promise<ServiceResponse<null>> {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        if (!auth0Id) {
+            throw new CustomError('Authentication required', 401);
+        }
+        const snippetId = payload.params?.snippetId;
+        if (!snippetId) {
+            throw new CustomError('Snippet ID required', 400);
+        }
+
+        return await executeInTransaction(async (t) => {
+            const snippet = await findBySnippetId(snippetId, t);
+            if (!snippet) {
+                throw new CustomError('Snippet not found', 404);
+            }
+            AuthorizationService.verifyOwnership(snippet.auth0Id, auth0Id, 'snippet');
+            await updateSnippet(snippetId, { shareToken: null }, t);
+            return {};
+        });
+    } catch (err: any) {
+        handleError(err, 'revokeSnippetShareLinkHandler');
+    }
+}
 // Get All Public Snippets (Pagination)
 export async function getAllPublicSnippetsHandler(
     payload: ServicePayload<unknown, unknown, SnippetListQuery>
@@ -562,6 +650,10 @@ export async function getSnippetEmbedHtmlHandler(
         if (!snippet || snippet.isPrivate) {
             throw new CustomError("Snippet not found", 404);
         }
+
+        void incrementSnippetEmbedCount(snippet.snippetId).catch((err) => {
+            logger.debug('embed_count increment failed', err);
+        });
 
         const files = snippet.snippetFiles || [];
         const html = files.find((f) => f.fileType === 'html')?.content ?? '';

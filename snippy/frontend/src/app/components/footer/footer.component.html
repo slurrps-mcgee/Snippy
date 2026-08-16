@@ -33,6 +33,12 @@
         <mat-icon>code</mat-icon>
         Embed
       </button>
+      @if (isOwner()) {
+      <button mat-button type="button" (click)="openShare()" matTooltip="Secret share link">
+        <mat-icon>share</mat-icon>
+        Share
+      </button>
+      }
       }
     </div>
     } @else {

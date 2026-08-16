@@ -47,6 +47,10 @@ export class SnippetMapper {
             snippetFiles: snippet.snippetFiles?.map(file => this.fileToDTO(file)),
             cdnResources: snippet.cdnResources ?? [],
             snapshotUrl: snippet.snapshotUrl ?? null,
+            embedCount: snippet.embedCount ?? 0,
+            shareToken: currentUserId && AuthorizationService.isOwner(snippet.auth0Id, currentUserId)
+                ? snippet.shareToken ?? null
+                : undefined,
             updatedAt: this.updatedAtIso(snippet),
         };
     }
@@ -81,6 +85,7 @@ export class SnippetMapper {
                 ? followingAuth0Ids.has(snippet.auth0Id)
                 : undefined,
             snapshotUrl: snippet.snapshotUrl ?? null,
+            embedCount: snippet.embedCount ?? 0,
             updatedAt: this.updatedAtIso(snippet),
         };
     }

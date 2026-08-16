@@ -21,7 +21,13 @@ export const errorHandler = (
   const message = err.message || 'Internal Server Error';
 
   // Log error with stack trace (if available)
-  logger.error(`[${req.method}] ${req.originalUrl} - ${statusCode} - ${message}`);
+  logger.error('request_error', {
+    requestId: req.requestId,
+    method: req.method,
+    path: req.originalUrl,
+    status: statusCode,
+    message,
+  });
   if (err.stack) {
     logger.debug(err.stack); // log stack trace separately at debug level
   }

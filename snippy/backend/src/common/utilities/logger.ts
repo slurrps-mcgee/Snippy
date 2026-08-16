@@ -3,53 +3,56 @@ import 'winston-daily-rotate-file';
 import path from 'path';
 import { config } from '../../config';
 
-// Folder paths for logs
 const logDir = path.join(__dirname, '../logs');
+const isProduction = config.server.nodeEnv === 'production';
 
-// Single, consistent log format for all transports
-const logFormatter = winston.format.printf(info => {
-    const { timestamp, level, stack, message } = info;
-    // Use stack trace for errors if available, otherwise use message
+const textFormatter = winston.format.printf(info => {
+    const { timestamp, level, stack, message, requestId, ...rest } = info;
     const logMessage = stack || message;
-    return `[${timestamp}] ${level.toUpperCase()}: ${logMessage}`;
+    const extras = Object.keys(rest).length ? ` ${JSON.stringify(rest)}` : '';
+    const req = requestId ? ` [${requestId}]` : '';
+    return `[${timestamp}] ${level.toUpperCase()}${req}: ${logMessage}${extras}`;
 });
 
-// Base format configuration used by all transports
-const baseFormat = winston.format.combine(
-    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-    winston.format.errors({ stack: true }), // Include stack traces for errors
-    logFormatter
+const jsonFormat = winston.format.combine(
+    winston.format.timestamp(),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
 );
 
-// Daily Rotate File for debug logs
+const textFormat = winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    winston.format.errors({ stack: true }),
+    textFormatter
+);
+
+const fileFormat = isProduction ? jsonFormat : textFormat;
+
 const debugTransport = new winston.transports.DailyRotateFile({
     filename: `${logDir}/debug/debug-%DATE%.log`,
     datePattern: 'YYYY-MM-DD',
     level: 'debug',
-    maxFiles: '14d', // Keep logs for 14 days
-    format: baseFormat,
+    maxFiles: '14d',
+    format: fileFormat,
 });
 
-// Daily Rotate File for error logs
 const errorTransport = new winston.transports.DailyRotateFile({
     filename: `${logDir}/error/error-%DATE%.log`,
     datePattern: 'YYYY-MM-DD',
     level: 'error',
-    maxFiles: '30d', // Keep error logs for 30 days
-    format: baseFormat,
+    maxFiles: '30d',
+    format: fileFormat,
 });
 
-// Console transport for development with colorization
 const consoleTransport = new winston.transports.Console({
-    format: winston.format.combine(
-        winston.format.colorize(),
-        baseFormat
-    ),
+    format: isProduction
+        ? jsonFormat
+        : winston.format.combine(winston.format.colorize(), textFormat),
 });
 
-// Winston Logger Configuration
 const logger = winston.createLogger({
     level: config.logging.level,
+    defaultMeta: { service: 'snippy-api' },
     transports: [consoleTransport, debugTransport, errorTransport],
 });
 

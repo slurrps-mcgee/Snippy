@@ -26,6 +26,7 @@ export interface ServiceResponse<T> {
     viewCount?: number;
     counted?: boolean;
     message?: string;
+    shareToken?: string;
 
     //File upload / asset responses
     url?: string;

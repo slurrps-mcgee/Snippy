@@ -17,7 +17,7 @@ import { favoriteHandler, getFavoriteSnippetsByUserHandler, isFavoriteHandler } 
  *           type: string
  *           format: uuid
  *     responses:
- *       201:
+ *       200:
  *         description: Favorite toggled successfully
  *       400:
  *         description: Bad request
@@ -30,7 +30,7 @@ export async function favorite(req: Request, res: Response, next: NextFunction):
     try {
         validateCreateOrDeleteFavorite(req.params);
         const { favoriteCount, isFavorited } = await favoriteHandler(req);
-        res.status(201).json({ success: true, isFavorited, favoriteCount });
+        res.status(200).json({ success: true, isFavorited, favoriteCount });
     } catch (error) {
         next(error);
     }

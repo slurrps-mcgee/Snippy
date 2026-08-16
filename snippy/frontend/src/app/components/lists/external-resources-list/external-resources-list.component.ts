@@ -9,7 +9,7 @@ import { Component, DestroyRef, EventEmitter, Input, Output, inject, OnInit, Cha
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { CdnResource } from '@app/interfaces/cdnResource.interface';
+import { CdnResource } from '@app/api/generated/models/cdn-resource';
 import { CdnLibraryHit } from '@app/interfaces/cdnLibrary.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { CdnApiService } from '@app/services/api/cdn.api.service';

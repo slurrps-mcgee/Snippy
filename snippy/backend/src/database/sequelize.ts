@@ -4,7 +4,7 @@ import { Snippets } from '../entities/snippet.entity';
 import { SnippetFiles } from '../entities/snippetFile.entity';
 import { Favorites } from '../entities/favorite.entity';
 import { Comments } from '../entities/comment.entity';
-import { dbConnectionPolicy } from '../common/utilities/resiliance';
+import { dbConnectionPolicy } from '../common/utilities/resilience';
 import logger from '../common/utilities/logger';
 import { config } from '../config';
 import { Assets } from '../entities/asset.entity';
@@ -23,6 +23,12 @@ export const sequelize = new Sequelize({
   port: config.database.port,
   dialect: config.database.dialect,
   logging: false,
+  pool: {
+    max: 10,
+    min: 0,
+    acquire: 30_000,
+    idle: 10_000,
+  },
 });
 
 // Add models to sequelize after initialization

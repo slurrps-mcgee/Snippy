@@ -1,4 +1,4 @@
-import { Op, Transaction, WhereOptions } from 'sequelize';
+import { Op, Sequelize, Transaction, WhereOptions } from 'sequelize';
 import { Collections } from '../../entities/collection.entity';
 import { CollectionSnippets } from '../../entities/collectionSnippet.entity';
 import { Snippets } from '../../entities/snippet.entity';
@@ -143,11 +143,27 @@ export async function countSnippetsForCollections(
     transaction?: Transaction
 ): Promise<Map<string, number>> {
     const counts = new Map<string, number>();
-    await Promise.all(
-        collectionIds.map(async (id) => {
-            counts.set(id, await countCollectionSnippets(id, transaction));
-        })
-    );
+    if (collectionIds.length === 0) {
+        return counts;
+    }
+
+    const rows = await CollectionSnippets.findAll({
+        attributes: [
+            'collectionId',
+            [Sequelize.fn('COUNT', Sequelize.col('collection_snippet_id')), 'snippetCount'],
+        ],
+        where: { collectionId: collectionIds },
+        group: ['collectionId'],
+        transaction,
+        raw: true,
+    }) as unknown as Array<{ collectionId: string; snippetCount: number | string }>;
+
+    for (const id of collectionIds) {
+        counts.set(id, 0);
+    }
+    for (const row of rows) {
+        counts.set(row.collectionId, Number(row.snippetCount) || 0);
+    }
     return counts;
 }
 

@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
 import { CommentDialogComponent } from '@app/components/dialogs/comment-dialog/comment-dialog.component';
 import { AddToCollectionDialogComponent } from '@app/components/dialogs/add-to-collection-dialog/add-to-collection-dialog.component';
-import { SnippetList } from '@app/interfaces/snippetList.interface';
-import { Snippet } from '@app/interfaces/snippet.interface';
+import { SnippetList } from '@app/api/generated/models/snippet-list';
+import { Snippet } from '@app/api/generated/models/snippet';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
@@ -26,6 +26,7 @@ export class SnippetActionsService {
   async forkAndOpen(snippetId: string) {
     try {
       const res = await this.snippetStore.forkSnippet(snippetId);
+      if (!res.snippet?.shortId) throw new Error('Fork returned no snippet');
       this.snackbar.success('Snippet forked');
       await this.navigation.toSnippet(res.snippet.shortId, res.snippet.userName);
     } catch {
@@ -57,11 +58,12 @@ export class SnippetActionsService {
    * response. Rolls back when the request fails.
    */
   async toggleFavoriteOptimistic(snippet: SnippetList) {
+    if (!snippet.snippetId) return;
     const previousFavorited = !!snippet.isFavorited;
-    const previousCount = snippet.favoriteCount;
+    const previousCount = snippet.favoriteCount ?? 0;
 
     snippet.isFavorited = !previousFavorited;
-    snippet.favoriteCount += previousFavorited ? -1 : 1;
+    snippet.favoriteCount = previousCount + (previousFavorited ? -1 : 1);
 
     try {
       const response = await this.snippetStore.favoriteSnippet(snippet.snippetId);
@@ -93,7 +95,7 @@ export class SnippetActionsService {
         confirmText: 'Delete',
         cancelText: 'Cancel',
       },
-      action: () => this.snippetStore.deleteSnippet(snippet.snippetId),
+      action: () => this.snippetStore.deleteSnippet(snippet.snippetId!),
       success: 'Snippet deleted',
       error: 'Failed to delete snippet',
     });

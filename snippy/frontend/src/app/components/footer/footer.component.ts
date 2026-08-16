@@ -8,6 +8,7 @@ import JSZip from 'jszip';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { AssetsDialogComponent } from '@app/components/dialogs/assets-dialog/assets-dialog.component';
 import { EmbedDialogComponent } from '@app/components/dialogs/embed-dialog/embed-dialog.component';
+import { ShareLinkDialogComponent } from '@app/components/dialogs/share-link-dialog/share-link-dialog.component';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { SnippetActionsService } from '@app/services/ui/snippet-actions.service';
@@ -42,12 +43,20 @@ export class FooterComponent {
     () => !!this.snippetStoreService.snippet()?.snippetId
   );
 
+  readonly isOwner = computed(
+    () => !!this.snippetStoreService.snippet()?.isOwner
+  );
+
   openAssets() {
     this.dialogService.open(AssetsDialogComponent, 'lg');
   }
 
   openEmbed() {
     this.dialogService.open(EmbedDialogComponent, 'lg');
+  }
+
+  openShare() {
+    this.dialogService.open(ShareLinkDialogComponent, 'md');
   }
 
   toggleConsole() {
@@ -65,9 +74,10 @@ export class FooterComponent {
     if (!snippet) return;
 
     const zip = new JSZip();
-    const html = snippet.snippetFiles.find(f => f.fileType === 'html')?.content ?? '';
-    const css = snippet.snippetFiles.find(f => f.fileType === 'css')?.content ?? '';
-    const js = snippet.snippetFiles.find(f => f.fileType === 'js')?.content ?? '';
+    const files = snippet.snippetFiles ?? [];
+    const html = files.find(f => f.fileType === 'html')?.content ?? '';
+    const css = files.find(f => f.fileType === 'css')?.content ?? '';
+    const js = files.find(f => f.fileType === 'js')?.content ?? '';
     const cdnResources = snippet.cdnResources ?? [];
 
     const stylesheets = cdnResources

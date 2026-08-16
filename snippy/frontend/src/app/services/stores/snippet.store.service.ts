@@ -1,13 +1,31 @@
 import { Injectable, signal, computed, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { Snippet } from '@app/interfaces/snippet.interface';
-import { CdnResource } from '@app/interfaces/cdnResource.interface';
-import { SnippetAPIService, SnippetSort } from '@app/services/api/snippet.api.service';
-import { FavoriteService } from '@app/services/api/favorite.api.service';
-import { SnippetListResponse } from '@app/interfaces/snippetListResponse.interface';
-import { FavoriteResponse } from '@app/interfaces/favoriteResponse.interface';
-import { SnippetResponse } from '@app/interfaces/snippetResponse.interface';
-import { SnippetList } from '@app/interfaces/snippetList.interface';
+import { Api } from '@app/api/generated/api';
+import {
+  createSnippet,
+  deleteSnippet,
+  forkSnippet,
+  getFeedSnippets,
+  getFavorites,
+  getMySnippets,
+  getPublicSnippets,
+  getSharedSnippet,
+  getSnippetByShortId,
+  getUserPublicSnippets,
+  recordSnippetView,
+  searchSnippets,
+  toggleFavorite,
+  updateSnippet,
+  type GetPublicSnippets$Params,
+} from '@app/api/generated/functions';
+import type { CdnResource } from '@app/api/generated/models/cdn-resource';
+import type { FavoriteResponse } from '@app/api/generated/models/favorite-response';
+import type { Snippet } from '@app/api/generated/models/snippet';
+import type { SnippetList } from '@app/api/generated/models/snippet-list';
+import type { SnippetListResponse } from '@app/api/generated/models/snippet-list-response';
+import type { SnippetResponse } from '@app/api/generated/models/snippet-response';
+import type { CreateSnippetRequest } from '@app/api/generated/models/create-snippet-request';
+
+export type SnippetSort = NonNullable<GetPublicSnippets$Params['sort']>;
 
 /**
  * Global snippet domain store (root singleton).
@@ -31,8 +49,7 @@ export class SnippetStoreService {
   private listGeneration = 0;
   private favoritesGeneration = 0;
   private detailGeneration = 0;
-  private snippetService = inject(SnippetAPIService);
-  private favoriteService = inject(FavoriteService);
+  private api = inject(Api);
 
   //#region API Methods
   async loadSnippet(snippetId: string) {
@@ -42,7 +59,7 @@ export class SnippetStoreService {
     this.snippet.set(null);
     this.originalSnippet.set(null);
     try {
-      const res = await firstValueFrom(this.snippetService.getSnippet(snippetId));
+      const res = await this.api.invoke(getSnippetByShortId, { shortId: snippetId });
       if (gen !== this.detailGeneration) return;
       if (res?.snippet) {
         this.setSnippet(res.snippet, true);
@@ -53,6 +70,30 @@ export class SnippetStoreService {
     } catch {
       if (gen !== this.detailGeneration) return;
       this.error.set('Failed to load snippet');
+      this.snippet.set(null);
+      this.originalSnippet.set(null);
+      this.loading.set(false);
+    }
+  }
+
+  async loadSharedSnippet(token: string) {
+    const gen = ++this.detailGeneration;
+    this.loading.set(true);
+    this.error.set(null);
+    this.snippet.set(null);
+    this.originalSnippet.set(null);
+    try {
+      const res = await this.api.invoke(getSharedSnippet, { token });
+      if (gen !== this.detailGeneration) return;
+      if (res?.snippet) {
+        this.setSnippet(res.snippet, true);
+      } else {
+        this.error.set('Snippet not found');
+      }
+      this.loading.set(false);
+    } catch {
+      if (gen !== this.detailGeneration) return;
+      this.error.set('Failed to load shared snippet');
       this.snippet.set(null);
       this.originalSnippet.set(null);
       this.loading.set(false);
@@ -83,28 +124,28 @@ export class SnippetStoreService {
 
   async loadUserSnippets(page: number, limit: number, q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getUserSnippets(page, limit, q)),
+      () => this.api.invoke(getMySnippets, { page, limit, q }),
       'Failed to load user snippets'
     );
   }
 
   async loadPublicSnippets(page: number, limit: number, sort: SnippetSort = 'newest', q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getPublicSnippets(page, limit, sort, undefined, q)),
+      () => this.api.invoke(getPublicSnippets, { page, limit, sort, q }),
       'Failed to load public snippets'
     );
   }
 
   async loadFeedSnippets(page: number, limit: number, sort: SnippetSort = 'newest', q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getFeedSnippets(page, limit, sort, q)),
+      () => this.api.invoke(getFeedSnippets, { page, limit, sort, q }),
       'Failed to load feed'
     );
   }
 
   async loadUserPublicSnippets(userName: string, page: number, limit: number, q?: string) {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.getUserPublicSnippets(userName, page, limit, q)),
+      () => this.api.invoke(getUserPublicSnippets, { userName, page, limit, q }),
       'Failed to load user snippets'
     );
   }
@@ -114,7 +155,7 @@ export class SnippetStoreService {
     this.favoritesLoading.set(true);
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.favoriteService.getFavorites(page, limit, q));
+      const res = await this.api.invoke(getFavorites, { page, limit, q });
       if (gen !== this.favoritesGeneration) return res ?? null;
       this.favoritesList.set(res ?? null);
       this.favoritesLoading.set(false);
@@ -130,7 +171,7 @@ export class SnippetStoreService {
 
   async searchSnippets(query: string, page: number, limit: number, sort: SnippetSort = 'newest') {
     return this.runListLoad(
-      () => firstValueFrom(this.snippetService.searchSnippets(query, page, limit, sort)),
+      () => this.api.invoke(searchSnippets, { q: query, page, limit, sort }),
       'Failed to search snippets'
     );
   }
@@ -140,7 +181,18 @@ export class SnippetStoreService {
     if (!s) throw new Error('No snippet to save');
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.snippetService.saveSnippet(s));
+      const body: CreateSnippetRequest = {
+        name: s.name,
+        description: s.description ?? undefined,
+        tags: s.tags ?? [],
+        isPrivate: s.isPrivate,
+        snippetFiles: s.snippetFiles,
+        cdnResources: s.cdnResources ?? [],
+      };
+      const res = s.snippetId
+        ? await this.api.invoke(updateSnippet, { snippetId: s.snippetId, body })
+        : await this.api.invoke(createSnippet, { body });
+      if (!res.snippet) throw new Error('Save returned no snippet');
       this.snippet.set(res.snippet);
       this.originalSnippet.set(JSON.parse(JSON.stringify(res.snippet)));
       return res;
@@ -154,12 +206,13 @@ export class SnippetStoreService {
     this.loading.set(true);
     this.error.set(null);
     try {
-      await firstValueFrom(this.snippetService.deleteSnippet(snippetId));
+      await this.api.invoke(deleteSnippet, { snippetId });
       this.snippetList.update(list => {
         if (!list) return list;
+        const snippets = (list.snippets ?? []).filter(s => s.snippetId !== snippetId);
         return {
           ...list,
-          snippets: list.snippets.filter(s => s.snippetId !== snippetId),
+          snippets,
           totalCount: Math.max(0, (list.totalCount ?? 0) - 1),
         };
       });
@@ -175,7 +228,7 @@ export class SnippetStoreService {
   async favoriteSnippet(snippetId: string): Promise<FavoriteResponse | undefined> {
     this.error.set(null);
     try {
-      const response = await firstValueFrom(this.favoriteService.favoriteSnippet(snippetId)) as FavoriteResponse;
+      const response = await this.api.invoke(toggleFavorite, { snippetId });
       if (response && typeof response.favoriteCount === 'number') {
         this.patchSnippetCounts(snippetId, {
           favoriteCount: response.favoriteCount,
@@ -186,18 +239,18 @@ export class SnippetStoreService {
             if (!list) return list;
             return {
               ...list,
-              snippets: list.snippets.filter(item => item.snippetId !== snippetId),
+              snippets: (list.snippets ?? []).filter(item => item.snippetId !== snippetId),
               totalCount: Math.max(0, (list.totalCount ?? 0) - 1),
             };
           });
         } else {
-          const existing = this.favoritesList()?.snippets.some(item => item.snippetId === snippetId);
+          const existing = this.favoritesList()?.snippets?.some(item => item.snippetId === snippetId);
           if (existing) {
             this.favoritesList.update(list => {
               if (!list) return list;
               return {
                 ...list,
-                snippets: list.snippets.map(item =>
+                snippets: (list.snippets ?? []).map(item =>
                   item.snippetId === snippetId
                     ? { ...item, favoriteCount: response.favoriteCount, isFavorited: true }
                     : item
@@ -217,8 +270,8 @@ export class SnippetStoreService {
                 }
                 return {
                   ...list,
-                  snippets: [row, ...list.snippets],
-                  totalCount: (list.totalCount ?? list.snippets.length) + 1,
+                    snippets: [row, ...(list.snippets ?? [])],
+                    totalCount: (list.totalCount ?? list.snippets?.length ?? 0) + 1,
                 };
               });
             } else {
@@ -236,7 +289,7 @@ export class SnippetStoreService {
 
   /** Build a favorites-list row from currently loaded list/detail state. */
   private resolveSnippetListItem(snippetId: string, favoriteCount: number): SnippetList | null {
-    const fromList = this.snippetList()?.snippets.find(item => item.snippetId === snippetId);
+    const fromList = this.snippetList()?.snippets?.find(item => item.snippetId === snippetId);
     if (fromList) {
       return {
         ...fromList,
@@ -254,7 +307,7 @@ export class SnippetStoreService {
         description: detail.description ?? null,
         tags: detail.tags?.length ? detail.tags : null,
         userName: detail.userName,
-        displayName: detail.displayName,
+        displayName: detail.displayName ?? undefined,
         commentCount: detail.commentCount ?? 0,
         favoriteCount,
         viewCount: detail.viewCount ?? 0,
@@ -269,7 +322,7 @@ export class SnippetStoreService {
   async forkSnippet(snippetId: string): Promise<SnippetResponse> {
     this.error.set(null);
     try {
-      const res = await firstValueFrom(this.snippetService.forkSnippet(snippetId));
+      const res = await this.api.invoke(forkSnippet, { snippetId });
       this.snippet.update(s =>
         s && s.snippetId === snippetId
           ? { ...s, forkCount: (s.forkCount ?? 0) + 1 }
@@ -284,7 +337,7 @@ export class SnippetStoreService {
 
   async recordView(snippetId: string): Promise<void> {
     try {
-      const res = await firstValueFrom(this.snippetService.recordView(snippetId));
+      const res = await this.api.invoke(recordSnippetView, { snippetId });
       if (res?.counted && typeof res.viewCount === 'number') {
         this.patchSnippetCounts(snippetId, { viewCount: res.viewCount });
       }
@@ -304,7 +357,7 @@ export class SnippetStoreService {
       if (!list) return list;
       return {
         ...list,
-        snippets: list.snippets.map(item =>
+        snippets: (list.snippets ?? []).map(item =>
           item.snippetId === snippetId
             ? { ...item, commentCount: apply(item.commentCount ?? 0) }
             : item
@@ -329,13 +382,24 @@ export class SnippetStoreService {
       if (!list) return list;
       return {
         ...list,
-        snippets: list.snippets.map(item =>
+        snippets: (list.snippets ?? []).map(item =>
           item.snippetId === snippetId ? { ...item, ...patch } : item
         ),
       };
     };
     this.snippetList.update(patchList);
     this.favoritesList.update(patchList);
+  }
+
+  patchShareToken(shareToken: string | null) {
+    const current = this.snippet();
+    if (!current) return;
+    const next = { ...current, shareToken };
+    this.snippet.set(next);
+    const original = this.originalSnippet();
+    if (original) {
+      this.originalSnippet.set({ ...original, shareToken });
+    }
   }
   //#endregion API Methods
 
@@ -346,7 +410,9 @@ export class SnippetStoreService {
     if (s.name !== o.name) return true;
     if (s.description !== o.description) return true;
     if (s.isPrivate !== o.isPrivate) return true;
-    if (s.tags.length !== o.tags.length) return true;
+    const sTags = s.tags ?? [];
+    const oTags = o.tags ?? [];
+    if (sTags.length !== oTags.length) return true;
     if (s.cdnResources?.length !== o.cdnResources?.length) return true;
     for (let i = 0; i < (s.cdnResources?.length || 0); i++) {
       if (
@@ -356,12 +422,14 @@ export class SnippetStoreService {
         return true;
       }
     }
-    for (let i = 0; i < s.tags.length; i++) {
-      if (s.tags[i] !== o.tags[i]) return true;
+    for (let i = 0; i < sTags.length; i++) {
+      if (sTags[i] !== oTags[i]) return true;
     }
-    if (s.snippetFiles.length !== o.snippetFiles.length) return true;
-    for (let i = 0; i < s.snippetFiles.length; i++) {
-      if (s.snippetFiles[i].content !== o.snippetFiles[i].content) return true;
+    const sFiles = s.snippetFiles ?? [];
+    const oFiles = o.snippetFiles ?? [];
+    if (sFiles.length !== oFiles.length) return true;
+    for (let i = 0; i < sFiles.length; i++) {
+      if (sFiles[i].content !== oFiles[i].content) return true;
     }
     return false;
   });
@@ -386,7 +454,7 @@ export class SnippetStoreService {
       if (!s) return s;
       return {
         ...s,
-        snippetFiles: s.snippetFiles.map(f =>
+        snippetFiles: (s.snippetFiles ?? []).map(f =>
           f.fileType === fileType ? { ...f, content } : f
         ),
       };
@@ -454,7 +522,7 @@ export class SnippetStoreService {
       if (!list) return list;
       return {
         ...list,
-        snippets: list.snippets.map(item =>
+        snippets: (list.snippets ?? []).map(item =>
           item.snippetId === snippetId ? this.applyListPatch(item, patch) : item
         ),
       };
@@ -464,7 +532,7 @@ export class SnippetStoreService {
       if (!list) return list;
       return {
         ...list,
-        snippets: list.snippets.map(item =>
+        snippets: (list.snippets ?? []).map(item =>
           item.snippetId === snippetId ? this.applyListPatch(item, patch) : item
         ),
       };

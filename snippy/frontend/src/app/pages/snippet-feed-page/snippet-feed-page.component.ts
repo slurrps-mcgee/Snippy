@@ -1,11 +1,12 @@
 import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
-import { SnippetSort } from '@app/services/api/snippet.api.service';
+import { SnippetSort } from '@app/services/stores/snippet.store.service';
 import { SnippetListComponent } from '@app/components/lists/snippet-list/snippet-list.component';
 import { SortPageHeaderComponent } from '@app/components/headers/sort-page-header/sort-page-header.component';
 import { AsyncStateComponent } from '@app/components/async-state/async-state.component';
 import { ListPageState } from '@app/utils/list-page-state';
+import { SnackbarService } from '@app/services/ui/snackbar.service';
 
 export type SnippetFeed = 'public' | 'following';
 
@@ -28,6 +29,7 @@ const FEED_TITLES: Record<SnippetFeed, string> = {
 export class SnippetFeedPageComponent implements OnInit {
   private snippetStore = inject(SnippetStoreService);
   private route = inject(ActivatedRoute);
+  private snackbar = inject(SnackbarService);
 
   feed: SnippetFeed = 'public';
 
@@ -49,6 +51,10 @@ export class SnippetFeedPageComponent implements OnInit {
     return this.snippetStore.loading();
   }
 
+  get listError() {
+    return this.snippetStore.error();
+  }
+
   ngOnInit() {
     this.feed = (this.route.snapshot.data['feed'] as SnippetFeed) ?? 'public';
     void this.load();
@@ -62,8 +68,8 @@ export class SnippetFeedPageComponent implements OnInit {
       } else {
         await this.snippetStore.loadPublicSnippets(page, pageSize, sort, query);
       }
-    } catch (error) {
-      console.error(`Error loading ${this.feed} snippets:`, error);
+    } catch {
+      this.snackbar.error(`Failed to load ${this.feed} snippets`);
     }
   }
 }

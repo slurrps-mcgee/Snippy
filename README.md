@@ -45,7 +45,7 @@ Compose loads environment variables from a root env file and wires the services 
 | Images | Built locally from `Dockerfile.dev` | Pulled from Docker Hub (`kennyl777/snippy-*`) |
 | Frontend | `ng serve` on port **4200** (hot reload) | nginx on container port **80** |
 | Env file | `.env` | `stack.env` (or Portainer stack env) |
-| CI / image publish | Not used | [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) |
+| CI / image publish | [`.github/workflows/ci.yml`](.github/workflows/ci.yml) on PRs | [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) |
 | Network | Default Compose network | External Docker network named `NPM` (for Nginx Proxy Manager) |
 
 > **Do not** use the root `docker-compose.yml` for production. It bind-mounts source, runs `ng serve`, and is intended only for local testing.
@@ -64,10 +64,12 @@ Shipped today:
 - Favorites, comments, follows, collections, and forking
 - External CSS / JS resources on snippets
 - ZIP export of snippet files
+- Asset uploads, profile pictures, and list snapshots when MinIO is enabled
+- Secret share links for private pens (`/s/:token`)
+- Command palette (`Ctrl/Cmd+K`)
 
 Coming soon (UI may show placeholders):
 
-- Upload assets (requires MinIO; product feature still evolving)
 - Projects
 
 ---
@@ -550,6 +552,7 @@ Current version sources:
 Snippy/
 ├── docker-compose.yml                 # Local development only
 ├── docker-compose.prod.example.yml    # Production pull-from-Hub example
+├── .github/workflows/ci.yml           # tsc, vitest, npm audit
 ├── .github/workflows/docker-image.yml # Build & push Hub images
 ├── LICENSE                            # MIT
 ├── README.md
@@ -557,6 +560,7 @@ Snippy/
 │   ├── frontend.md
 │   ├── backend.md
 │   ├── db.md
+│   ├── openapi.json
 │   ├── frontend-test-plan.md
 │   └── snippy-api.postman_collection.json
 └── snippy/
@@ -573,6 +577,7 @@ Snippy/
 | [documentation/frontend.md](./documentation/frontend.md) | Angular architecture, editor preferences, themes how-to, embed player |
 | [documentation/backend.md](./documentation/backend.md) | API layers, auth, `PUT /users` + `editorPreferences` |
 | [documentation/db.md](./documentation/db.md) | Schema (including `users.editor_preferences`) |
+| [documentation/openapi.json](./documentation/openapi.json) | Exported OpenAPI snapshot (`npm run openapi:export` in `snippy/backend`; also copied to `snippy/frontend/src/app/api/openapi.json`). SPA client: `npm run openapi:generate` |
 | [documentation/frontend-test-plan.md](./documentation/frontend-test-plan.md) | Manual QA checklist |
 
 In-app legal pages (when the frontend is running):

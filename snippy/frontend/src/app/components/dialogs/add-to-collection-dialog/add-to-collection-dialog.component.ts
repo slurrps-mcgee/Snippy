@@ -7,7 +7,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CollectionStoreService } from '@app/services/stores/collection.store.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
-import { Collection } from '@app/interfaces/collection.interface';
+import { Collection } from '@app/api/generated/models/collection';
 import { CollectionCreateDialogComponent } from '@app/components/dialogs/collection-create-dialog/collection-create-dialog.component';
 import { MatDividerModule } from '@angular/material/divider';
 
@@ -57,6 +57,7 @@ export class AddToCollectionDialogComponent implements OnInit {
   async addTo(collection: Collection) {
     if (this.isInCollection(collection) || this.addingId()) return;
 
+    if (!collection.collectionId) return;
     this.addingId.set(collection.collectionId);
     try {
       await this.collectionStore.addSnippet(collection.collectionId, this.data.snippetId);

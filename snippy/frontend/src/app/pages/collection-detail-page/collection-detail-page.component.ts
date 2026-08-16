@@ -9,7 +9,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatChipsModule } from '@angular/material/chips';
 import { CollectionStoreService } from '@app/services/stores/collection.store.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
-import { SnippetList } from '@app/interfaces/snippetList.interface';
+import { SnippetList } from '@app/api/generated/models/snippet-list';
 import { SnippetListComponent } from '@app/components/lists/snippet-list/snippet-list.component';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { AsyncStateComponent } from '@app/components/async-state/async-state.component';
@@ -92,7 +92,9 @@ export class CollectionDetailPageComponent implements OnInit {
   removeSnippet(snippet: SnippetList, event?: Event) {
     event?.stopPropagation();
     const collection = this.collection;
-    if (!collection?.isOwner) return;
+    const collectionId = collection?.collectionId;
+    const snippetId = snippet.snippetId;
+    if (!collection?.isOwner || !collectionId || !snippetId) return;
 
     return this.dialogService.confirmAndRun({
       confirm: {
@@ -101,7 +103,7 @@ export class CollectionDetailPageComponent implements OnInit {
         confirmText: 'Remove',
         cancelText: 'Cancel',
       },
-      action: () => this.collectionStoreService.removeSnippet(collection.collectionId, snippet.snippetId),
+      action: () => this.collectionStoreService.removeSnippet(collectionId, snippetId),
       success: 'Removed from collection',
       error: 'Failed to remove snippet',
     });

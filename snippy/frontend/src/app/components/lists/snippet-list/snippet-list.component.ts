@@ -3,7 +3,7 @@ import { MatCardModule } from '@angular/material/card';
 import { PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatChipsModule } from '@angular/material/chips';
-import { SnippetList } from '@app/interfaces/snippetList.interface';
+import { SnippetList } from '@app/api/generated/models/snippet-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
@@ -64,6 +64,7 @@ export class SnippetListComponent {
   }
 
   openSnippet(snippet: SnippetList) {
+    if (!snippet.shortId) return;
     this.navigation.toSnippet(snippet.shortId, snippet.userName);
   }
 
@@ -95,11 +96,13 @@ export class SnippetListComponent {
 
   addToCollection(snippet: SnippetList, event?: Event) {
     event?.stopPropagation();
+    if (!snippet.snippetId) return;
     this.snippetActions.openAddToCollection(snippet.snippetId);
   }
 
   forkSnippet(snippet: SnippetList, event?: Event) {
     event?.stopPropagation();
+    if (!snippet.snippetId) return;
     void this.snippetActions.forkAndOpen(snippet.snippetId);
   }
 

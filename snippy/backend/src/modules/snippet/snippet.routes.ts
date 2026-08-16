@@ -13,6 +13,9 @@ import {
     getFeedSnippets,
     getSnippetEmbed,
     uploadSnippetSnapshot,
+    getSnippetByShareToken,
+    createSnippetShareLink,
+    revokeSnippetShareLink,
 } from './snippet.controller';
 import { publicReadLimiter, searchLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
 
@@ -27,6 +30,7 @@ snippetRouter.get('/public', publicReadLimiter, getPublicSnippets);
 snippetRouter.get('/feed', publicReadLimiter, getFeedSnippets);
 snippetRouter.get('/me', publicReadLimiter, getCurrentUserSnippets);
 snippetRouter.get('/user/:userName', publicReadLimiter, getUserPublicSnippets);
+snippetRouter.get('/shared/:token', publicReadLimiter, getSnippetByShareToken);
 snippetRouter.get('/:shortId/embed', publicReadLimiter, getSnippetEmbed);
 snippetRouter.get('/:shortId', publicReadLimiter, getSnippetByShortId);
 
@@ -34,6 +38,8 @@ snippetRouter.get('/:shortId', publicReadLimiter, getSnippetByShortId);
 snippetRouter.post('/', writeLimiter, createSnippet);
 snippetRouter.post('/fork/:snippetId', writeLimiter, forkSnippet);
 snippetRouter.post('/:snippetId/snapshot', writeLimiter, uploadSnippetSnapshot);
+snippetRouter.post('/:snippetId/share', writeLimiter, createSnippetShareLink);
+snippetRouter.delete('/:snippetId/share', writeLimiter, revokeSnippetShareLink);
 snippetRouter.put('/:snippetId', writeLimiter, updateSnippet);
 snippetRouter.post('/:snippetId/view', writeLimiter, updateSnippetViewCount);
 snippetRouter.delete('/:snippetId', writeLimiter, deleteSnippet);

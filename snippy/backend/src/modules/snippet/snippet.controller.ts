@@ -13,6 +13,9 @@ import {
     getFeedSnippetsHandler,
     getSnippetEmbedHtmlHandler,
     uploadSnippetSnapshotHandler,
+    getSnippetByShareTokenHandler,
+    createSnippetShareLinkHandler,
+    revokeSnippetShareLinkHandler,
 } from "./snippet.service";
 import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validator';
 import multer from 'multer';
@@ -423,6 +426,75 @@ export async function updateSnippetViewCount(req: Request, res: Response, next: 
     try {
         const { viewCount, counted } = await updateSnippetViewCountHandler(req);
         res.status(200).json({ success: true, viewCount, counted });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * @swagger
+ * /snippets/shared/{token}:
+ *   get:
+ *     tags: [Snippet]
+ *     summary: Load a snippet by private share token (no JWT required)
+ *     parameters:
+ *       - name: token
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       '200':
+ *         description: Snippet
+ *       '404':
+ *         description: Unknown token
+ */
+export async function getSnippetByShareToken(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { snippet } = await getSnippetByShareTokenHandler(req);
+        res.status(200).json({ success: true, snippet });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * @swagger
+ * /snippets/{snippetId}/share:
+ *   post:
+ *     tags: [Snippet]
+ *     summary: Create or return a secret share token for a private (or public) pen
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: Share token
+ */
+export async function createSnippetShareLink(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { shareToken } = await createSnippetShareLinkHandler(req);
+        res.status(200).json({ success: true, shareToken });
+    } catch (error) {
+        next(error);
+    }
+}
+
+/**
+ * @swagger
+ * /snippets/{snippetId}/share:
+ *   delete:
+ *     tags: [Snippet]
+ *     summary: Revoke the secret share token
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '204':
+ *         description: Revoked
+ */
+export async function revokeSnippetShareLink(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        await revokeSnippetShareLinkHandler(req);
+        res.status(204).end();
     } catch (error) {
         next(error);
     }

@@ -1,6 +1,6 @@
 import { Client } from 'minio';
 import { config, featureFlags } from '../config/index';
-import { dbConnectionPolicy } from '../common/utilities/resiliance';
+import { dbConnectionPolicy } from '../common/utilities/resilience';
 import logger from '../common/utilities/logger';
 
 export const minioClient = new Client({

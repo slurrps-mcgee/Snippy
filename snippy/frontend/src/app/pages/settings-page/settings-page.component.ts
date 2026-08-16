@@ -15,7 +15,7 @@ import {
 
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError, firstValueFrom } from 'rxjs';
+import { Subject, debounceTime, distinctUntilChanged, switchMap, of, catchError, from } from 'rxjs';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
@@ -33,7 +33,13 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
-import { UserApiService } from '@app/services/api/user.api.service';
+import { Api } from '@app/api/generated/api';
+import {
+  checkUsername,
+  deleteUser,
+  updateUser,
+  uploadProfilePicture,
+} from '@app/api/generated/functions';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
@@ -99,7 +105,7 @@ console.log(greet('Snippy'));`,
 })
 export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   private authStore = inject(AuthStoreService);
-  private userApi = inject(UserApiService);
+  private api = inject(Api);
   private snackbar = inject(SnackbarService);
   private dialogService = inject(DialogService);
   private editorPrefsService = inject(EditorPreferencesService);
@@ -237,7 +243,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
             return of(null);
           }
           this.usernameStatus.set('checking');
-          return this.userApi.checkUsername(trimmed).pipe(
+          return from(this.api.invoke(checkUsername, { userName: trimmed })).pipe(
             catchError(() => {
               this.usernameStatus.set('invalid');
               return of(null);
@@ -275,7 +281,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     this.userName = u.userName ?? '';
     this.isPrivate = !!u.isPrivate;
     this.usernameStatus.set('current');
-    this.hydratedUserName = u.userName;
+    this.hydratedUserName = u.userName ?? null;
     this.editorDraft = mergeEditorPreferences(u.editorPreferences);
     this.editorPrefsService.clearLocal();
   }
@@ -356,7 +362,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.pictureUploading.set(true);
     try {
-      const res = await firstValueFrom(this.userApi.uploadPicture(file));
+      const res = await this.api.invoke(uploadProfilePicture, { body: { file } });
       if (res?.user) {
         this.authStore.setUserFromApi(res.user);
       }
@@ -372,7 +378,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.user()?.pictureUrl || this.pictureRemoving()) return;
     this.pictureRemoving.set(true);
     try {
-      const res = await firstValueFrom(this.userApi.updateProfile({ pictureUrl: null }));
+      const res = await this.api.invoke(updateUser, { body: { pictureUrl: null } });
       if (res?.user) {
         this.authStore.setUserFromApi(res.user);
       }
@@ -388,12 +394,12 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.isProfileDirty() || this.profileSaving()) return;
     this.profileSaving.set(true);
     try {
-      const res = await firstValueFrom(
-        this.userApi.updateProfile({
+      const res = await this.api.invoke(updateUser, {
+        body: {
           displayName: this.displayName.trim(),
           bio: this.bio.trim() || null,
-        })
-      );
+        },
+      });
       if (res?.user) {
         this.authStore.setUserFromApi(res.user);
         this.hydrateFromUser();
@@ -410,9 +416,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.canSaveUsername()) return;
     this.usernameSaving.set(true);
     try {
-      const res = await firstValueFrom(
-        this.userApi.updateProfile({ userName: this.userName.trim() })
-      );
+      const res = await this.api.invoke(updateUser, { body: { userName: this.userName.trim() } });
       if (res?.user) {
         this.authStore.setUserFromApi(res.user);
         this.hydrateFromUser();
@@ -429,9 +433,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.isPrivacyDirty() || this.privacySaving()) return;
     this.privacySaving.set(true);
     try {
-      const res = await firstValueFrom(
-        this.userApi.updateProfile({ isPrivate: this.isPrivate })
-      );
+      const res = await this.api.invoke(updateUser, { body: { isPrivate: this.isPrivate } });
       if (res?.user) {
         this.authStore.setUserFromApi(res.user);
         this.hydrateFromUser();
@@ -448,9 +450,9 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
     if (!this.isEditorDirty() || this.editorSaving()) return;
     this.editorSaving.set(true);
     try {
-      const res = await firstValueFrom(
-        this.userApi.updateProfile({ editorPreferences: { ...this.editorDraft } })
-      );
+      const res = await this.api.invoke(updateUser, {
+        body: { editorPreferences: { ...this.editorDraft } },
+      });
       if (res?.user) {
         this.authStore.setUserFromApi(res.user);
         this.editorDraft = mergeEditorPreferences(res.user.editorPreferences);
@@ -475,7 +477,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
       },
       action: async () => {
         this.deleting.set(true);
-        await firstValueFrom(this.userApi.deleteAccount());
+        await this.api.invoke(deleteUser);
       },
       success: 'Account deleted',
       error: 'Failed to delete account',

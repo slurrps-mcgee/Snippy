@@ -1,6 +1,6 @@
 import { PageEvent } from '@angular/material/paginator';
 
-export const DEFAULT_PAGE_SIZE = 6;
+export const DEFAULT_PAGE_SIZE = 12;
 
 /**
  * Search + pagination + sort state for one list surface (a page or a tab).

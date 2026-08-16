@@ -1,3 +1,7 @@
+/**
+ * Keep theme/font keys in sync with snippy/backend/src/common/utilities/editor-preferences.ts.
+ * Do not extract a shared package — HTTP JSON is the contract.
+ */
 export const EDITOR_THEME_KEYS = ['one-dark', 'light', 'dracula'] as const;
 export type EditorThemeKey = (typeof EDITOR_THEME_KEYS)[number];
 
@@ -35,15 +39,13 @@ export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
   theme: 'one-dark',
 };
 
-export function mergeEditorPreferences(
-  stored: Partial<EditorPreferences> | null | undefined
-): EditorPreferences {
+export function mergeEditorPreferences(stored: unknown): EditorPreferences {
   if (!stored || typeof stored !== 'object') {
     return { ...DEFAULT_EDITOR_PREFERENCES };
   }
   return {
     ...DEFAULT_EDITOR_PREFERENCES,
-    ...stored,
+    ...(stored as Partial<EditorPreferences>),
   };
 }
 

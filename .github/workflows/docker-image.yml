@@ -13,7 +13,7 @@ jobs:
 
     steps:
     - name: Checkout code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Log in to Docker Hub
       uses: docker/login-action@v3
@@ -88,3 +88,19 @@ jobs:
         tags: |
           kennyl777/snippy-minio:${{ env.MINIO_VERSION }}
           kennyl777/snippy-minio:latest
+
+    - name: Scan API image
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: kennyl777/snippy-api:${{ env.API_VERSION }}
+        format: table
+        exit-code: '1'
+        severity: CRITICAL,HIGH
+
+    - name: Scan frontend image
+      uses: aquasecurity/trivy-action@0.28.0
+      with:
+        image-ref: kennyl777/snippy-frontend:${{ env.FE_VERSION }}
+        format: table
+        exit-code: '1'
+        severity: CRITICAL,HIGH

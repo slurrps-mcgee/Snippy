@@ -11,8 +11,8 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatDividerModule } from '@angular/material/divider';
 import { ExternalResourcesListComponent } from '@app/components/lists/external-resources-list/external-resources-list.component';
-import { CdnResource } from '@app/interfaces/cdnResource.interface';
-import { Snippet } from '@app/interfaces/snippet.interface';
+import { CdnResource } from '@app/api/generated/models/cdn-resource';
+import { Snippet } from '@app/api/generated/models/snippet';
 import { DialogService } from '@app/services/ui/dialog.service';
 
 export type SnippetSettingsDialogData = Snippet & { guestMode?: boolean };
@@ -52,7 +52,7 @@ export class SnippetSettingsDialogComponent {
   constructor() {
     this.guestMode = !!this.data.guestMode;
     this.description = this.data.description || '';
-    this.isPrivate = this.data.isPrivate;
+    this.isPrivate = !!this.data.isPrivate;
     this.tags = [...(this.data.tags || [])];
     const allResources = [...(this.data.cdnResources || [])];
     this.cssResources = allResources.filter(r => r.resourceType === 'css');
@@ -83,7 +83,7 @@ export class SnippetSettingsDialogComponent {
     ];
 
     // Validate all CDN URLs
-    const invalidUrls = cdnResources.filter(r => !this.isValidUrl(r.url));
+    const invalidUrls = cdnResources.filter(r => !r.url || !this.isValidUrl(r.url));
     if (invalidUrls.length > 0) {
       this.dialogService.error(
         'Invalid URL',

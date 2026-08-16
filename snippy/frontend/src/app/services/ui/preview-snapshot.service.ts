@@ -1,12 +1,12 @@
 import { Injectable, inject } from '@angular/core';
-import { firstValueFrom } from 'rxjs';
-import { SnippetAPIService } from '@app/services/api/snippet.api.service';
+import { Api } from '@app/api/generated/api';
+import { uploadSnippetSnapshot } from '@app/api/generated/functions';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { MinioStatusService } from '@app/services/ui/minio-status.service';
 
 @Injectable({ providedIn: 'root' })
 export class PreviewSnapshotService {
-  private snippetApi = inject(SnippetAPIService);
+  private api = inject(Api);
   private snippetStore = inject(SnippetStoreService);
   private minioStatus = inject(MinioStatusService);
 
@@ -29,7 +29,10 @@ export class PreviewSnapshotService {
     try {
       const blob = await this.captureFn();
       if (!blob) return;
-      const res = await firstValueFrom(this.snippetApi.uploadSnapshot(snippetId, blob));
+      const res = await this.api.invoke(uploadSnippetSnapshot, {
+        snippetId,
+        body: { file: blob },
+      });
       if (res?.snippet) {
         this.snippetStore.applySnapshotMeta(
           snippetId,

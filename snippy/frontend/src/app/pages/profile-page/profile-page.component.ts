@@ -2,14 +2,14 @@ import { Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectio
 
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { firstValueFrom } from 'rxjs';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
-import { User } from '@app/interfaces/user.interface';
-import { Collection } from '@app/interfaces/collection.interface';
-import { UserApiService } from '@app/services/api/user.api.service';
+import { User } from '@app/api/generated/models/user';
+import { Collection } from '@app/api/generated/models/collection';
+import { Api } from '@app/api/generated/api';
+import { getUserProfile } from '@app/api/generated/functions';
 import { FollowUiService } from '@app/services/ui/follow-ui.service';
 import { NavigationService } from '@app/services/ui/navigation.service';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
@@ -40,7 +40,7 @@ import { ListPageState } from '@app/utils/list-page-state';
 export class ProfilePageComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private destroyRef = inject(DestroyRef);
-  private userApiService = inject(UserApiService);
+  private api = inject(Api);
   private followUi = inject(FollowUiService);
   private navigation = inject(NavigationService);
   private authStoreService = inject(AuthStoreService);
@@ -106,8 +106,8 @@ export class ProfilePageComponent implements OnInit {
     this.profileUser.set(null);
 
     try {
-      const res = await firstValueFrom(this.userApiService.getByUserName(username));
-      this.profileUser.set(res.user);
+      const res = await this.api.invoke(getUserProfile, { userName: username });
+      this.profileUser.set(res.user ?? null);
       await Promise.all([this.loadPens(), this.loadCollections()]);
     } catch (err: any) {
       if (err?.status === 403) {
@@ -144,6 +144,7 @@ export class ProfilePageComponent implements OnInit {
     const user = this.profileUser();
     if (!user || this.followLoading()) return;
 
+    if (!user.userName) return;
     this.followLoading.set(true);
     try {
       const nowFollowing = await this.followUi.toggle(user.userName, !!user.isFollowing);
@@ -160,6 +161,7 @@ export class ProfilePageComponent implements OnInit {
   }
 
   openCollection(collection: Collection) {
+    if (!collection.shortId) return;
     this.navigation.toCollection(collection.shortId);
   }
 }

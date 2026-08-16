@@ -3,7 +3,7 @@ import { SnippetStoreService } from '@app/services/stores/snippet.store.service'
 import { NavigationService } from '@app/services/ui/navigation.service';
 import { PreviewSnapshotService } from '@app/services/ui/preview-snapshot.service';
 import { MinioStatusService } from '@app/services/ui/minio-status.service';
-import { User } from '@app/interfaces/user.interface';
+import { User } from '@app/api/generated/models/user';
 import { Injectable, inject } from '@angular/core';
 
 @Injectable({ providedIn: 'root' })

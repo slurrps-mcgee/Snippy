@@ -73,6 +73,15 @@ export const routes: Routes = [
     data: { header: 'embed' satisfies HeaderMode },
   },
   {
+    path: 's/:token',
+    loadComponent: () =>
+      import('./pages/snippet-web-view/snippet-web-view.component').then(
+        m => m.SnippetWebViewComponent
+      ),
+    canDeactivate: [unsavedChangesGuard],
+    data: { header: 'editor' satisfies HeaderMode, share: true },
+  },
+  {
     path: 'try',
     loadComponent: () =>
       import('./pages/snippet-web-view/snippet-web-view.component').then(

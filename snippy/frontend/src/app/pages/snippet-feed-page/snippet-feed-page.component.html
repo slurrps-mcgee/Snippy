@@ -2,7 +2,7 @@
   <div class="page-shell">
     <app-sort-page-header [title]="title" [sort]="state.sort" (sortChange)="state.onSortChange($event)" />
 
-    <app-async-state [loading]="isLoading" loadingText="Loading snippets...">
+    <app-async-state [loading]="isLoading" [error]="listError" loadingText="Loading snippets...">
       <app-snippet-list [snippets]="snippets" [total]="total" [pageSize]="state.pageSize"
         [pageIndex]="state.pageIndex" [showNewButton]="false"
         (searchChange)="state.onSearch($event)" (pageChange)="state.onPageChange($event)">

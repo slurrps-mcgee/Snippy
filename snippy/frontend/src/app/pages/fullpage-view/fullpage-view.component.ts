@@ -27,9 +27,10 @@ export class FullpageViewComponent implements OnInit, OnDestroy {
       const previewUpdateType = this.snippetStoreService.previewUpdateType();
 
       if (snippet && this.previewComponent) {
-        const htmlFile = snippet.snippetFiles.find(f => f.fileType === 'html');
-        const cssFile = snippet.snippetFiles.find(f => f.fileType === 'css');
-        const jsFile = snippet.snippetFiles.find(f => f.fileType === 'js');
+        const files = snippet.snippetFiles ?? [];
+        const htmlFile = files.find(f => f.fileType === 'html');
+        const cssFile = files.find(f => f.fileType === 'css');
+        const jsFile = files.find(f => f.fileType === 'js');
 
         this.previewComponent.updatePreview(
           htmlFile?.content || '',

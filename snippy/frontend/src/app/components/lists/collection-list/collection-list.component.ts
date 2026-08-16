@@ -4,7 +4,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
 import { MatMenuModule } from '@angular/material/menu';
-import { Collection } from '@app/interfaces/collection.interface';
+import { Collection } from '@app/api/generated/models/collection';
 import { MatDividerModule } from '@angular/material/divider';
 import { ListToolbarComponent } from '@app/components/ui/list-toolbar/list-toolbar.component';
 import { ListEmptyStateComponent } from '@app/components/ui/list-empty-state/list-empty-state.component';

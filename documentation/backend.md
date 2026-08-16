@@ -16,7 +16,8 @@
 12. [End-to-End Workflows](#end-to-end-workflows)
 13. [Environment Variables](#environment-variables)
 14. [Operational Notes](#operational-notes)
-15. [Debugging](#debugging)
+15. [OpenAPI / SPA client](#openapi--spa-client)
+16. [Debugging](#debugging)
 
 ---
 
@@ -94,7 +95,7 @@ Client
 
 Mappers exist when the module owns a client JSON shape. If it does not return its own table row, reuse another mapper: favorite lists use `SnippetMapper`; follow lists use `UserMapper`; favorite toggle uses a small `FavoriteMapper` (`isFavorited` / `favoriteCount`). Extra repos are only for a second table (e.g. `snippetView.repo.ts`). Follow routes stay on `user.routes.ts`.
 
-Swagger JSDoc is collected from `src/modules/**/*.controller.ts` (dev) and `dist/modules/**/*.controller.js` (compiled). The glob is relative to `common/utilities` (`../../modules/...`).
+OpenAPI is defined in [`common/utilities/openapi-definition.ts`](../snippy/backend/src/common/utilities/openapi-definition.ts). See [OpenAPI / SPA client](#openapi--spa-client).
 
 ---
 
@@ -225,13 +226,17 @@ Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed ass
 | Path | Purpose |
 |------|---------|
 | `GET /health` | Liveness probe — `{ status: "ok", minio: boolean }` |
-| `GET /api/v1/health` | Same body, public (no JWT) — SPA reads this through nginx `/api/` |
+| `GET /ready` | Readiness probe — pings MySQL (and MinIO when enabled) |
+| `GET /api/v1/health` | Same liveness body, public (no JWT) — SPA reads this through nginx `/api/` |
+| `GET /api/v1/ready` | Same readiness body |
+| `GET /api/v1/snippets/:shortId` | Public snippet GET — JWT optional (identity attached when present) |
 | `GET /api/v1/snippets/:shortId/embed` | Runnable HTML for **public** pens (iframe-friendly) |
-| `/api-docs` | Swagger UI (non-production only) |
+| `GET /api/v1/snippets/shared/:token` | Secret share-link load — JWT optional |
+| `/api-docs` | Swagger UI (non-production only); spec at `/api-docs.json` |
 
 ### Auth0 JWT (`/api/v1/*`)
 
-Every request under `/api/v1` requires a valid Bearer token **except** `GET /api/v1/health` and the embed route above:
+Every request under `/api/v1` requires a valid Bearer token **except** the public routes above. List, search, feed, profile, and all writes still require a JWT.
 
 ```
 Authorization: Bearer <access_token>
@@ -245,7 +250,7 @@ Configured in `common/middleware/auth0.service.ts`:
 
 User identity: `req.auth.payload.sub` → `auth0Id`.
 
-Aside from embed HTML, clients must send a JWT for all API module calls (including “public” list/read endpoints).
+Aside from the public GET carve-outs above, clients must send a JWT for API module calls (including list/search/feed).
 
 ### Ownership
 
@@ -270,12 +275,13 @@ Order in `index.ts`:
 
 1. Cookie parser
 2. Helmet
-3. CORS (`FRONTEND_URL`, credentials, `Authorization` header)
+3. CORS (`FRONTEND_URL`, credentials, `Authorization` + `X-Request-Id`)
 4. Global rate limiter (200 / 15 min)
-5. `express.json()`
-6. Auth0 JWT check
-7. `/api/v1` routers (with per-route limiters)
-8. Error handler
+5. `express.json({ limit: '2mb' })` — snippet HTML/CSS/JS bodies can exceed the Express 100kb default
+6. Request ID + request log (`X-Request-Id`)
+7. Auth0 JWT check
+8. `/api/v1` routers (with per-route limiters)
+9. Error handler
 
 ### Rate limiters (`rate-limit.service.ts`)
 
@@ -307,9 +313,9 @@ Order in `index.ts`:
 
 | Code | Meaning |
 |------|---------|
-| 200 | OK |
-| 201 | Created / favorite toggled |
-| 204 | Deleted (empty body) |
+| 200 | OK (including favorite toggle) |
+| 201 | Created |
+| 204 | Deleted (empty body) — snippets, assets, users, collections, comments, share-link revoke |
 | 400 | Validation / bad input |
 | 401 | Missing/invalid JWT |
 | 403 | Forbidden (ownership or private resource) |
@@ -418,7 +424,7 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 
 ### DTOs (reference)
 
-These TypeScript DTOs (under `modules/*/dto/`) plus mappers are the **API JSON contract**. Express controllers return `Promise<void>` and `res.json(...)`; they do not share a compile-time package with the Angular SPA. The frontend keeps duplicated view interfaces (`snippy/frontend/src/app/interfaces/`). Do not add a SteamStats-style shared workspace for container independence — version HTTP/OpenAPI if services split later. See [frontend contracts](./frontend.md#contracts-spa-vs-api).
+These TypeScript DTOs (under `modules/*/dto/`) plus mappers are the **API JSON contract**. Express controllers return `Promise<void>` and `res.json(...)`; they do not share a compile-time package with the Angular SPA. After you change routes or JSON shapes, regenerate the SPA client ([OpenAPI / SPA client](#openapi--spa-client)). See also [frontend contracts](./frontend.md#contracts-spa-vs-api).
 
 **UserDTO**
 
@@ -956,6 +962,36 @@ curl -s http://localhost:3000/health
 
 - Tighten MinIO put/delete vs DB ordering for orphan cleanup on single-asset delete failures
 - Optional richer readiness probe (DB ping) separate from `/health`
+
+---
+
+## OpenAPI / SPA client
+
+The spec source of truth is [`openapi-definition.ts`](../snippy/backend/src/common/utilities/openapi-definition.ts). [`swagger.ts`](../snippy/backend/src/common/utilities/swagger.ts) re-exports it (not a JSDoc glob). Keep DTOs and mappers in sync with that document. The SPA does not import backend TypeScript DTOs.
+
+After you change routes, request/response shapes, or `operationId`s:
+
+1. Update `openapi-definition.ts` (and the matching DTOs/mappers).
+2. From `snippy/backend`:
+
+```bash
+npm run openapi:export
+```
+
+Writes [`documentation/openapi.json`](./openapi.json) and copies the same JSON to [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json).
+
+3. From `snippy/frontend`:
+
+```bash
+npm run openapi:generate
+```
+
+Runs `ng-openapi-gen` into [`snippy/frontend/src/app/api/generated/`](../snippy/frontend/src/app/api/generated/) (`fn/`, models, `Api.invoke`).
+
+4. Commit **both** `openapi.json` files **and** `src/app/api/generated/`. Do not generate during `ng serve`; Docker / `ng build` use the committed client.
+
+If you only changed handler logic and the JSON contract is unchanged, skip export/generate. SPA-side detail: [frontend contracts](./frontend.md#contracts-spa-vs-api).
+
 ---
 
 ## Debugging
@@ -974,7 +1010,7 @@ Test scripts capture `userName`, `snippetId`, `shortId`, `commentId`, `forkSnipp
 
 ### Swagger
 
-In non-production, open `http://localhost:3000/api-docs` (mounted before JWT). Spec paths come from JSDoc on `modules/**/*.controller.ts` (see glob in [`swagger.ts`](../snippy/backend/src/common/utilities/swagger.ts)).
+In non-production, open `http://localhost:3000/api-docs` (mounted before JWT). The UI serves [`openapi-definition.ts`](../snippy/backend/src/common/utilities/openapi-definition.ts) (re-exported by [`swagger.ts`](../snippy/backend/src/common/utilities/swagger.ts)). After contract changes, export and regenerate the SPA client ([OpenAPI / SPA client](#openapi--spa-client)). JSON bodies are capped at **2mb**. Deletes of resources return **204** empty (follow toggle stays **200** `{ isFollowing }`; favorite toggle **200**).
 
 ### Inspect JWT
 
