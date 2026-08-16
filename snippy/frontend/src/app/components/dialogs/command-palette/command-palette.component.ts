@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { Router } from '@angular/router';
+import { NavigationService } from '@app/services/ui/navigation.service';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { SnippetSaveUIService } from '@app/services/ui/snippet-save-ui.service';
 import { EditorUiService, EditorLayout } from '@app/services/ui/editor-ui.service';
@@ -56,6 +57,7 @@ interface PaletteCommand {
 export class CommandPaletteComponent {
   private dialogRef = inject(MatDialogRef<CommandPaletteComponent>);
   private router = inject(Router);
+  private navigation = inject(NavigationService);
   private snippetStore = inject(SnippetStoreService);
   private saveUi = inject(SnippetSaveUIService);
   private editorUi = inject(EditorUiService);
@@ -104,7 +106,7 @@ export class CommandPaletteComponent {
         id: 'new',
         label: 'New snippet',
         icon: 'add',
-        run: () => void this.router.navigate(['/snippet']),
+        run: () => void this.navigation.toNewSnippet(),
       },
     ];
 
@@ -154,7 +156,9 @@ export class CommandPaletteComponent {
         id: 'assets',
         label: 'Assets',
         icon: 'perm_media',
-        run: () => this.dialogs.open(AssetsDialogComponent, 'lg'),
+        run: () => this.dialogs.open(AssetsDialogComponent, 'lg', {
+          data: this.snippetStore.snippet() ? { insertTarget: 'html' } : {},
+        }),
       });
     }
 

@@ -23,7 +23,7 @@
           </a>
           @if (snippet.parentShortId) {
           <app-fork-attribution [parentShortId]="snippet.parentShortId" [parentName]="snippet.parentName"
-            [parentUserName]="snippet.parentUserName" />
+            [parentUserName]="snippet.parentUserName" [parentDeleted]="!!snippet.parentDeleted" />
           }
         </mat-card-subtitle>
       </mat-card-header>
@@ -36,7 +36,9 @@
       <div class="list-card-chips">
         <mat-chip-set>
           @for (tag of snippet.tags; track tag) {
-          <mat-chip>{{ tag }}</mat-chip>
+          <a [routerLink]="['/tags', tag]" (click)="$event.stopPropagation()">
+            <mat-chip>{{ tag }}</mat-chip>
+          </a>
           }
         </mat-chip-set>
       </div>
@@ -46,9 +48,9 @@
 
       <div class="list-card-actions">
         <app-snippet-stat-bar [stats]="snippet" (favorite)="favoriteSnippet(snippet, $event)"
-          (comment)="commentOnSnippet(snippet, $event)" />
+          (comment)="commentOnSnippet(snippet, $event)" (forks)="openForks(snippet, $event)" />
 
-        <button mat-icon-button [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
+        <button mat-icon-button matTooltip="More actions" [matMenuTriggerFor]="menu" (click)="$event.stopPropagation()">
           <mat-icon>more_vert</mat-icon>
         </button>
         <mat-menu #menu="matMenu" xPosition="before">

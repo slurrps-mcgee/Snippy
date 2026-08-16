@@ -104,6 +104,16 @@
             </mat-radio-group>
           </div>
 
+          <div>
+            <p class="section-label">Keymap</p>
+            <mat-radio-group class="theme-group" [(ngModel)]="editorDraft.keymap"
+              (ngModelChange)="onEditorDraftChange()">
+              @for (key of keymapKeys; track key) {
+              <mat-radio-button [value]="key">{{ key === 'vim' ? 'Vim' : 'Default' }}</mat-radio-button>
+              }
+            </mat-radio-group>
+          </div>
+
           <div class="editor-row">
             <mat-form-field appearance="outline" class="editor-row__grow">
               <mat-label>Font family</mat-label>

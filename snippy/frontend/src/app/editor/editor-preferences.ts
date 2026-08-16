@@ -2,7 +2,15 @@
  * Keep theme/font keys in sync with snippy/backend/src/common/utilities/editor-preferences.ts.
  * Do not extract a shared package — HTTP JSON is the contract.
  */
-export const EDITOR_THEME_KEYS = ['one-dark', 'light', 'dracula'] as const;
+export const EDITOR_THEME_KEYS = [
+  'one-dark',
+  'light',
+  'dracula',
+  'github-dark',
+  'solarized-dark',
+  'solarized-light',
+  'material-dark',
+] as const;
 export type EditorThemeKey = (typeof EDITOR_THEME_KEYS)[number];
 
 export const EDITOR_FONT_KEYS = [
@@ -12,6 +20,9 @@ export const EDITOR_FONT_KEYS = [
   'source-code-pro',
 ] as const;
 export type EditorFontKey = (typeof EDITOR_FONT_KEYS)[number];
+
+export const EDITOR_KEYMAP_KEYS = ['default', 'vim'] as const;
+export type EditorKeymapKey = (typeof EDITOR_KEYMAP_KEYS)[number];
 
 export interface EditorPreferences {
   fontSize: number;
@@ -24,6 +35,7 @@ export interface EditorPreferences {
   autocomplete: boolean;
   matchBrackets: boolean;
   theme: EditorThemeKey;
+  keymap: EditorKeymapKey;
 }
 
 export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
@@ -37,6 +49,7 @@ export const DEFAULT_EDITOR_PREFERENCES: EditorPreferences = {
   autocomplete: true,
   matchBrackets: true,
   theme: 'one-dark',
+  keymap: 'default',
 };
 
 export function mergeEditorPreferences(stored: unknown): EditorPreferences {

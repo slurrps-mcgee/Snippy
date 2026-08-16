@@ -7,6 +7,7 @@ export interface SnippetList {
   displayName?: string;
   embedCount?: number;
   favoriteCount?: number;
+  forkCount?: number;
   isFavorited?: boolean;
   isFollowing?: boolean;
   isOwner?: boolean;
@@ -14,6 +15,7 @@ export interface SnippetList {
   parentName?: string | null;
   parentShortId?: string | null;
   parentUserName?: string | null;
+  parentDeleted?: boolean;
   shortId?: string;
   snapshotUrl?: string | null;
   snippetId?: string;

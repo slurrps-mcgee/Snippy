@@ -154,7 +154,9 @@ Added by migration [`20260813143000-005-add-user-editor-preferences.js`](../snip
 | `description` | VARCHAR(255) | NULL | Snippet description |
 | `tags` | JSON | NULL | Array of search tags |
 | `is_private` | BOOLEAN | DEFAULT: false | Privacy setting |
-| `parent_snippet_short_id` | VARCHAR(16) | FK → snippets(short_id), NULL | Parent if forked |
+| `parent_snippet_short_id` | VARCHAR(16) | NULL (not a DB FK) | Parent short id if forked |
+| `parent_name` | VARCHAR(255) | NULL | Denormalized parent title (survives parent delete) |
+| `parent_user_name` | VARCHAR(255) | NULL | Denormalized parent owner username |
 | `view_count` | INT | DEFAULT: 0 | Total views |
 | `fork_count` | INT | DEFAULT: 0 | Number of forks |
 | `favorite_count` | INT | DEFAULT: 0 | Number of favorites |
@@ -172,7 +174,6 @@ Added by migration [`20260813143000-005-add-user-editor-preferences.js`](../snip
 PRIMARY KEY (snippet_id)
 UNIQUE KEY (short_id)
 FOREIGN KEY (auth0_id) REFERENCES users(auth0_id) ON DELETE CASCADE
-FOREIGN KEY (parent_snippet_short_id) REFERENCES snippets(short_id)
 INDEX idx_snippets_auth0 (auth0_id)
 INDEX idx_snippets_short_id (short_id)
 INDEX idx_snippets_parent (parent_snippet_short_id)
@@ -191,7 +192,7 @@ Column `cdnResources` was renamed from `externalResources` by [`20260814001500-0
 
 `snapshotUrl` added by [`20260814020000-007-add-snippet-snapshot-url.js`](../snippy/backend/src/database/migrations/20260814020000-007-add-snippet-snapshot-url.js).
 
-`tags_text`, FULLTEXT, `share_token`, and `embed_count` added by [`20260815180000-008-search-share-embed.js`](../snippy/backend/src/database/migrations/20260815180000-008-search-share-embed.js). Search uses FULLTEXT on `name, description, tags_text` (LIKE fallback for tokens shorter than 3 characters). Tag filters use `JSON_CONTAINS`.
+`tags_text`, FULLTEXT, `share_token`, and `embed_count` added by [`20260815180000-008-search-share-embed.js`](../snippy/backend/src/database/migrations/20260815180000-008-search-share-embed.js). Search uses FULLTEXT on `name, description, tags_text` (LIKE fallback for tokens shorter than 3 characters). Tag filters use `JSON_CONTAINS`. `parent_name` / `parent_user_name` added by [`20260816010000-009-snippet-parent-attribution.js`](../snippy/backend/src/database/migrations/20260816010000-009-snippet-parent-attribution.js). Comment threads (`parent_comment_id`, `mentions`, `is_deleted`) added by [`20260816020000-010-comment-threads.js`](../snippy/backend/src/database/migrations/20260816020000-010-comment-threads.js).
 
 **Sample Data:**
 ```json
@@ -317,6 +318,9 @@ INDEX idx_favorites_snippet (snippet_id)
 | `auth0_id` | VARCHAR(255) | FOREIGN KEY → users(auth0_id), NOT NULL | Comment author |
 | `snippet_id` | UUID | FOREIGN KEY → snippets(snippet_id), NOT NULL | Commented snippet |
 | `content` | TEXT | NOT NULL | Comment text |
+| `parent_comment_id` | UUID | NULL, self-FK | Parent comment for a one-level reply |
+| `mentions` | JSON | NULL | Usernames mentioned (`@userName`) |
+| `is_deleted` | BOOLEAN | DEFAULT: false | Tombstone when a parent with replies is deleted |
 | `created_at` | TIMESTAMP | NOT NULL | Comment creation timestamp |
 | `updated_at` | TIMESTAMP | NOT NULL | Last update timestamp |
 
@@ -325,6 +329,7 @@ INDEX idx_favorites_snippet (snippet_id)
 PRIMARY KEY (comment_id)
 FOREIGN KEY (auth0_id) REFERENCES users(auth0_id) ON DELETE CASCADE
 FOREIGN KEY (snippet_id) REFERENCES snippets(snippet_id) ON DELETE CASCADE
+FOREIGN KEY (parent_comment_id) REFERENCES comments(comment_id)
 INDEX idx_comments_auth0 (auth0_id)
 INDEX idx_comments_snippet (snippet_id)
 INDEX idx_comments_snippet_created (snippet_id, created_at)

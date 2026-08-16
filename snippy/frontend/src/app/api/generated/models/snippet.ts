@@ -18,6 +18,7 @@ export interface Snippet {
   parentName?: string | null;
   parentShortId?: string | null;
   parentUserName?: string | null;
+  parentDeleted?: boolean;
   shareToken?: string | null;
   shortId?: string;
   snapshotUrl?: string | null;

@@ -34,6 +34,7 @@ import {
   EditorFontKey,
 } from './editor-preferences';
 import { getThemeExtension } from './themes';
+import { vim } from '@replit/codemirror-vim';
 
 function resolveFontFamily(fontFamily: string): string {
   return FONT_FAMILY_CSS[fontFamily as EditorFontKey] ?? FONT_FAMILY_CSS.monospace;
@@ -102,6 +103,9 @@ export function buildPreferenceExtensions(prefs: EditorPreferences): Extension[]
   }
   if (prefs.autocomplete) {
     extensions.push(autocompletion());
+  }
+  if (prefs.keymap === 'vim') {
+    extensions.push(vim());
   }
 
   return extensions;

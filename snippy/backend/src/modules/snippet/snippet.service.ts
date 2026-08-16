@@ -29,6 +29,7 @@ import {
     findByShareToken,
     getFeedSnippets,
     incrementSnippetEmbedCount,
+    getForksByParentShortId,
 } from "./snippet.repo";
 import { findSnippetView, upsertSnippetView } from "./snippetView.repo";
 import { SnippetListQuery } from "./dto/snippet.dto";
@@ -66,7 +67,7 @@ async function mapSnippetsWithFavorites(
  * Protected fields that cannot be updated through the updateSnippet endpoint
  * These fields are system-managed and should not be modified by users
  */
-const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId', 'snapshotUrl', 'shareToken', 'embedCount'] as const;
+const PROTECTED_SNIPPET_FIELDS = ['snippetId', 'auth0Id', 'shortId', 'parentShortId', 'parentName', 'parentUserName', 'snapshotUrl', 'shareToken', 'embedCount'] as const;
 
 //#region CREATE/UPDATE/DELETE
 // Create Snippet
@@ -131,6 +132,8 @@ export async function forkSnippetHandler(payload: ServicePayload<unknown, { snip
             const forkData = {
                 auth0Id,
                 parentShortId: originalSnippet.shortId,
+                parentName: originalSnippet.name,
+                parentUserName: (originalSnippet as any).user?.userName ?? null,
                 name: originalSnippet.name,
                 description: originalSnippet.description,
                 tags: originalSnippet.tags,
@@ -633,6 +636,37 @@ export async function getFeedSnippetsHandler(
         });
     } catch (err: any) {
         handleError(err, 'getFeedSnippetsHandler');
+    }
+}
+
+export async function getSnippetForksHandler(
+    payload: ServicePayload<unknown, { shortId: string }, PaginationQuery>
+): Promise<ServiceResponse<SnippetListDTO>> {
+    try {
+        const auth0Id = payload.auth?.payload?.sub;
+        const shortId = payload.params?.shortId;
+        if (!shortId) {
+            throw new CustomError('Short ID required', 400);
+        }
+        const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
+
+        return await executeInTransaction(async (t) => {
+            const parent = await findByShortId(shortId, t);
+            if (!parent) {
+                throw new CustomError('Snippet not found', 404);
+            }
+            if (parent.isPrivate && parent.auth0Id !== auth0Id) {
+                throw new CustomError('Forbidden: private snippet', 403);
+            }
+            const includePrivate = !!auth0Id && parent.auth0Id === auth0Id;
+            const result = await getForksByParentShortId(shortId, offset, limit, includePrivate, t);
+            return {
+                snippets: await mapSnippetsWithFavorites(result.rows, auth0Id, t),
+                totalCount: result.count,
+            };
+        });
+    } catch (err: any) {
+        handleError(err, 'getSnippetForksHandler');
     }
 }
 

@@ -16,6 +16,7 @@ import {
     getSnippetByShareToken,
     createSnippetShareLink,
     revokeSnippetShareLink,
+    getSnippetForks,
 } from './snippet.controller';
 import { publicReadLimiter, searchLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
 
@@ -32,6 +33,7 @@ snippetRouter.get('/me', publicReadLimiter, getCurrentUserSnippets);
 snippetRouter.get('/user/:userName', publicReadLimiter, getUserPublicSnippets);
 snippetRouter.get('/shared/:token', publicReadLimiter, getSnippetByShareToken);
 snippetRouter.get('/:shortId/embed', publicReadLimiter, getSnippetEmbed);
+snippetRouter.get('/:shortId/forks', publicReadLimiter, getSnippetForks);
 snippetRouter.get('/:shortId', publicReadLimiter, getSnippetByShortId);
 
 // Write operations - lower limit

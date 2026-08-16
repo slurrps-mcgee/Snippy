@@ -23,6 +23,11 @@
         <mat-icon>download</mat-icon>
         Export
       </button>
+      <button mat-button type="button" (click)="triggerImportZip()" matTooltip="Import ZIP into this pen">
+        <mat-icon>upload</mat-icon>
+        Import
+      </button>
+      <input #zipInput type="file" hidden accept=".zip,application/zip" (change)="onZipSelected($event)">
 
       @if (!isGuest()) {
       <button mat-button type="button" (click)="openAssets()" matTooltip="Manage assets">

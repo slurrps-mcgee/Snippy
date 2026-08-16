@@ -64,6 +64,13 @@ export async function findCommentsByUserAndSnippetId(
     });
 }
 
+export async function countReplies(
+    parentCommentId: string,
+    transaction?: Transaction
+): Promise<number> {
+    return await Comments.count({ where: { parentCommentId }, transaction });
+}
+
 export async function findCommentByCommentId(
     commentId: string,
     transaction?: Transaction

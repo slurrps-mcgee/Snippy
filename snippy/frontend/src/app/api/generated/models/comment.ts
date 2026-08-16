@@ -6,7 +6,10 @@ export interface Comment {
   content?: string;
   createdAt?: string;
   displayName?: string;
+  isDeleted?: boolean;
   isOwner?: boolean;
+  mentions?: Array<string>;
+  parentId?: string | null;
   updatedAt?: string;
   userName?: string;
 }

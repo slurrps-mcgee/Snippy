@@ -13,6 +13,7 @@ export interface CreateComment$Params {
   snippetId: string;
       body: {
 'content'?: string;
+'parentId'?: string;
 }
 }
 

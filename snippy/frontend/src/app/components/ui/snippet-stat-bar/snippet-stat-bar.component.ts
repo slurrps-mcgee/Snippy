@@ -8,6 +8,7 @@ export interface SnippetStats {
   favoriteCount?: number;
   commentCount?: number;
   embedCount?: number;
+  forkCount?: number;
   isFavorited?: boolean;
 }
 
@@ -26,7 +27,9 @@ export class SnippetStatBarComponent {
   @Input({ required: true }) stats!: SnippetStats;
   @Input() variant: 'card' | 'toolbar' = 'card';
   @Input() showFork = false;
+  @Input() showForksList = false;
   @Output() favorite = new EventEmitter<Event>();
   @Output() comment = new EventEmitter<Event>();
   @Output() fork = new EventEmitter<Event>();
+  @Output() forks = new EventEmitter<Event>();
 }

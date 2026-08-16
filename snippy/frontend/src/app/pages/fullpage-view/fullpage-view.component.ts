@@ -2,6 +2,7 @@ import { Component, inject, OnInit, OnDestroy, ViewChild, effect, DestroyRef, Ch
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetPreviewComponent } from "@app/components/editor/snippet-preview/snippet-preview.component";
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
+import { AuthStoreService } from '@app/services/stores/auth.store.service';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
@@ -16,6 +17,7 @@ export class FullpageViewComponent implements OnInit, OnDestroy {
 
   snippetStoreService = inject(SnippetStoreService);
   private route = inject(ActivatedRoute);
+  private authStoreService = inject(AuthStoreService);
   private destroyRef = inject(DestroyRef);
 
   snippetId: string | null = null;
@@ -45,6 +47,7 @@ export class FullpageViewComponent implements OnInit, OnDestroy {
     effect(() => {
       const snippet = this.snippetStoreService.snippet();
       if (!snippet?.snippetId || snippet.isOwner || this.viewRecorded) return;
+      if (!this.authStoreService.isAuthenticated()) return;
       this.viewRecorded = true;
       void this.snippetStoreService.recordView(snippet.snippetId);
     });

@@ -106,6 +106,22 @@ export class Snippets extends Model<Snippets> {
   parentShortId?: string | null;
 
   @Column({
+    field: 'parent_name',
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: null,
+  })
+  parentName?: string | null;
+
+  @Column({
+    field: 'parent_user_name',
+    type: DataType.STRING,
+    allowNull: true,
+    defaultValue: null,
+  })
+  parentUserName?: string | null;
+
+  @Column({
     type: DataType.STRING,
     allowNull: true,
   })

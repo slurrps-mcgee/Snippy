@@ -3,6 +3,7 @@ import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnIn
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
 import { MatButtonModule } from '@angular/material/button';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { EditorView } from 'codemirror';
 import { Compartment, EditorState } from '@codemirror/state';
 import { html } from '@codemirror/lang-html';
@@ -11,6 +12,7 @@ import { javascript } from '@codemirror/lang-javascript';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
+import { EditorInsertService } from '@app/services/ui/editor-insert.service';
 import {
   baseEditorExtensions,
   buildPreferenceExtensions,
@@ -18,7 +20,7 @@ import {
 
 @Component({
   selector: 'app-snippet-editor',
-  imports: [MatMenuModule, MatIconModule, MatButtonModule],
+  imports: [MatMenuModule, MatIconModule, MatButtonModule, MatTooltipModule],
   templateUrl: './snippet-editor.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-editor.component.scss',
@@ -26,12 +28,12 @@ import {
 export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy {
   // Input for editor type only
   @Input() editorType: 'html' | 'css' | 'js' = 'html';
-  // Reference to the editor container
   @ViewChild('editor', { static: false }) editorRef?: ElementRef<HTMLDivElement>;
 
   private snippetStoreService = inject(SnippetStoreService);
   private dialogService = inject(DialogService);
   private editorPrefs = inject(EditorPreferencesService);
+  private editorInsert = inject(EditorInsertService);
 
   // CodeMirror editor instance
   private editorInstance?: EditorView;
@@ -72,14 +74,15 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
 
   ngAfterViewInit() {
     setTimeout(() => {
-      // Initialize the CodeMirror editor
       this.initializeEditor();
     }, 0);
   }
 
   ngOnDestroy() {
-    // Clean up editor instance
-    this.editorInstance?.destroy();
+    if (this.editorInstance) {
+      this.editorInsert.unregister(this.editorType, this.editorInstance);
+      this.editorInstance.destroy();
+    }
   }
 
   // Update editor content programmatically
@@ -114,6 +117,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
       }),
       parent: this.editorRef.nativeElement,
     });
+    this.editorInsert.register(this.editorType, this.editorInstance);
   }
 
   // Get language extension based on editor type

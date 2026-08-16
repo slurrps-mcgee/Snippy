@@ -12,4 +12,5 @@ export interface EditorPreferences {
   lineWrapping?: boolean;
   matchBrackets?: boolean;
   theme?: string;
+  keymap?: string;
 }

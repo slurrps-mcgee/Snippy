@@ -144,7 +144,7 @@ If any smoke case fails, stop and fix before full regression.
 
 | ID | Steps | Expected |
 |----|-------|----------|
-| A1 | Visit `/` logged out | Landing header with Log in; no feed nav |
+| A1 | Visit `/` logged out | Landing header with Log in and View snippets; no Your Snippets / Following |
 | A2 | Visit `/home` logged out | Auth0 redirect / login |
 | A3 | Login success | `/home`; feed nav + user avatar menu |
 | A4 | Refresh on `/home` | Session restored; user header populates (not stuck empty) |
@@ -159,6 +159,7 @@ If any smoke case fails, stop and fix before full regression.
 |----|-------|----------|
 | L1 | View hero | Brand “Snippy”, headline, CTAs, glass cards, atmosphere orbs |
 | L2 | Log in CTA | Starts Auth0 |
+| L2a | View snippets CTA / header Public | Navigates to `/public` without login |
 | L3 | Explore Features / section anchors | Scrolls to features (if linked) |
 | L4 | Responsive | Usable at 375px and 1280px; no horizontal overflow |
 
@@ -236,6 +237,8 @@ On home / explore / following / profile lists:
 | SL1 | Favorite toggle | Optimistic UI; reverts + error snackbar on failure |
 | SL2 | Favorite on Snippets tab → open Favorites | Item appears without hard refresh |
 | SL3 | Comment icon | Opens comments dialog for that snippet |
+| SL3a | Hover Views / Favorite / Comments / Forks | Tooltips; Favorite vs Unfavorite; Views tooltip works though the button is disabled |
+| SL3b | Embeds chip | Hidden when count is 0 |
 | SL4 | Fork from ⋮ menu | Fork + navigate to new owner editor |
 | SL5 | Follow/Unfollow from ⋮ | Snackbar; `isFollowing` updates |
 | SL6 | Add to collection | Dialog lists collections; Add marks “In collection” |
@@ -271,9 +274,12 @@ On home / explore / following / profile lists:
 | ED5 | Save | Success snackbar; Save disabled until next edit |
 | ED5a | Save with MinIO on | List card later shows a preview thumb; Assets dialog does not list the snapshot |
 | ED6 | Layout menu: Left / Top / Right / Bottom | Panels rearrange; preference persists (localStorage) |
+| ED6a | Drag HTML/CSS/JS or preview splitters | Panes resize; no snap, no gutter labels; 14px themed gutters without grip dots |
+| ED6b | Save a fork | Attribution still links to the live parent — not “(parent deleted)” unless the parent row is gone |
 | ED7 | Full Page View | Opens `/:user/fullpage/:id`; preview only; minimal header |
 | ED8 | Favorite / Comment / Fork in editor header | Same behavior as list |
 | ED9 | Footer Export ZIP | Downloads zip with html/css/js + README |
+| ED9a | Footer Import ZIP | Opens as unsaved pen contents |
 | ED10 | Footer Fork / Assets | Fork navigates; Assets opens dialog |
 | ED11 | Navigate away with unsaved changes | Confirm dialog; Cancel stays; Confirm leaves |
 | ED12 | Open snippet B while viewing A | Clears A; shows B or not-found/error — never A’s content stuck |
@@ -303,6 +309,8 @@ On home / explore / following / profile lists:
 | CM4 | Delete own (confirm) | Removed; count -1 |
 | CM5 | Other user’s comment | No edit; delete only if allowed by rules |
 | CM6 | Close | Dialog dismisses cleanly |
+| CM7 | Reply | One-level indent; cannot reply to a reply |
+| CM8 | `@username` | Renders as profile link; composer suggestions |
 
 ---
 
@@ -314,8 +322,9 @@ On home / explore / following / profile lists:
 |----|-------|----------|
 | AS1 | Open Assets (menu or footer) | Grid or empty state |
 | AS2 | Upload image | Appears in grid; success snackbar |
-| AS3 | Copy URL | Success; URL usable in snippet HTML/CSS |
-| AS4 | Delete (confirm) | Removed from grid |
+| AS3 | Insert into editor (from footer) | Markup inserted at HTML caret; snackbar |
+| AS3b | Copy URL | Success; URL on clipboard |
+| AS4 | Delete (confirm) | Removed from grid; warning if usedInCount > 0 |
 | AS6 | After profile picture and snippet save | Assets grid does **not** show avatar or snippet snapshots |
 
 **When MinIO disabled**
@@ -355,6 +364,7 @@ Requires a **public** saved snippet with a `shortId`.
 | ID | Steps | Expected |
 |----|-------|----------|
 | EM1 | Open Embed dialog from editor | Preview iframe + copyable HTML; blocked if private/unsaved |
+| EM1a | Narrow viewport | Dialog content scrolls; copy/theme controls remain reachable |
 | EM2 | Select theme (e.g. Dracula) | Preview URL includes `theme=dracula`; code pane uses that theme |
 | EM3 | Open `/embed/{shortId}?theme=light` | Light theme on code tabs |
 | EM4 | Open with invalid `theme=nope` | Editor still loads; theme falls back (defaults / viewer prefs) |

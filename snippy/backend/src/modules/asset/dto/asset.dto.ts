@@ -8,6 +8,7 @@ export interface AssetDTO {
     fileType: string;
     url: string;
     objectKey?: string;
+    usedInCount?: number;
 }
 
 export const ALLOWED_ASSET_MIME_TYPES = [

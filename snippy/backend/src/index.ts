@@ -10,6 +10,7 @@ import { requestIdMiddleware, requestLogMiddleware } from './common/middleware/r
 import { version } from '../package.json';
 import logger from './common/utilities/logger';
 import { auth0Check } from './common/middleware/auth0.service';
+import { isOptionalJwtGet } from './common/middleware/optional-jwt';
 import cookie from 'cookie-parser';
 import { config, featureFlags, validateConfig } from './config';
 import { connectMinioWithRetry, minioClient } from './database/minio';
@@ -80,15 +81,8 @@ app.use((req, res, next) => {
     return next();
   }
 
-  if (req.method === 'GET') {
-    const isPublicEmbed = /^\/api\/v1\/snippets\/[^/]+\/embed\/?$/.test(path);
-    const isPublicShare = /^\/api\/v1\/snippets\/shared\/[^/]+\/?$/.test(path);
-    const isPublicSnippetGet =
-      /^\/api\/v1\/snippets\/(?!(?:me|public|feed|search|user|shared)(?:\/|$))[^/]+\/?$/.test(path);
-
-    if (isPublicEmbed || isPublicShare || isPublicSnippetGet) {
-      return auth0Check(req as any, res as any, ((_err?: unknown) => next()) as any);
-    }
+  if (isOptionalJwtGet(req.method, path)) {
+    return auth0Check(req as any, res as any, ((_err?: unknown) => next()) as any);
   }
 
   return auth0Check(req as any, res as any, next as any);

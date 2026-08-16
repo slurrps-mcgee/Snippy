@@ -6,6 +6,7 @@ import {
     DataType,
     ForeignKey,
     BelongsTo,
+    HasMany,
 } from "sequelize-typescript";
 import { Snippets } from "./snippet.entity";
 import { Users } from "./user.entity";
@@ -61,6 +62,30 @@ export class Comments extends Model<Comments> {
     })
     content!: string;
 
+    @ForeignKey(() => Comments)
+    @Column({
+        field: 'parent_comment_id',
+        type: DataType.UUID,
+        allowNull: true,
+        defaultValue: null,
+    })
+    parentCommentId?: string | null;
+
+    @Column({
+        type: DataType.JSON,
+        allowNull: true,
+        defaultValue: null,
+    })
+    mentions?: string[] | null;
+
+    @Column({
+        field: 'is_deleted',
+        type: DataType.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+    })
+    isDeleted!: boolean;
+
     // Relations
     @BelongsTo(() => Users, {
         foreignKey: 'auth0Id',
@@ -77,4 +102,18 @@ export class Comments extends Model<Comments> {
         constraints: true,
     })
     snippet!: Snippets;
+
+    @BelongsTo(() => Comments, {
+        foreignKey: 'parentCommentId',
+        targetKey: 'commentId',
+        constraints: false,
+    })
+    parent?: Comments;
+
+    @HasMany(() => Comments, {
+        foreignKey: 'parentCommentId',
+        sourceKey: 'commentId',
+        constraints: false,
+    })
+    replies!: Comments[];
 }

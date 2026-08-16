@@ -45,7 +45,13 @@
       </div>
       <div class="asset-meta">
         <span class="asset-name" [matTooltip]="asset.fileName">{{ asset.fileName }}</span>
+        <span class="asset-usage text-xs text-slate-400">{{ usageLabel(asset) }}</span>
         <div class="asset-actions">
+          @if (canInsert) {
+          <button mat-icon-button matTooltip="Insert into editor" (click)="insertIntoEditor(asset)">
+            <mat-icon>add_photo_alternate</mat-icon>
+          </button>
+          }
           <button mat-icon-button matTooltip="Copy URL" (click)="copyUrl(asset)">
             <mat-icon>content_copy</mat-icon>
           </button>

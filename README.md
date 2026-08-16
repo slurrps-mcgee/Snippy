@@ -56,15 +56,17 @@ Compose loads environment variables from a root env file and wires the services 
 
 Shipped today:
 
-- Live HTML / CSS / JS editor with instant preview and layout options
-- Per-account editor preferences (theme, font, indent, line numbers, wrapping, folding, autocomplete) with Settings live preview
-- Guest `/try` editor and public `/embed/:shortId` player (tabs, editable, theme query params)
+- Live HTML / CSS / JS editor with instant preview, split layouts, extra themes, and optional Vim keymap
+- Per-account editor preferences (theme, keymap, font, indent, line numbers, wrapping, folding, autocomplete) with Settings live preview
+- Guest `/try` editor, starter templates on `/snippet`, and public `/embed/:shortId` player (tabs, editable, theme query params)
+- Anonymous Explore (`/public`), tag browse (`/tags/:tag`), profiles, and collection pages without logging in
 - Public and private snippets, shareable links, full-page view
 - Account privacy toggle (private profiles hidden from others)
-- Favorites, comments, follows, collections, and forking
+- Favorites, threaded comments (`@username` links), follows, collections, and forking (forks list + parent attribution)
+- Local draft autosave in `localStorage` (including `/try` after login)
 - External CSS / JS resources on snippets
-- ZIP export of snippet files
-- Asset uploads, profile pictures, and list snapshots when MinIO is enabled
+- ZIP export and import of snippet files
+- Asset uploads, insert-at-cursor from the editor, usage counts, profile pictures, and list snapshots when MinIO is enabled
 - Secret share links for private pens (`/s/:token`)
 - Command palette (`Ctrl/Cmd+K`)
 
@@ -316,7 +318,7 @@ docker compose down -v
 2. Set MinIO variables in `.env` and `ENABLE_MINIO=true`.
 3. Run `docker compose up --build`.
 
-Asset uploads are still product-marked as coming soon in places; MinIO wiring exists for deployments that want object storage.
+Asset uploads work when MinIO is enabled: library upload/list/delete, insert into HTML/CSS/JS from the editor Assets dialog, profile pictures, and snapshot-on-save.
 
 ### Optional: smoke-test production Dockerfiles locally
 

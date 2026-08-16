@@ -8,12 +8,16 @@ export interface CommentDTO {
     userName?: string;
     displayName?: string;
     isOwner: boolean;
+    parentId?: string | null;
+    mentions?: string[];
+    isDeleted?: boolean;
     createdAt: Date;
     updatedAt: Date;
 }
 
 export interface CreateCommentRequest {
     content: string;
+    parentId?: string;
 }
 
 export interface UpdateCommentRequest {

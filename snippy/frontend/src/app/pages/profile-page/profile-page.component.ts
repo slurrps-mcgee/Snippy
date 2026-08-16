@@ -43,7 +43,7 @@ export class ProfilePageComponent implements OnInit {
   private api = inject(Api);
   private followUi = inject(FollowUiService);
   private navigation = inject(NavigationService);
-  private authStoreService = inject(AuthStoreService);
+  authStoreService = inject(AuthStoreService);
   private snippetStoreService = inject(SnippetStoreService);
   private collectionStoreService = inject(CollectionStoreService);
 

@@ -45,8 +45,15 @@ export const routes: Routes = [
       import('./pages/snippet-feed-page/snippet-feed-page.component').then(
         m => m.SnippetFeedPageComponent
       ),
-    canActivate: [AuthGuard],
     data: { header: 'feed' satisfies HeaderMode, feed: 'public' satisfies SnippetFeed },
+  },
+  {
+    path: 'tags/:tag',
+    loadComponent: () =>
+      import('./pages/snippet-feed-page/snippet-feed-page.component').then(
+        m => m.SnippetFeedPageComponent
+      ),
+    data: { header: 'feed' satisfies HeaderMode, feed: 'tag' satisfies SnippetFeed },
   },
   {
     path: 'settings',
@@ -61,7 +68,6 @@ export const routes: Routes = [
       import('./pages/collection-detail-page/collection-detail-page.component').then(
         m => m.CollectionDetailPageComponent
       ),
-    canActivate: [AuthGuard],
     data: { header: 'feed' satisfies HeaderMode },
   },
   {
@@ -106,7 +112,6 @@ export const routes: Routes = [
       import('./pages/snippet-web-view/snippet-web-view.component').then(
         m => m.SnippetWebViewComponent
       ),
-    canActivate: [AuthGuard],
     canDeactivate: [unsavedChangesGuard],
     data: { header: 'editor' satisfies HeaderMode },
   },
@@ -116,14 +121,12 @@ export const routes: Routes = [
       import('./pages/fullpage-view/fullpage-view.component').then(
         m => m.FullpageViewComponent
       ),
-    canActivate: [AuthGuard],
     data: { header: 'minimal' satisfies HeaderMode },
   },
   {
     path: ':username',
     loadComponent: () =>
       import('./pages/profile-page/profile-page.component').then(m => m.ProfilePageComponent),
-    canActivate: [AuthGuard],
     data: { header: 'feed' satisfies HeaderMode },
   },
 

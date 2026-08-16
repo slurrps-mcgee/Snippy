@@ -15,6 +15,8 @@ export type { DeleteSnippet$Params as DeleteSnippet$Params } from './fn/snippet/
 export { deleteSnippet as deleteSnippet } from './fn/snippet/delete-snippet';
 export type { GetSnippetEmbed$Params as GetSnippetEmbed$Params } from './fn/snippet/get-snippet-embed';
 export { getSnippetEmbed as getSnippetEmbed } from './fn/snippet/get-snippet-embed';
+export type { GetSnippetForks$Params as GetSnippetForks$Params } from './fn/snippet/get-snippet-forks';
+export { getSnippetForks as getSnippetForks } from './fn/snippet/get-snippet-forks';
 export type { UploadSnippetSnapshot$Params as UploadSnippetSnapshot$Params } from './fn/snippet/upload-snippet-snapshot';
 export { uploadSnippetSnapshot as uploadSnippetSnapshot } from './fn/snippet/upload-snippet-snapshot';
 export type { ForkSnippet$Params as ForkSnippet$Params } from './fn/snippet/fork-snippet';

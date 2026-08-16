@@ -46,6 +46,7 @@ import { EditorPreferencesService } from '@app/editor/editor-preferences.service
 import { MinioStatusService } from '@app/services/ui/minio-status.service';
 import {
   EDITOR_FONT_KEYS,
+  EDITOR_KEYMAP_KEYS,
   EditorFontKey,
   EditorPreferences,
   FONT_FAMILY_LABELS,
@@ -150,6 +151,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly themes = EDITOR_THEMES;
   readonly darkThemes = EDITOR_THEMES.filter(t => t.group === 'dark');
   readonly lightThemes = EDITOR_THEMES.filter(t => t.group === 'light');
+  readonly keymapKeys = EDITOR_KEYMAP_KEYS;
   /** Profile=0, Editor=1, Account=2 */
   readonly editorTabIndex = 1;
 

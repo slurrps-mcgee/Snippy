@@ -1,4 +1,4 @@
-import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,7 +6,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import JSZip from 'jszip';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
-import { AssetsDialogComponent } from '@app/components/dialogs/assets-dialog/assets-dialog.component';
+import { AssetsDialogComponent, AssetsDialogData } from '@app/components/dialogs/assets-dialog/assets-dialog.component';
 import { EmbedDialogComponent } from '@app/components/dialogs/embed-dialog/embed-dialog.component';
 import { ShareLinkDialogComponent } from '@app/components/dialogs/share-link-dialog/share-link-dialog.component';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
@@ -14,6 +14,7 @@ import { DialogService } from '@app/services/ui/dialog.service';
 import { SnippetActionsService } from '@app/services/ui/snippet-actions.service';
 import { EditorUiService } from '@app/services/ui/editor-ui.service';
 import { PreviewConsoleService } from '@app/services/ui/preview-console.service';
+import { ZipImportService } from '@app/services/ui/zip-import.service';
 
 @Component({
   selector: 'app-footer',
@@ -29,6 +30,9 @@ export class FooterComponent {
   private dialogService = inject(DialogService);
   private snippetActions = inject(SnippetActionsService);
   private snackbar = inject(SnackbarService);
+  private zipImport = inject(ZipImportService);
+
+  @ViewChild('zipInput') zipInput?: ElementRef<HTMLInputElement>;
 
   readonly githubUrl = 'https://github.com/slurrps-mcgee/Snippy';
   readonly licenseUrl = 'https://github.com/slurrps-mcgee/Snippy/blob/main/LICENSE';
@@ -48,7 +52,9 @@ export class FooterComponent {
   );
 
   openAssets() {
-    this.dialogService.open(AssetsDialogComponent, 'lg');
+    this.dialogService.open<AssetsDialogComponent, AssetsDialogData>(AssetsDialogComponent, 'lg', {
+      data: { insertTarget: 'html' },
+    });
   }
 
   openEmbed() {
@@ -127,5 +133,30 @@ ${html}
     a.click();
     URL.revokeObjectURL(url);
     this.snackbar.success('Exported ZIP');
+  }
+
+  triggerImportZip() {
+    this.zipInput?.nativeElement.click();
+  }
+
+  async onZipSelected(event: Event) {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    input.value = '';
+    if (!file) return;
+    try {
+      const imported = await this.zipImport.importFile(file);
+      const snippet = this.snippetStoreService.snippet();
+      if (!snippet) return;
+      this.snippetStoreService.applyDraft({
+        ...snippet,
+        name: snippet.name || imported.name,
+        snippetFiles: this.zipImport.filesFromImport(imported),
+        cdnResources: imported.cdnResources,
+      });
+      this.snackbar.success('Imported ZIP');
+    } catch {
+      this.snackbar.error('Failed to import ZIP');
+    }
   }
 }

@@ -92,6 +92,7 @@ export const openapiDefinition = {
           parentShortId: { type: 'string', nullable: true },
           parentName: { type: 'string', nullable: true },
           parentUserName: { type: 'string', nullable: true },
+          parentDeleted: { type: 'boolean' },
           isOwner: { type: 'boolean' },
           isFavorited: { type: 'boolean' },
           userName: { type: 'string' },
@@ -116,6 +117,7 @@ export const openapiDefinition = {
           commentCount: { type: 'integer' },
           favoriteCount: { type: 'integer' },
           viewCount: { type: 'integer' },
+          forkCount: { type: 'integer' },
           embedCount: { type: 'integer' },
           isOwner: { type: 'boolean' },
           isFavorited: { type: 'boolean' },
@@ -123,6 +125,7 @@ export const openapiDefinition = {
           parentShortId: { type: 'string', nullable: true },
           parentName: { type: 'string', nullable: true },
           parentUserName: { type: 'string', nullable: true },
+          parentDeleted: { type: 'boolean' },
           snapshotUrl: { type: 'string', nullable: true },
           updatedAt: { type: 'string' },
         },
@@ -181,6 +184,7 @@ export const openapiDefinition = {
           autocomplete: { type: 'boolean' },
           matchBrackets: { type: 'boolean' },
           theme: { type: 'string' },
+          keymap: { type: 'string' },
         },
       },
       Asset: {
@@ -191,6 +195,7 @@ export const openapiDefinition = {
           fileType: { type: 'string' },
           url: { type: 'string' },
           objectKey: { type: 'string' },
+          usedInCount: { type: 'integer' },
         },
       },
       User: {
@@ -263,6 +268,9 @@ export const openapiDefinition = {
           userName: { type: 'string' },
           displayName: { type: 'string' },
           isOwner: { type: 'boolean' },
+          parentId: { type: 'string', nullable: true },
+          mentions: { type: 'array', items: { type: 'string' } },
+          isDeleted: { type: 'boolean' },
           createdAt: { type: 'string' },
           updatedAt: { type: 'string' },
         },
@@ -371,9 +379,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getSnippetByShortId',
         tags: ['Snippet'],
-        security: bearer,
-        parameters: [{ name: 'shortId', in: 'path', required: true, schema: { type: 'string' } }],
-        responses: { '200': { description: 'Snippet', ...json(ref('SnippetResponse')) }, ...err },
+        security: [],
       },
     },
     '/snippets/{snippetId}': {
@@ -406,6 +412,18 @@ export const openapiDefinition = {
           },
           ...err,
         },
+      },
+    },
+    '/snippets/{shortId}/forks': {
+      get: {
+        operationId: 'getSnippetForks',
+        tags: ['Snippet'],
+        security: [],
+        parameters: [
+          { name: 'shortId', in: 'path', required: true, schema: { type: 'string' } },
+          ...pageQuery,
+        ],
+        responses: { '200': { description: 'Forks', ...json(ref('SnippetListResponse')) }, ...err },
       },
     },
     '/snippets/{snippetId}/snapshot': {
@@ -441,7 +459,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getPublicSnippets',
         tags: ['Snippet'],
-        security: bearer,
+        security: [],
         parameters: sortQuery,
         responses: { '200': { description: 'List', ...json(ref('SnippetListResponse')) }, ...err },
       },
@@ -468,7 +486,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'searchSnippets',
         tags: ['Snippet'],
-        security: bearer,
+        security: [],
         parameters: sortQuery,
         responses: { '200': { description: 'Search', ...json(ref('SnippetListResponse')) }, ...err },
       },
@@ -477,7 +495,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getUserPublicSnippets',
         tags: ['Snippet'],
-        security: bearer,
+        security: [],
         parameters: [
           { name: 'userName', in: 'path', required: true, schema: { type: 'string' } },
           ...pageQuery,
@@ -568,7 +586,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getUserProfile',
         tags: ['User'],
-        security: bearer,
+        security: [],
         parameters: [{ name: 'userName', in: 'path', required: true, schema: { type: 'string' } }],
         responses: { '200': { description: 'Profile', ...json(ref('UserResponse')) }, ...err },
       },
@@ -684,7 +702,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getComments',
         tags: ['Comments'],
-        security: bearer,
+        security: [],
         parameters: [
           { name: 'snippetId', in: 'path', required: true, schema: { type: 'string' } },
           ...pageQuery,
@@ -698,7 +716,7 @@ export const openapiDefinition = {
         parameters: [{ name: 'snippetId', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          ...json({ type: 'object', properties: { content: { type: 'string' } } }),
+          ...json({ type: 'object', properties: { content: { type: 'string' }, parentId: { type: 'string' } } }),
         },
         responses: { '201': { description: 'Created', ...json(ref('CommentResponse')) }, ...err },
       },
@@ -761,7 +779,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getUserCollections',
         tags: ['Collection'],
-        security: bearer,
+        security: [],
         parameters: [
           { name: 'userName', in: 'path', required: true, schema: { type: 'string' } },
           ...pageQuery,
@@ -776,7 +794,7 @@ export const openapiDefinition = {
       get: {
         operationId: 'getCollection',
         tags: ['Collection'],
-        security: bearer,
+        security: [],
         parameters: [
           { name: 'shortId', in: 'path', required: true, schema: { type: 'string' } },
           { name: 'q', in: 'query', schema: { type: 'string' } },

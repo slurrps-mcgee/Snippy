@@ -16,6 +16,7 @@ import {
     getSnippetByShareTokenHandler,
     createSnippetShareLinkHandler,
     revokeSnippetShareLinkHandler,
+    getSnippetForksHandler,
 } from "./snippet.service";
 import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validator';
 import multer from 'multer';
@@ -362,6 +363,15 @@ export async function getSnippetByShortId(req: Request, res: Response, next: Nex
     try {
         const { snippet } = await getSnippetByShortIdHandler(req);
         res.status(200).json({ success: true, snippet });
+    } catch (error) {
+        next(error);
+    }
+}
+
+export async function getSnippetForks(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+        const { snippets, totalCount } = await getSnippetForksHandler(req);
+        res.status(200).json({ success: true, snippets, totalCount });
     } catch (error) {
         next(error);
     }

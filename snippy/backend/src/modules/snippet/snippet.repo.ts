@@ -108,7 +108,7 @@ export async function findBySnippetId(
     return await Snippets.findByPk(snippetId, {
         include: [
             SnippetFiles,
-            { model: Users, attributes: ['userName', 'displayName'] }
+            ...snippetWithParentInclude(),
         ],
         transaction
     });
@@ -279,6 +279,27 @@ export async function getFeedSnippets(
         limit,
         transaction,
         distinct: true
+    });
+}
+
+export async function getForksByParentShortId(
+    parentShortId: string,
+    offset: number,
+    limit: number,
+    includePrivate: boolean,
+    transaction?: Transaction
+): Promise<{ rows: Snippets[]; count: number }> {
+    return await Snippets.findAndCountAll({
+        where: {
+            parentShortId,
+            ...(includePrivate ? {} : { isPrivate: false }),
+        },
+        include: listInclude(),
+        order: [['created_at', 'DESC']],
+        offset,
+        limit,
+        transaction,
+        distinct: true,
     });
 }
 // #endregion

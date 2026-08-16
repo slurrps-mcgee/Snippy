@@ -1,5 +1,6 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy, DestroyRef } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { SnippetSort } from '@app/services/stores/snippet.store.service';
 import { SnippetListComponent } from '@app/components/lists/snippet-list/snippet-list.component';
@@ -8,9 +9,9 @@ import { AsyncStateComponent } from '@app/components/async-state/async-state.com
 import { ListPageState } from '@app/utils/list-page-state';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
 
-export type SnippetFeed = 'public' | 'following';
+export type SnippetFeed = 'public' | 'following' | 'tag';
 
-const FEED_TITLES: Record<SnippetFeed, string> = {
+const FEED_TITLES: Record<Exclude<SnippetFeed, 'tag'>, string> = {
   public: 'Explore',
   following: 'Following',
 };
@@ -30,12 +31,15 @@ export class SnippetFeedPageComponent implements OnInit {
   private snippetStore = inject(SnippetStoreService);
   private route = inject(ActivatedRoute);
   private snackbar = inject(SnackbarService);
+  private destroyRef = inject(DestroyRef);
 
   feed: SnippetFeed = 'public';
+  tag = '';
 
   state = new ListPageState<SnippetSort>(() => this.load());
 
   get title() {
+    if (this.feed === 'tag') return this.tag ? `Tag: ${this.tag}` : 'Tag';
     return FEED_TITLES[this.feed];
   }
 
@@ -57,7 +61,10 @@ export class SnippetFeedPageComponent implements OnInit {
 
   ngOnInit() {
     this.feed = (this.route.snapshot.data['feed'] as SnippetFeed) ?? 'public';
-    void this.load();
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+      this.tag = params.get('tag') ?? '';
+      void this.load();
+    });
   }
 
   private async load() {
@@ -65,6 +72,8 @@ export class SnippetFeedPageComponent implements OnInit {
     try {
       if (this.feed === 'following') {
         await this.snippetStore.loadFeedSnippets(page, pageSize, sort, query);
+      } else if (this.feed === 'tag') {
+        await this.snippetStore.loadPublicSnippets(page, pageSize, sort, query, this.tag);
       } else {
         await this.snippetStore.loadPublicSnippets(page, pageSize, sort, query);
       }

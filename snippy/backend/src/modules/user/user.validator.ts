@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { CustomError } from '../../common/exceptions/custom-error';
 import { sanitizeInput } from '../../common/utilities/sanitizer';
-import { EDITOR_FONT_KEYS, EDITOR_THEME_KEYS } from '../../common/utilities/editor-preferences';
+import { EDITOR_FONT_KEYS, EDITOR_THEME_KEYS, EDITOR_KEYMAP_KEYS } from '../../common/utilities/editor-preferences';
 
 const registerSchema = Joi.object({
     name: Joi.string().min(2).max(100).optional(),
@@ -29,6 +29,7 @@ const editorPreferencesSchema = Joi.object({
     autocomplete: Joi.boolean().optional(),
     matchBrackets: Joi.boolean().optional(),
     theme: Joi.string().valid(...EDITOR_THEME_KEYS).optional(),
+    keymap: Joi.string().valid(...EDITOR_KEYMAP_KEYS).optional(),
 }).optional();
 
 const updateUserSchema = Joi.object({

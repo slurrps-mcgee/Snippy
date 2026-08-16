@@ -12,6 +12,7 @@ import {
     findAssetsByUserId,
     findByAssetId,
     findByObjectKey,
+    countAssetUsageByNeedle,
 } from './asset.repo';
 import { config, featureFlags } from '../../config';
 import { PaginationQuery, PaginationService } from '../../common/services/pagination.service';
@@ -192,8 +193,17 @@ export async function listAssetsHandler(
     const { offset, limit } = PaginationService.getPaginationParams(payload.query || {});
 
     const { rows, count } = await findAssetsByUserId(auth0Id, offset, limit);
+    const needles = rows.flatMap((asset) => [asset.url, asset.objectKey].filter(Boolean));
+    const usage = await countAssetUsageByNeedle(auth0Id, needles);
+    const assets = rows.map((asset) => {
+        const dto = AssetMapper.toDTO(asset);
+        const byUrl = asset.url ? usage.get(asset.url) ?? 0 : 0;
+        const byKey = asset.objectKey ? usage.get(asset.objectKey) ?? 0 : 0;
+        dto.usedInCount = Math.max(byUrl, byKey);
+        return dto;
+    });
     return {
-        assets: AssetMapper.toDTOs(rows),
+        assets,
         totalCount: count,
     };
 }

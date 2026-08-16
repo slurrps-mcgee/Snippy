@@ -54,6 +54,19 @@ export async function findByUsername(
 		transaction
 	});
 }
+
+export async function findUserNamesByNames(
+	userNames: string[],
+	transaction?: Transaction
+): Promise<string[]> {
+	if (!userNames.length) return [];
+	const rows = await Users.findAll({
+		where: { userName: userNames },
+		attributes: ['userName'],
+		transaction,
+	});
+	return rows.map((u) => u.userName);
+}
 // #endregion
 
 // Check if any users exist

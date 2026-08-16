@@ -218,7 +218,7 @@ Set via route `data.header`. [`PageHeaderComponent`](../snippy/frontend/src/app/
 
 | Mode | Chrome |
 |------|--------|
-| `landing` | Brand + Log in |
+| `landing` | Brand, View snippets (`/public`), Log in |
 | `feed` | Brand, nav pills (Your Snippets / Following / Public), user menu |
 | `editor` | Name field (owner/new), stat bar, save, layout menu, settings, user menu |
 | `minimal` | Brand + user menu (full-page preview) |
@@ -228,7 +228,7 @@ Set via route `data.header`. [`PageHeaderComponent`](../snippy/frontend/src/app/
 
 [`FooterComponent`](../snippy/frontend/src/app/components/footer/footer.component.ts):
 
-- If `snippetStore.snippet()?.snippetId` → **Fork / Export ZIP / Assets**
+- If `snippetStore.snippet()?.snippetId` → **Fork / Export ZIP / Import ZIP / Assets / Embed / Share** (owner actions as applicable)
 - Else → copyright + **Privacy Policy / Terms / License / GitHub**
 
 New unsaved pens (no `snippetId` yet) still show the legal footer until the first successful save.
@@ -241,21 +241,22 @@ Defined in [`app.routes.ts`](../snippy/frontend/src/app/app.routes.ts). Most rou
 
 | Path | Page | Guards | `data.header` | Notes |
 |------|------|--------|---------------|-------|
-| `''` | HomePage | — | `landing` | Auto-navigates to `/home` if Auth0 session exists |
+| `''` | HomePage | — | `landing` | Marketing; **View snippets** → `/public`; Auto-navigates to `/home` if Auth0 session exists |
 | `privacy` | PrivacyPolicy | — | `landing` | Public legal |
 | `terms` | Terms | — | `landing` | Public legal |
 | `home` | UserHome | AuthGuard | `feed` | Snippets / Collections / Favorites / Projects tabs |
 | `following` | SnippetFeed | AuthGuard | `feed`, `feed: 'following'` | |
-| `public` | SnippetFeed | AuthGuard | `feed`, `feed: 'public'` | |
+| `public` | SnippetFeed | — | `feed`, `feed: 'public'` | Anonymous explore |
+| `tags/:tag` | SnippetFeed | — | `feed`, `feed: 'tag'` | Public pens with that tag |
 | `settings` | Settings | AuthGuard | `feed` | Tabs: Profile, Editor, Account |
-| `collections/:shortId` | CollectionDetail | AuthGuard | `feed` | |
+| `collections/:shortId` | CollectionDetail | — | `feed` | Public collections; private → 403 |
 | `embed/:shortId` | EmbedPlayerPage | — | `embed` | Public embed iframe player |
 | `s/:token` | SnippetWebView | unsavedChanges | `editor`, `share: true` | Secret share link; guest chrome unless the viewer is the owner |
 | `try` | SnippetWebView | unsavedChanges | `editor`, `guest: true` | Guest editor (defaults prefs) |
 | `snippet` | SnippetWebView | AuthGuard + unsavedChanges | `editor` | New pen |
-| `:username/snippet/:id` | SnippetWebView | AuthGuard + unsavedChanges | `editor` | Existing pen (`id` = **shortId**) |
-| `:username/fullpage/:id` | FullpageView | AuthGuard | `minimal` | Preview only |
-| `:username` | Profile | AuthGuard | `feed` | Catch-all username |
+| `:username/snippet/:id` | SnippetWebView | unsavedChanges | `editor` | Existing pen (`id` = **shortId**); anonymous read-only |
+| `:username/fullpage/:id` | FullpageView | — | `minimal` | Preview only |
+| `:username` | Profile | — | `feed` | Catch-all username |
 | `**` | → `''` | | | |
 
 **Ordering matter:** `privacy` and `terms` are registered **before** `:username`. If they were after the catch-all, `/privacy` would load as a profile named `privacy`. Same for `try` / `embed` / `s/:token` / `snippet` — they must stay before the username catch-all.
@@ -263,7 +264,7 @@ Defined in [`app.routes.ts`](../snippy/frontend/src/app/app.routes.ts). Most rou
 ### Guards
 
 1. **AuthGuard** (Auth0 SDK) — requires an Auth0 session. Does **not** wait for backend `AuthStoreService.user()`.
-2. **`unsavedChangesGuard`** — if `SnippetStoreService.isDirty()`, opens a confirm dialog; Leave vs Stay.
+2. **`unsavedChangesGuard`** — if `SnippetStoreService.isDirty()`, opens a confirm dialog; Leave vs Stay. Guest `/try` is included (local drafts).
 
 ---
 
@@ -591,15 +592,15 @@ Snippet settings CSS/JS tabs use `ExternalResourcesListComponent` → `CdnApiSer
 
 | Page | Route | Who loads what |
 |------|-------|----------------|
-| **Home** | `''` | Marketing; Auth0 login; if Auth0 session → `/home` |
+| **Home** | `''` | Marketing; Auth0 login; **View snippets** → `/public`; if Auth0 session → `/home` |
 | **User home** | `/home` | Three `ListPageState`s: `loadUserSnippets`, `loadMine` collections, `loadFavorites`. Create collection dialog. Projects tab = coming soon. Bind store getters; do not keep a local snippet array. |
-| **Snippet feed** | `/public`, `/following` | One `ListPageState<SnippetSort>`. `data.feed === 'following'` → `loadFeedSnippets`; else `loadPublicSnippets`. Sort via `SortPageHeaderComponent` → `state.onSortChange`. |
+| **Snippet feed** | `/public`, `/following`, `/tags/:tag` | One `ListPageState<SnippetSort>`. `data.feed === 'following'` → `loadFeedSnippets`; `tag` → `loadPublicSnippets({ tag })`; else `loadPublicSnippets`. Sort via `SortPageHeaderComponent` → `state.onSortChange`. |
 | **Profile** | `/:username` | Local `profileUser` signal from `Api.invoke(getUserProfile)` (not AuthStore). `isSelf` vs `AuthStore.user`. Pens: `loadUserPublicSnippets`; collections: `loadUser`. Follow: `FollowUiService` patches `profileUser`. |
 | **Settings** | `/settings` | Hydrate from `AuthStore.user`. Profile Image only if `MinioStatusService.enabled()`. Display name / bio / username / privacy / editor prefs → `Api.invoke(updateUser)` → `setUserFromApi`. Delete account → confirm → `DELETE /users` → logout. |
 | **Collection detail** | `/collections/:shortId` | `loadOne(shortId, q)`; search reloads API; `ListPageState.setPage` slices embedded `snippets` client-side. Owner remove → `removeSnippet`. |
-| **Snippet web view** | `/snippet`, `/:user/snippet/:id` | No shortId: blank untitled template `setSnippet(..., true)` with `isOwner: true`. With shortId: `loadSnippet`. Ctrl+S → save UI. `clearSnippet` on destroy. Guest `/try`: `setGuestMode(true)`. |
+| **Snippet web view** | `/snippet`, `/:user/snippet/:id` | No shortId: template picker or `?template=` then `setSnippet`. With shortId: `loadSnippet`. Ctrl+S → save UI. Dirty state autosaved to `localStorage` (`snippy.draft.try` / `.new` / `.{shortId}`). `clearSnippet` on destroy. Guest `/try`: `setGuestMode(true)`. Split gutters are 14px and follow the editor theme (no collapse labels). |
 | **Share link** | `/s/:token` | `loadSharedSnippet`; starts in guest mode, then lifts it if `snippet.isOwner`. Ctrl/Cmd+K command palette from the app shell. |
-| **Try (guest)** | `/try` | Same editor UI without AuthGuard; prefs = defaults until login; no persist |
+| **Try (guest)** | `/try` | Same editor UI without AuthGuard; prefs = defaults until login; drafts persist in `snippy.draft.try` and promote to `snippy.draft.new` after login |
 | **Embed player** | `/embed/:shortId` | Public iframe player; query params for tabs / editable / theme; does not use snippet store dirty tracking |
 | **Fullpage view** | `/:user/fullpage/:id` | `loadSnippet`; preview only; `recordView` if not owner; `clearSnippet` on destroy |
 | **Privacy / Terms** | `/privacy`, `/terms` | Static legal; landing header; linked from footer |
@@ -712,12 +713,20 @@ Live HTML/CSS/JS sample preview, theme radios (dark/light groups), font family +
 
 Keep frontend and backend allowlists in sync.
 
-1. **Define the extension** in [`editor/themes/index.ts`](../snippy/frontend/src/app/editor/themes/index.ts) — import an npm CodeMirror theme (like `oneDark`) or build one with `EditorView.theme({ ... }, { dark: true|false })`.
-2. **Register it** in `EDITOR_THEMES` with `{ key, label, group: 'dark'|'light', extension }`.
+1. **Define the extension** in [`editor/themes/index.ts`](../snippy/frontend/src/app/editor/themes/index.ts) using the [CodeMirror theme recipe](https://codemirror.net/examples/styling/#themes): `[EditorView.theme({ ... }, { dark }), syntaxHighlighting(HighlightStyle.define(...))]`. Chrome alone is not enough — token colors come from `@lezer/highlight` tags. Reuse [`highlightSyntax()`](../snippy/frontend/src/app/editor/themes/highlight.ts) with a palette, or import a complete package theme like `oneDark`.
+2. **Register it** in `EDITOR_THEMES` with `{ key, label, group: 'dark'|'light', extension, gutter, gutterHover }`. `gutter` / `gutterHover` color the angular-split dividers (not CodeMirror line-number gutters). Dark themes typically use `rgba(255, 255, 255, 0.06)` / `0.12`; light themes use black at the same opacities.
 3. **Allowlist the key** in:
    - Frontend [`EDITOR_THEME_KEYS`](../snippy/frontend/src/app/editor/editor-preferences.ts)
    - Backend [`EDITOR_THEME_KEYS`](../snippy/backend/src/common/utilities/editor-preferences.ts) (Joi for `PUT /users`)
 4. Settings radios and the embed dialog theme dropdown pick it up from `EDITOR_THEMES` / keys automatically. `getThemeExtension()` falls back to `one-dark` for unknown keys.
+
+**Do not add a shared FE/BE package** for this allowlist. Optional later: put an OpenAPI `enum` on `EditorPreferences.theme` / `keymap` so codegen emits unions; Joi remains the server gate.
+
+### How to add a keymap
+
+1. Add the key to **both** `EDITOR_KEYMAP_KEYS` files (`default` and `vim` today).
+2. Wire the CodeMirror extension in [`codemirror-extensions.ts`](../snippy/frontend/src/app/editor/codemirror-extensions.ts) (`vim()` from `@replit/codemirror-vim` when `prefs.keymap === 'vim'`).
+3. Settings Editor tab radios follow `EDITOR_KEYMAP_KEYS`.
 
 Optional: load web fonts in [`index.html`](../snippy/frontend/src/index.html) if the theme or font family needs them (Fira Code / JetBrains Mono / Source Code Pro are already linked).
 
@@ -831,6 +840,7 @@ One instance per list surface (page or tab). Default `pageSize` = **6**. The pag
 
 - `data.feed === 'public'` → Explore / `loadPublicSnippets`
 - `data.feed === 'following'` → Following / `loadFeedSnippets`
+- `data.feed === 'tag'` → Explore filtered by route `:tag` / `loadPublicSnippets({ tag })`
 
 Sort options come from `SnippetSort` on the snippet API service (`newest` \| `views` \| `favorites` \| `forks`).
 
@@ -844,12 +854,14 @@ Always open through **`DialogService`** so `snippy-dialog` + max-height apply.
 |--------|---------|
 | **ConfirmDialog** | `confirm` / `confirmAndRun` — unsaved leave, deletes, dirty logout, remove from collection |
 | **AlertDialog** | Typed alerts (e.g. invalid external URLs in settings) |
-| **EmbedDialog** | Footer embed action — iframe URL (tabs, editable, theme) |
+| **EmbedDialog** | Footer embed action — iframe URL (tabs, editable, theme); dialog body scrolls on small viewports |
 | **ShareLinkDialog** | Footer share action — create/revoke secret `/s/:token` link |
 | **CommandPalette** | App shell `Ctrl/Cmd+K` — navigate, save, layout, embed, share |
 | **SnippetSettingsDialog** | Editor settings (`snippy-dialog-tall`) |
-| **AssetsDialog** | Footer / user menu (MinIO gated) |
-| **CommentDialog** | Stat bar / list comment action |
+| **AssetsDialog** | Footer (insert into HTML) / user menu (copy-only); shows usage counts |
+| **CommentDialog** | Stat bar / list comment action; one-level replies and `@username` suggestions |
+| **ForksDialog** | Stat bar tree icon / command palette — public children of a pen |
+| **TemplatePickerDialog** | New `/snippet` when no `?template=` and no restored draft |
 | **AddToCollectionDialog** | List “add to collection”; loads mine with `snippetId` for `containsSnippet` |
 | **CollectionCreateDialog** | User-home create; can nest from add-to-collection |
 
@@ -968,7 +980,7 @@ CodeMirror change
 11. **Dev proxy targets Docker DNS names** (`api`, `minio`) — host-only `ng serve` needs matching networking or proxy edits.
 12. **Static legal routes must stay above `:username`.**
 13. **Generation counters** — don’t assume the latest HTTP response wins if a newer load already started; trust the store’s generation checks.
-14. **Theme allowlists** — adding a CodeMirror theme requires updating both FE and BE `EDITOR_THEME_KEYS` or `PUT /users` will reject the theme.
+14. **Theme allowlists** — adding a CodeMirror theme requires updating both FE and BE `EDITOR_THEME_KEYS` or `PUT /users` will reject the theme. Same for `EDITOR_KEYMAP_KEYS`.
 15. **Embed `theme` is URL-only** — it does not change the author’s saved editor preferences.
 16. **Do not import backend DTO modules in the SPA** — use generated models; after API contract changes run export → generate → commit. See [Contracts](#contracts-spa-vs-api).
 17. **MinIO latch is one-way** — after `disable()`, reload the SPA only after the API (and MinIO) have been restarted.

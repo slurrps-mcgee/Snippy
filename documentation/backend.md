@@ -5,19 +5,20 @@
 1. [Overview](#overview)
 2. [Tech Stack](#tech-stack)
 3. [Architecture Layers](#architecture-layers)
-4. [Startup Workflow](#startup-workflow)
-5. [Database Schema](#database-schema)
-6. [Authentication & Authorization](#authentication--authorization)
-7. [Middleware](#middleware)
-8. [Common Response Shapes](#common-response-shapes)
-9. [Pagination](#pagination)
-10. [API Quick Reference](#api-quick-reference)
-11. [Detailed API Endpoints](#detailed-api-endpoints)
-12. [End-to-End Workflows](#end-to-end-workflows)
-13. [Environment Variables](#environment-variables)
-14. [Operational Notes](#operational-notes)
-15. [OpenAPI / SPA client](#openapi--spa-client)
-16. [Debugging](#debugging)
+4. [How to add a module](#how-to-add-a-module)
+5. [Startup Workflow](#startup-workflow)
+6. [Database Schema](#database-schema)
+7. [Authentication & Authorization](#authentication--authorization)
+8. [Middleware](#middleware)
+9. [Common Response Shapes](#common-response-shapes)
+10. [Pagination](#pagination)
+11. [API Quick Reference](#api-quick-reference)
+12. [Detailed API Endpoints](#detailed-api-endpoints)
+13. [End-to-End Workflows](#end-to-end-workflows)
+14. [Environment Variables](#environment-variables)
+15. [Operational Notes](#operational-notes)
+16. [OpenAPI / SPA client](#openapi--spa-client)
+17. [Debugging](#debugging)
 
 ---
 
@@ -32,8 +33,8 @@ The Snippy backend is a Node.js / Express REST API that powers a CodePen-like pr
 | Module | Mount | Responsibility |
 |--------|-------|----------------|
 | User | `/users` | Ensure/create profile, update (incl. privacy + editorPreferences), delete, username check, follow graph |
-| Snippet | `/snippets` | CRUD, fork, search, feed, views, embed, public/private |
-| Comment | `/comments` | CRUD on snippet comments |
+| Snippet | `/snippets` | CRUD, fork, forks list, search, feed, views, embed, public/private |
+| Comment | `/comments` | CRUD, one-level replies, @mentions (display) |
 | Favorite | `/favorites` | List, status check, toggle |
 | Collection | `/collections` | CRUD collections + ordered pens |
 | Asset | `/assets` | MinIO asset list / upload / delete |
@@ -96,6 +97,42 @@ Client
 Mappers exist when the module owns a client JSON shape. If it does not return its own table row, reuse another mapper: favorite lists use `SnippetMapper`; follow lists use `UserMapper`; favorite toggle uses a small `FavoriteMapper` (`isFavorited` / `favoriteCount`). Extra repos are only for a second table (e.g. `snippetView.repo.ts`). Follow routes stay on `user.routes.ts`.
 
 OpenAPI is defined in [`common/utilities/openapi-definition.ts`](../snippy/backend/src/common/utilities/openapi-definition.ts). See [OpenAPI / SPA client](#openapi--spa-client).
+
+---
+
+## How to add a module
+
+Use **collection** (`modules/collection/`) as the canonical full module. Follow lives on `user.routes.ts` instead of its own router; extra tables (e.g. `snippetView.repo.ts`) are repos, not new modules.
+
+**Runtime (always):**
+
+1. Entity in `src/entities/` plus associations on related entities.
+2. Register the model in [`sequelize.addModels`](../snippy/backend/src/database/sequelize.ts).
+3. Migration `src/database/migrations/<timestamp>-NNN-descriptive.js` with `up` / `down`. Use **`.js`**, not `.ts` (`tsc` would compile a TypeScript migration).
+4. `dto/`, `validator.ts`, `repo.ts`, `service.ts`, `controller.ts`, and `mapper.ts` if you own a JSON shape. Reuse another mapper if you only return someone else’s DTO.
+5. `*.routes.ts` with `publicReadLimiter` / `writeLimiter`, **or** attach routes to an existing router.
+6. Mount in [`src/routes/routes.ts`](../snippy/backend/src/routes/routes.ts) unless nested.
+7. Unauthenticated GET: add a path pattern in [`optional-jwt.ts`](../snippy/backend/src/common/middleware/optional-jwt.ts) (plus tests). Do **not** open `/me`, `/feed`, `/users/me`, or favorites.
+8. Controllers: Joi in the controller, `CustomError`, mapped DTOs only, `{ success: true, ... }` or **204** on delete.
+9. Tests next to the module when behavior is non-trivial. Add the module to this doc’s Overview table and API quick reference.
+
+**OpenAPI / SPA — required when the HTTP contract changes** (new paths, methods, query/path params, bodies, status codes, DTO fields, `operationId`s):
+
+1. Update [`openapi-definition.ts`](../snippy/backend/src/common/utilities/openapi-definition.ts) (`components.schemas` + `paths`) to match DTOs/mappers. Mark public GETs `security: []`. Controller `@swagger` JSDoc is **not** the spec (`swagger-jsdoc` is unused).
+2. From `snippy/backend`: `npm run openapi:export`
+3. From `snippy/frontend`: `npm run openapi:generate`
+4. Commit both `openapi.json` files and `frontend/src/app/api/generated/`
+
+Skip export/generate only when handler/SQL change and the JSON/routes/`operationId`s are unchanged. The SPA never imports backend TypeScript DTOs.
+
+```
+entity + migration
+  → dto / validator / repo / service / controller / routes
+  → routes.ts + optional JWT
+  → openapi-definition.ts
+  → npm run openapi:export
+  → npm run openapi:generate
+```
 
 ---
 
@@ -231,12 +268,20 @@ Assets are **user-scoped**, not linked to snippets in the DB. Snippets embed ass
 | `GET /api/v1/ready` | Same readiness body |
 | `GET /api/v1/snippets/:shortId` | Public snippet GET — JWT optional (identity attached when present) |
 | `GET /api/v1/snippets/:shortId/embed` | Runnable HTML for **public** pens (iframe-friendly) |
+| `GET /api/v1/snippets/:shortId/forks` | Paginated fork children — JWT optional |
 | `GET /api/v1/snippets/shared/:token` | Secret share-link load — JWT optional |
+| `GET /api/v1/snippets/public` | Paginated public explore list — JWT optional |
+| `GET /api/v1/snippets/search` | Public search — JWT optional |
+| `GET /api/v1/snippets/user/:userName` | A user's public pens — JWT optional |
+| `GET /api/v1/users/:userName` | Public profile (`/users/me` still requires JWT) |
+| `GET /api/v1/collections/:shortId` | Public collection detail (`/collections/me` still requires JWT) |
+| `GET /api/v1/collections/user/:userName` | A user's public collections |
+| `GET /api/v1/comments/:snippetId` | Comment list on a pen — JWT optional |
 | `/api-docs` | Swagger UI (non-production only); spec at `/api-docs.json` |
 
 ### Auth0 JWT (`/api/v1/*`)
 
-Every request under `/api/v1` requires a valid Bearer token **except** the public routes above. List, search, feed, profile, and all writes still require a JWT.
+Every request under `/api/v1` requires a valid Bearer token **except** the public GET routes above. Personal feeds (`/snippets/feed`, `/snippets/me`, `/collections/me`, `/users/me`, favorites) and **all writes** still require a JWT.
 
 ```
 Authorization: Bearer <access_token>
@@ -250,7 +295,7 @@ Configured in `common/middleware/auth0.service.ts`:
 
 User identity: `req.auth.payload.sub` → `auth0Id`.
 
-Aside from the public GET carve-outs above, clients must send a JWT for API module calls (including list/search/feed).
+Aside from the public GET carve-outs above, clients must send a JWT for personal feeds and mutations.
 
 ### Ownership
 
@@ -370,6 +415,7 @@ All paths are under `/api/v1`. All require `Authorization: Bearer …`.
 | GET | `/snippets/me` | Current user’s snippets (incl. private) |
 | GET | `/snippets/user/:userName` | User’s public snippets (profile privacy enforced) |
 | GET | `/snippets/:shortId/embed` | **Public** runnable HTML (no JWT) |
+| GET | `/snippets/:shortId/forks` | Paginated children (public-safe) |
 | GET | `/snippets/:shortId` | Full snippet by short id |
 | POST | `/snippets` | Create |
 | POST | `/snippets/fork/:snippetId` | Fork by UUID |
@@ -453,6 +499,7 @@ Defaults and allowlists live in [`common/utilities/editor-preferences.ts`](../sn
   fileType: string;
   url: string;
   objectKey?: string;
+  usedInCount?: number;
 }
 ```
 
@@ -694,7 +741,9 @@ Paginated. Private snippet → owner only.
 
 #### `POST /comments/:snippetId`
 
-**Body:** `{ "content": "Nice pen!" }` (required, length-validated)
+**Body:** `{ "content": "Nice pen!", "parentId": "<optional UUID>" }`
+
+`parentId` is a one-level reply (CodePen-style). Nested replies (reply to a reply) are rejected. `@userName` tokens matching existing users are stored on `mentions` and rendered as profile links (no notification inbox).
 
 **Response `201`:** `{ success: true, comment: CommentDTO }`
 
@@ -706,7 +755,7 @@ Owner only. **Body:** `{ "content": "..." }`
 
 #### `DELETE /comments/:commentId`
 
-Allowed for the **comment author** or the **snippet owner**. Decrements snippet `commentCount`.
+Allowed for the **comment author** or the **snippet owner**. If the comment has replies, content is tombstoned (`isDeleted`); otherwise the row is removed. Decrements snippet `commentCount` on hard delete.
 
 **Response `200`:** `{ success: true, message }`
 
@@ -772,7 +821,7 @@ Require `featureFlags.isMinioAvailable === true` or return **503**.
 
 #### `GET /assets`
 
-Current user’s **library** assets (`general/` and other non-system prefixes). Paginated. Excludes `{auth0Id}/profile/` and `{auth0Id}/snippets/`.
+Current user’s **library** assets (`general/` and other non-system prefixes). Paginated. Excludes `{auth0Id}/profile/` and `{auth0Id}/snippets/`. Each item includes `usedInCount` — how many of the owner’s snippet files contain the asset URL or object key.
 
 **Response `200`:** `{ success: true, assets: AssetDTO[], totalCount: number }`
 
@@ -876,7 +925,7 @@ sequenceDiagram
 1. Enable MinIO (`ENABLE_MINIO=true`) and ensure bucket/init succeeded
 2. `POST /assets` multipart with image → receive `url` like `/content/...`
 3. Optionally `POST /users/picture` multipart → `users.picture_url` becomes `/content/{auth0Id}/profile/avatar.{ext}`
-3. Insert that URL into snippet HTML/CSS (`<img src="/content/...">`)
+3. Insert that URL into snippet HTML/CSS from the editor Assets dialog (insert-at-cursor) or by pasting (`<img src="/content/...">`)
 4. `GET /assets` to show the user’s asset list in the UI
 5. `DELETE /assets/:assetId` when removing an unused asset
 
@@ -1096,4 +1145,4 @@ Logger writes under `src/common/logs/` inside the container/workdir depending on
 
 ## Summary
 
-The Snippy API is a layered Express/TypeScript service with Auth0 JWT on every `/api/v1` route, Sequelize models for users/snippets/files/comments/favorites/assets, and optional MinIO-backed user assets. Controllers validate, services enforce privacy and ownership inside transactions, repositories talk to MySQL, and mappers emit stable DTOs. Prefer extending modules inside this pattern rather than introducing a new architecture.
+The Snippy API is a layered Express/TypeScript service. Personal feeds and writes require Auth0 JWT; an explicit GET allowlist in `optional-jwt.ts` lets anonymous clients browse public pens, profiles, collections, comments, embeds, and share links. Sequelize models cover users/snippets/files/comments/favorites/assets, with optional MinIO-backed user assets. Controllers validate, services enforce privacy and ownership inside transactions, repositories talk to MySQL, and mappers emit stable DTOs. Prefer extending modules inside this pattern rather than introducing a new architecture. See [How to add a module](#how-to-add-a-module).

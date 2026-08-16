@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { CommentDialogComponent } from '@app/components/dialogs/comment-dialog/comment-dialog.component';
+import { ForksDialogComponent } from '@app/components/dialogs/forks-dialog/forks-dialog.component';
 import { AddToCollectionDialogComponent } from '@app/components/dialogs/add-to-collection-dialog/add-to-collection-dialog.component';
 import { SnippetList } from '@app/api/generated/models/snippet-list';
 import { Snippet } from '@app/api/generated/models/snippet';
@@ -10,7 +11,7 @@ import { NavigationService } from '@app/services/ui/navigation.service';
 
 /** Fields any snippet-ish object must expose for these shared actions. */
 type SnippetLike = Pick<SnippetList, 'snippetId' | 'name'> &
-  Partial<Pick<SnippetList, 'description' | 'userName' | 'isOwner'>>;
+  Partial<Pick<SnippetList, 'description' | 'userName' | 'isOwner' | 'shortId'>>;
 
 /**
  * Snippet actions shared by list cards, the editor header, and the footer:
@@ -32,6 +33,16 @@ export class SnippetActionsService {
     } catch {
       this.snackbar.error('Failed to fork snippet');
     }
+  }
+
+  openForks(snippet: SnippetLike | Snippet) {
+    if (!snippet.shortId) return;
+    this.dialogService.open(ForksDialogComponent, 'md', {
+      data: {
+        shortId: snippet.shortId,
+        snippetName: snippet.name,
+      },
+    });
   }
 
   openComments(snippet: SnippetLike | Snippet) {

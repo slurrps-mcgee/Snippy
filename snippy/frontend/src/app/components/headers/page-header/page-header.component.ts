@@ -24,6 +24,7 @@ import { NavigationService } from '@app/services/ui/navigation.service';
 import { SnippetActionsService } from '@app/services/ui/snippet-actions.service';
 import { ForkAttributionComponent } from '@app/components/ui/fork-attribution/fork-attribution.component';
 import { SnippetStatBarComponent } from '@app/components/ui/snippet-stat-bar/snippet-stat-bar.component';
+import { DraftAutosaveService } from '@app/services/ui/draft-autosave.service';
 
 @Component({
   selector: 'app-page-header',
@@ -54,6 +55,7 @@ export class PageHeaderComponent implements OnInit {
   private dialogService = inject(DialogService);
   private navigation = inject(NavigationService);
   private snippetActions = inject(SnippetActionsService);
+  private drafts = inject(DraftAutosaveService);
 
   snippetStore = inject(SnippetStoreService);
   snippetSaveUI = inject(SnippetSaveUIService);
@@ -110,6 +112,13 @@ export class PageHeaderComponent implements OnInit {
   }
 
   login() {
+    if (this.editorUi.guestMode()) {
+      const snippet = this.snippetStore.snippet();
+      if (snippet) {
+        this.drafts.persistFromSnippet(this.drafts.keyFor({ guest: true }), snippet);
+      }
+      this.drafts.promoteTryToNew();
+    }
     const target = this.editorUi.guestMode() ? '/snippet' : '/home';
     this.auth0.loginWithRedirect({ appState: { target } });
   }
@@ -165,6 +174,12 @@ export class PageHeaderComponent implements OnInit {
       ...snippet,
       userName: snippet.userName || this.user()?.userName,
     });
+  }
+
+  openForks() {
+    const snippet = this.snippetStore.snippet();
+    if (!snippet?.shortId) return;
+    this.snippetActions.openForks(snippet);
   }
 
   forkSnippet() {

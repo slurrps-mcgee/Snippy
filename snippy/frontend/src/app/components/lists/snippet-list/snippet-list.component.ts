@@ -7,6 +7,8 @@ import { SnippetList } from '@app/api/generated/models/snippet-list';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 import { MatMenuModule } from '@angular/material/menu';
+import { RouterModule } from '@angular/router';
+import { MatTooltipModule } from '@angular/material/tooltip';
 import { NavigationService } from '@app/services/ui/navigation.service';
 import { SnippetActionsService } from '@app/services/ui/snippet-actions.service';
 import { FollowUiService } from '@app/services/ui/follow-ui.service';
@@ -30,6 +32,8 @@ import { SnippetStatBarComponent } from '@app/components/ui/snippet-stat-bar/sni
     ListPaginatorComponent,
     ForkAttributionComponent,
     SnippetStatBarComponent,
+    RouterModule,
+    MatTooltipModule,
   ],
   templateUrl: './snippet-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
@@ -51,11 +55,12 @@ export class SnippetListComponent {
   private followUi = inject(FollowUiService);
   private readonly brokenSnapshots = signal(new Set<string>());
 
-  snapshotFailed(shortId: string): boolean {
-    return this.brokenSnapshots().has(shortId);
+  snapshotFailed(shortId: string | undefined): boolean {
+    return !!shortId && this.brokenSnapshots().has(shortId);
   }
 
-  onSnapshotError(shortId: string): void {
+  onSnapshotError(shortId: string | undefined): void {
+    if (!shortId) return;
     this.brokenSnapshots.update((prev) => {
       const next = new Set(prev);
       next.add(shortId);
@@ -92,6 +97,11 @@ export class SnippetListComponent {
   commentOnSnippet(snippet: SnippetList, event?: Event) {
     event?.stopPropagation();
     this.snippetActions.openComments(snippet);
+  }
+
+  openForks(snippet: SnippetList, event?: Event) {
+    event?.stopPropagation();
+    this.snippetActions.openForks(snippet);
   }
 
   addToCollection(snippet: SnippetList, event?: Event) {

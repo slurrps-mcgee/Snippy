@@ -1,6 +1,6 @@
 import { Component, ElementRef, OnInit, ViewChild, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 
-import { MatDialogModule, MatDialogRef } from '@angular/material/dialog';
+import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
@@ -12,6 +12,12 @@ import { SnackbarService } from '@app/services/ui/snackbar.service';
 import { DialogService } from '@app/services/ui/dialog.service';
 import { Asset } from '@app/api/generated/models/asset';
 import { MinioStatusService } from '@app/services/ui/minio-status.service';
+import { EditorInsertService, EditorPane } from '@app/services/ui/editor-insert.service';
+import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
+
+export interface AssetsDialogData {
+  insertTarget?: EditorPane | null;
+}
 
 @Component({
   selector: 'app-assets-dialog',
@@ -29,11 +35,16 @@ import { MinioStatusService } from '@app/services/ui/minio-status.service';
 })
 export class AssetsDialogComponent implements OnInit {
   dialogRef = inject(MatDialogRef<AssetsDialogComponent>);
+  private data = inject<AssetsDialogData | null>(MAT_DIALOG_DATA, { optional: true });
 
   private api = inject(Api);
   private snackbarService = inject(SnackbarService);
   private dialogService = inject(DialogService);
+  private editorInsert = inject(EditorInsertService);
+  private snippetStore = inject(SnippetStoreService);
   readonly minioEnabled = inject(MinioStatusService).enabled;
+
+  readonly canInsert = !!this.data?.insertTarget;
 
   @ViewChild('fileInput') fileInput?: ElementRef<HTMLInputElement>;
 
@@ -85,10 +96,14 @@ export class AssetsDialogComponent implements OnInit {
   }
 
   deleteAsset(asset: Asset) {
+    const used = asset.usedInCount ?? 0;
+    const usageNote = used > 0
+      ? ` It is referenced in ${used} snippet file${used === 1 ? '' : 's'}.`
+      : '';
     return this.dialogService.confirmAndRun({
       confirm: {
         title: 'Delete Asset',
-        message: `Are you sure you want to delete "${asset.fileName}"? This action cannot be undone.`,
+        message: `Are you sure you want to delete "${asset.fileName}"?${usageNote} This action cannot be undone.`,
         confirmText: 'Delete',
         cancelText: 'Cancel',
       },
@@ -116,6 +131,40 @@ export class AssetsDialogComponent implements OnInit {
     } catch {
       this.snackbarService.error('Failed to copy URL');
     }
+  }
+
+  insertIntoEditor(asset: Asset) {
+    const pane = this.data?.insertTarget;
+    if (!pane || !asset.url) return;
+    const snippet = this.escapeAttr(asset.fileName || 'asset');
+    const url = asset.url;
+    let text = '';
+    if (pane === 'html') {
+      text = `<img src="${url}" alt="${snippet}">`;
+    } else if (pane === 'css') {
+      text = `url("${url}")`;
+    } else {
+      text = `"${url}"`;
+    }
+    const inserted = this.editorInsert.insertAtCursor(pane, text);
+    if (!inserted) {
+      const files = this.snippetStore.snippet()?.snippetFiles ?? [];
+      const file = files.find(f => f.fileType === pane);
+      const next = `${file?.content ?? ''}${file?.content ? '\n' : ''}${text}`;
+      this.snippetStore.updateSnippetFile(pane, next);
+    }
+    this.snackbarService.success(`Inserted into ${pane.toUpperCase()}`);
+    this.dialogRef.close(true);
+  }
+
+  usageLabel(asset: Asset): string {
+    const n = asset.usedInCount ?? 0;
+    if (n === 0) return 'Unused';
+    return `Used in ${n} file${n === 1 ? '' : 's'}`;
+  }
+
+  private escapeAttr(value: string): string {
+    return value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
   isImage(asset: Asset): boolean {

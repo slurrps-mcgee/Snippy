@@ -129,9 +129,15 @@ export class SnippetStoreService {
     );
   }
 
-  async loadPublicSnippets(page: number, limit: number, sort: SnippetSort = 'newest', q?: string) {
+  async loadPublicSnippets(
+    page: number,
+    limit: number,
+    sort: SnippetSort = 'newest',
+    q?: string,
+    tag?: string
+  ) {
     return this.runListLoad(
-      () => this.api.invoke(getPublicSnippets, { page, limit, sort, q }),
+      () => this.api.invoke(getPublicSnippets, { page, limit, sort, q, tag }),
       'Failed to load public snippets'
     );
   }
@@ -443,6 +449,12 @@ export class SnippetStoreService {
     if (updatePreview) {
       this.previewUpdateType.set('full');
     }
+  }
+
+  /** Overlay a restored draft without treating it as the saved original. */
+  applyDraft(drafted: Snippet) {
+    this.snippet.set(drafted);
+    this.previewUpdateType.set('full');
   }
 
   //#region Update Methods

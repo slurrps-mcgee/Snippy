@@ -7,4 +7,5 @@ export interface Asset {
   fileType?: string;
   objectKey?: string;
   url?: string;
+  usedInCount?: number;
 }

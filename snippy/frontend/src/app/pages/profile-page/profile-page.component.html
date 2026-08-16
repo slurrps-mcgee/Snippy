@@ -15,7 +15,7 @@
         [followingCount]="user.followingCount"
         [showStats]="true">
         <ng-container identityActions>
-          @if (!isSelf()) {
+          @if (!isSelf() && authStoreService.isAuthenticated()) {
           <button mat-raised-button [color]="user.isFollowing ? undefined : 'primary'" [disabled]="followLoading()"
             (click)="toggleFollow()">
             @if (followLoading()) {

@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
+import { DraftAutosaveService, DRAFT_NEW_KEY } from '@app/services/ui/draft-autosave.service';
 
 /**
  * Single place that knows Snippy's URL shapes, so components never hand-build
@@ -10,6 +11,7 @@ import { AuthStoreService } from '@app/services/stores/auth.store.service';
 export class NavigationService {
   private router = inject(Router);
   private authStore = inject(AuthStoreService);
+  private drafts = inject(DraftAutosaveService);
 
   toHome() {
     return this.router.navigate(['/home']);
@@ -20,7 +22,8 @@ export class NavigationService {
   }
 
   toNewSnippet() {
-    return this.router.navigate(['/snippet']);
+    this.drafts.remove(DRAFT_NEW_KEY);
+    return this.router.navigate(['/snippet'], { queryParams: { new: Date.now() } });
   }
 
   toProfile(userName: string | null | undefined) {

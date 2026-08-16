@@ -12,10 +12,13 @@ export class CommentMapper {
     static toDTO(comment: Comments, currentUserId?: string): CommentDTO {
         return {
             commentId: comment.commentId,
-            content: comment.content,
+            content: comment.isDeleted ? '' : comment.content,
             userName: (comment as any).user?.userName,
             displayName: (comment as any).user?.displayName,
             isOwner: AuthorizationService.isOwner(comment.auth0Id, currentUserId || ''),
+            parentId: comment.parentCommentId ?? null,
+            mentions: comment.mentions ?? [],
+            isDeleted: !!comment.isDeleted,
             createdAt: comment.createdAt,
             updatedAt: comment.updatedAt,
         };

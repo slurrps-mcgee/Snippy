@@ -11,12 +11,17 @@ export class SnippetMapper {
         parentShortId: string | null;
         parentName: string | null;
         parentUserName: string | null;
+        parentDeleted: boolean;
     } {
-        const parent = (snippet as any).parent as Snippets | undefined;
+        const parent = (snippet as any).parent as Snippets | null | undefined;
+        const liveName = parent?.name ?? null;
+        const liveUser = (parent as any)?.user?.userName ?? null;
+        const parentShortId = snippet.parentShortId ?? null;
         return {
-            parentShortId: snippet.parentShortId ?? null,
-            parentName: parent?.name ?? null,
-            parentUserName: (parent as any)?.user?.userName ?? null,
+            parentShortId,
+            parentName: liveName ?? snippet.parentName ?? null,
+            parentUserName: liveUser ?? snippet.parentUserName ?? null,
+            parentDeleted: !!parentShortId && parent === null,
         };
     }
 
@@ -78,6 +83,7 @@ export class SnippetMapper {
             commentCount: snippet.commentCount,
             favoriteCount: snippet.favoriteCount,
             viewCount: snippet.viewCount,
+            forkCount: snippet.forkCount,
             ...this.parentFields(snippet),
             isOwner,
             isFavorited: favoritedIds ? favoritedIds.has(snippet.snippetId) : undefined,

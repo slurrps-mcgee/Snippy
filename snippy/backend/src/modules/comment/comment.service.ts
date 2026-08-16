@@ -13,14 +13,24 @@ import {
     findCommentByCommentId,
     findCommentsBySnippetId,
     updateComment,
+    countReplies,
 } from "./comment.repo";
 import { decrementSnippetCommentCount, findBySnippetId, incrementSnippetCommentCount } from "../snippet/snippet.repo";
+import { findUserNamesByNames } from "../user/user.repo";
 
 /**
  * Protected fields that cannot be updated through the updateComment endpoint
  * These fields are system-managed and should not be modified by users
  */
-const PROTECTED_COMMENT_FIELDS = ['auth0Id', 'snippetId', 'commentId'] as const;
+const PROTECTED_COMMENT_FIELDS = ['auth0Id', 'snippetId', 'commentId', 'parentCommentId'] as const;
+
+const MENTION_RE = /@([A-Za-z0-9_-]{2,32})/g;
+
+async function resolveMentions(content: string, transaction?: any): Promise<string[]> {
+    const names = [...new Set([...content.matchAll(MENTION_RE)].map((m) => m[1]))].slice(0, 10);
+    if (!names.length) return [];
+    return findUserNamesByNames(names, transaction);
+}
 
 export async function addCommentHandler(payload: ServicePayload<CreateCommentRequest, { snippetId: string }>): Promise<ServiceResponse<CommentDTO>> {
     try {
@@ -45,11 +55,32 @@ export async function addCommentHandler(payload: ServicePayload<CreateCommentReq
         }
 
         return await executeInTransaction(async (t) => {
+            let parentCommentId: string | null = null;
+            const parentId = payload.body?.parentId;
+            if (parentId) {
+                const parent = await findCommentByCommentId(parentId, t);
+                if (!parent || parent.snippetId !== snippet.snippetId) {
+                    throw new CustomError('Parent comment not found', 404);
+                }
+                if (parent.parentCommentId) {
+                    throw new CustomError('Replies can only be one level deep', 400);
+                }
+                parentCommentId = parent.commentId;
+            }
+
+            const body = payload.body;
+            if (!body?.content) {
+                throw new CustomError('Comment content required', 400);
+            }
+            const mentions = await resolveMentions(body.content, t);
+
             const createdComment = await createComment(
                 {
                     auth0Id,
-                    ...payload.body,
-                    snippetId: snippet.snippetId
+                    content: body.content,
+                    snippetId: snippet.snippetId,
+                    parentCommentId,
+                    mentions,
                 }, t);
 
             await incrementSnippetCommentCount(snippet.snippetId, t);
@@ -140,8 +171,13 @@ export async function deleteCommentHandler(payload: ServicePayload<unknown, { co
                 throw new CustomError('Forbidden: not comment or snippet owner', 403);
             }
 
-            await deleteComment(commentId, t);
-            await decrementSnippetCommentCount(comment.snippetId, t);
+            const replyCount = await countReplies(comment.commentId, t);
+            if (replyCount > 0) {
+                await updateComment(commentId, { isDeleted: true, content: '' } as any, t);
+            } else {
+                await deleteComment(commentId, t);
+                await decrementSnippetCommentCount(comment.snippetId, t);
+            }
 
             return { message: 'Comment deleted successfully' };
         });

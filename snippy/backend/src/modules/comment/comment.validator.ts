@@ -4,6 +4,7 @@ import { sanitizeInput } from '../../common/utilities/sanitizer';
 
 const createCommentSchema = Joi.object({
     content: Joi.string().min(1).max(2000).required(),
+    parentId: Joi.string().uuid().optional(),
 });
 
 export const validateCreateComment = (payload: any): void => {
