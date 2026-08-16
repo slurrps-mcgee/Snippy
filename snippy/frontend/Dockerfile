@@ -14,7 +14,7 @@ COPY . .
 RUN npm run build -- --configuration=production
 
 # Step 2 Use nginx to serve the application
-FROM nginx:1.27-alpine
+FROM nginx:1.31-alpine
 
 # Install curl for health checks
 RUN apk add --no-cache curl
