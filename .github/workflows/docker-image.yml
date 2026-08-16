@@ -50,7 +50,7 @@ jobs:
         echo "Using MinIO version: $MINIO_VERSION"
 
     - name: Build and push API image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ./snippy/backend
         file: ./snippy/backend/Dockerfile
@@ -60,7 +60,7 @@ jobs:
           kennyl777/snippy-api:latest
 
     - name: Build and push DB image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ./snippy/db
         file: ./snippy/db/Dockerfile
@@ -70,7 +70,7 @@ jobs:
           kennyl777/snippy-db:latest
 
     - name: Build and push FrontEnd image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ./snippy/frontend
         file: ./snippy/frontend/Dockerfile
@@ -80,7 +80,7 @@ jobs:
           kennyl777/snippy-frontend:latest
 
     - name: Build and push MinIO image
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v7
       with:
         context: ./snippy/minio
         file: ./snippy/minio/Dockerfile
