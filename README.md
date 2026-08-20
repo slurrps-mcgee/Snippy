@@ -554,7 +554,7 @@ Current version sources:
 Snippy/
 ├── docker-compose.yml                 # Local development only
 ├── docker-compose.prod.example.yml    # Production pull-from-Hub example
-├── .github/workflows/ci.yml           # tsc, vitest, npm audit
+├── .github/workflows/ci.yml           # format, tsc, OpenAPI drift, build, vitest, npm audit
 ├── .github/workflows/docker-image.yml # Build & push Hub images
 ├── LICENSE                            # MIT
 ├── README.md
