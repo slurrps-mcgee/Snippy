@@ -1,23 +1,23 @@
 import { NextFunction, Request, Response } from 'express';
 import {
-    createSnippetHandler,
-    deleteSnippetHandler,
-    forkSnippetHandler,
-    getAllPublicSnippetsHandler,
-    getUserPublicSnippetsHandler,
-    getMySnippetsHandler,
-    getSnippetByShortIdHandler,
-    updateSnippetHandler,
-    updateSnippetViewCountHandler,
-    searchSnippetsHandler,
-    getFeedSnippetsHandler,
-    getSnippetEmbedHtmlHandler,
-    uploadSnippetSnapshotHandler,
-    getSnippetByShareTokenHandler,
-    createSnippetShareLinkHandler,
-    revokeSnippetShareLinkHandler,
-    getSnippetForksHandler,
-} from "./snippet.service";
+  createSnippetHandler,
+  deleteSnippetHandler,
+  forkSnippetHandler,
+  getAllPublicSnippetsHandler,
+  getUserPublicSnippetsHandler,
+  getMySnippetsHandler,
+  getSnippetByShortIdHandler,
+  updateSnippetHandler,
+  updateSnippetViewCountHandler,
+  searchSnippetsHandler,
+  getFeedSnippetsHandler,
+  getSnippetEmbedHtmlHandler,
+  uploadSnippetSnapshotHandler,
+  getSnippetByShareTokenHandler,
+  createSnippetShareLinkHandler,
+  revokeSnippetShareLinkHandler,
+  getSnippetForksHandler,
+} from './snippet.service';
 import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validator';
 import multer from 'multer';
 import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from '../asset/dto/asset.dto';
@@ -57,15 +57,19 @@ import { CustomError } from '../../common/exceptions/custom-error';
  *       '400':
  *         description: Validation error
  */
-export async function createSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateCreateSnippet(req.body);
+export async function createSnippet(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    validateCreateSnippet(req.body);
 
-        const { snippet } = await createSnippetHandler(req);
-        res.status(201).json({ success: true, snippet });
-    } catch (error) {
-        next(error);
-    }
+    const { snippet } = await createSnippetHandler(req);
+    res.status(201).json({ success: true, snippet });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -104,15 +108,19 @@ export async function createSnippet(req: Request, res: Response, next: NextFunct
  *       '404':
  *         description: Not found
  */
-export async function updateSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateUpdateSnippet(req.body);
+export async function updateSnippet(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    validateUpdateSnippet(req.body);
 
-        const { snippet } = await updateSnippetHandler(req);
-        res.status(200).json({ success: true, snippet });
-    } catch (error) {
-        next(error);
-    }
+    const { snippet } = await updateSnippetHandler(req);
+    res.status(200).json({ success: true, snippet });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -136,13 +144,17 @@ export async function updateSnippet(req: Request, res: Response, next: NextFunct
  *       '404':
  *         description: Not found
  */
-export async function deleteSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        await deleteSnippetHandler(req);
-        res.status(204).end();
-    } catch (error) {
-        next(error);
-    }
+export async function deleteSnippet(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    await deleteSnippetHandler(req);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
 }
 
 const snapshotUpload = multer({
@@ -200,7 +212,6 @@ export const uploadSnippetSnapshot = [
   },
 ];
 
-
 /**
  * @swagger
  * /snippets/fork:
@@ -226,12 +237,12 @@ export const uploadSnippetSnapshot = [
  *         description: Not found
  */
 export async function forkSnippet(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippet } = await forkSnippetHandler(req);
-        res.status(201).json({ success: true, snippet });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    const { snippet } = await forkSnippetHandler(req);
+    res.status(201).json({ success: true, snippet });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -253,13 +264,17 @@ export async function forkSnippet(req: Request, res: Response, next: NextFunctio
  *       '200':
  *         description: Public snippets list
  */
-export async function getPublicSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await getAllPublicSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function getPublicSnippets(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await getAllPublicSnippetsHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -281,13 +296,17 @@ export async function getPublicSnippets(req: Request, res: Response, next: NextF
  *       '200':
  *         description: User's snippets
  */
-export async function getCurrentUserSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await getMySnippetsHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function getCurrentUserSnippets(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await getMySnippetsHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -309,33 +328,45 @@ export async function getCurrentUserSnippets(req: Request, res: Response, next: 
  *       '200':
  *         description: Search results
  */
-export async function searchSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await searchSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function searchSnippets(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await searchSnippetsHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export async function getFeedSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await getFeedSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function getFeedSnippets(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await getFeedSnippetsHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export async function getSnippetEmbed(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const html = await getSnippetEmbedHtmlHandler(req);
-        res.removeHeader('X-Frame-Options');
-        res.setHeader('Content-Security-Policy', "frame-ancestors *");
-        res.type('html').status(200).send(html);
-    } catch (error) {
-        next(error);
-    }
+export async function getSnippetEmbed(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const html = await getSnippetEmbedHtmlHandler(req);
+    res.removeHeader('X-Frame-Options');
+    res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+    res.type('html').status(200).send(html);
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -359,22 +390,30 @@ export async function getSnippetEmbed(req: Request, res: Response, next: NextFun
  *       '404':
  *         description: Not found
  */
-export async function getSnippetByShortId(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippet } = await getSnippetByShortIdHandler(req);
-        res.status(200).json({ success: true, snippet });
-    } catch (error) {
-        next(error);
-    }
+export async function getSnippetByShortId(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippet } = await getSnippetByShortIdHandler(req);
+    res.status(200).json({ success: true, snippet });
+  } catch (error) {
+    next(error);
+  }
 }
 
-export async function getSnippetForks(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await getSnippetForksHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function getSnippetForks(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await getSnippetForksHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -403,13 +442,17 @@ export async function getSnippetForks(req: Request, res: Response, next: NextFun
  *       '404':
  *         description: Not found
  */
-export async function getUserPublicSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await getUserPublicSnippetsHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function getUserPublicSnippets(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await getUserPublicSnippetsHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -432,13 +475,17 @@ export async function getUserPublicSnippets(req: Request, res: Response, next: N
  *       '200':
  *         description: Current view count; counted indicates whether this request incremented it
  */
-export async function updateSnippetViewCount(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { viewCount, counted } = await updateSnippetViewCountHandler(req);
-        res.status(200).json({ success: true, viewCount, counted });
-    } catch (error) {
-        next(error);
-    }
+export async function updateSnippetViewCount(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { viewCount, counted } = await updateSnippetViewCountHandler(req);
+    res.status(200).json({ success: true, viewCount, counted });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -459,13 +506,17 @@ export async function updateSnippetViewCount(req: Request, res: Response, next: 
  *       '404':
  *         description: Unknown token
  */
-export async function getSnippetByShareToken(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippet } = await getSnippetByShareTokenHandler(req);
-        res.status(200).json({ success: true, snippet });
-    } catch (error) {
-        next(error);
-    }
+export async function getSnippetByShareToken(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippet } = await getSnippetByShareTokenHandler(req);
+    res.status(200).json({ success: true, snippet });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -480,13 +531,17 @@ export async function getSnippetByShareToken(req: Request, res: Response, next: 
  *       '200':
  *         description: Share token
  */
-export async function createSnippetShareLink(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { shareToken } = await createSnippetShareLinkHandler(req);
-        res.status(200).json({ success: true, shareToken });
-    } catch (error) {
-        next(error);
-    }
+export async function createSnippetShareLink(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { shareToken } = await createSnippetShareLinkHandler(req);
+    res.status(200).json({ success: true, shareToken });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -501,11 +556,15 @@ export async function createSnippetShareLink(req: Request, res: Response, next: 
  *       '204':
  *         description: Revoked
  */
-export async function revokeSnippetShareLink(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        await revokeSnippetShareLinkHandler(req);
-        res.status(204).end();
-    } catch (error) {
-        next(error);
-    }
+export async function revokeSnippetShareLink(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    await revokeSnippetShareLinkHandler(req);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
 }

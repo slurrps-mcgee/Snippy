@@ -1,4 +1,11 @@
-import { Component, computed, inject, ChangeDetectionStrategy, ViewChild, ElementRef } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  ChangeDetectionStrategy,
+  ViewChild,
+  ElementRef,
+} from '@angular/core';
 
 import { RouterLink } from '@angular/router';
 import { MatButtonModule } from '@angular/material/button';
@@ -6,7 +13,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import JSZip from 'jszip';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
-import { AssetsDialogComponent, AssetsDialogData } from '@app/components/dialogs/assets-dialog/assets-dialog.component';
+import {
+  AssetsDialogComponent,
+  AssetsDialogData,
+} from '@app/components/dialogs/assets-dialog/assets-dialog.component';
 import { EmbedDialogComponent } from '@app/components/dialogs/embed-dialog/embed-dialog.component';
 import { ShareLinkDialogComponent } from '@app/components/dialogs/share-link-dialog/share-link-dialog.component';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
@@ -43,13 +53,9 @@ export class FooterComponent {
 
   readonly isGuest = computed(() => this.editorUi.guestMode());
 
-  readonly hasSavedSnippet = computed(
-    () => !!this.snippetStoreService.snippet()?.snippetId
-  );
+  readonly hasSavedSnippet = computed(() => !!this.snippetStoreService.snippet()?.snippetId);
 
-  readonly isOwner = computed(
-    () => !!this.snippetStoreService.snippet()?.isOwner
-  );
+  readonly isOwner = computed(() => !!this.snippetStoreService.snippet()?.isOwner);
 
   openAssets() {
     this.dialogService.open<AssetsDialogComponent, AssetsDialogData>(AssetsDialogComponent, 'lg', {
@@ -81,19 +87,19 @@ export class FooterComponent {
 
     const zip = new JSZip();
     const files = snippet.snippetFiles ?? [];
-    const html = files.find(f => f.fileType === 'html')?.content ?? '';
-    const css = files.find(f => f.fileType === 'css')?.content ?? '';
-    const js = files.find(f => f.fileType === 'js')?.content ?? '';
+    const html = files.find((f) => f.fileType === 'html')?.content ?? '';
+    const css = files.find((f) => f.fileType === 'css')?.content ?? '';
+    const js = files.find((f) => f.fileType === 'js')?.content ?? '';
     const cdnResources = snippet.cdnResources ?? [];
 
     const stylesheets = cdnResources
-      .filter(res => res.resourceType === 'css')
-      .map(res => `<link rel="stylesheet" href="${res.url}">`)
+      .filter((res) => res.resourceType === 'css')
+      .map((res) => `<link rel="stylesheet" href="${res.url}">`)
       .join('\n  ');
 
     const scripts = cdnResources
-      .filter(res => res.resourceType === 'js')
-      .map(res => `<script src="${res.url}"><\/script>`)
+      .filter((res) => res.resourceType === 'js')
+      .map((res) => `<script src="${res.url}"><\/script>`)
       .join('\n  ');
 
     const title = (snippet.name || 'snippet')
@@ -119,10 +125,7 @@ ${html}
     zip.file('index.html', indexHtml);
     zip.file('style.css', css);
     zip.file('script.js', js);
-    zip.file(
-      'README.txt',
-      `Snippy export: ${snippet.name}\n${snippet.description || ''}\n`
-    );
+    zip.file('README.txt', `Snippy export: ${snippet.name}\n${snippet.description || ''}\n`);
 
     const blob = await zip.generateAsync({ type: 'blob' });
     const url = URL.createObjectURL(blob);

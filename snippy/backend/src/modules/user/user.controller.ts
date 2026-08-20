@@ -1,12 +1,12 @@
 import { NextFunction, Request, Response } from 'express';
-import { 
-    checkUserNameAvailabilityHandler, 
-    deleteUserHandler, 
-    ensureUserHandler, 
-    getCurrentUserHandler, 
-    getUserProfileHandler, 
-    updateProfilePictureHandler,
-    updateUserHandler 
+import {
+  checkUserNameAvailabilityHandler,
+  deleteUserHandler,
+  ensureUserHandler,
+  getCurrentUserHandler,
+  getUserProfileHandler,
+  updateProfilePictureHandler,
+  updateUserHandler,
 } from './user.service';
 import { validateRegister, validateUpdateUser } from './user.validator';
 import multer from 'multer';
@@ -40,17 +40,17 @@ import { CustomError } from '../../common/exceptions/custom-error';
  *         description: Validation error
  */
 export async function ensureUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateRegister(req.body);
+  try {
+    validateRegister(req.body);
 
-        const result = await ensureUserHandler(req);
-        const status = result?.created ? 201 : 200;
-        const user = result?.user;
+    const result = await ensureUserHandler(req);
+    const status = result?.created ? 201 : 200;
+    const user = result?.user;
 
-        res.status(status).json({ success: true, user });
-    } catch (error) {
-        next(error);
-    }
+    res.status(status).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -85,15 +85,15 @@ export async function ensureUser(req: Request, res: Response, next: NextFunction
  *         description: Unauthorized
  */
 export async function updateUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateUpdateUser(req.body);
+  try {
+    validateUpdateUser(req.body);
 
-        const { user } = await updateUserHandler(req);
+    const { user } = await updateUserHandler(req);
 
-        res.status(200).json({ success: true, user });
-    } catch (error) {
-        next(error);
-    }
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -112,12 +112,12 @@ export async function updateUser(req: Request, res: Response, next: NextFunction
  *         description: Unauthorized
  */
 export async function deleteUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        await deleteUserHandler(req);
-        res.status(204).end();
-    } catch (error) {
-        next(error);
-    }
+  try {
+    await deleteUserHandler(req);
+    res.status(204).end();
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -141,13 +141,17 @@ export async function deleteUser(req: Request, res: Response, next: NextFunction
  *       '404':
  *         description: Not found
  */
-export async function getUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { user } = await getUserProfileHandler(req);
-        res.status(200).json({ success: true, user });
-    } catch (error) {
-        next(error);
-    }
+export async function getUserProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { user } = await getUserProfileHandler(req);
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -165,13 +169,17 @@ export async function getUserProfile(req: Request, res: Response, next: NextFunc
  *       '401':
  *         description: Unauthorized
  */
-export async function getCurrentUserProfile(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { user } = await getCurrentUserHandler(req);
-        res.status(200).json({ success: true, user });
-    } catch (error) {
-        next(error);
-    }
+export async function getCurrentUserProfile(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { user } = await getCurrentUserHandler(req);
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -200,13 +208,17 @@ export async function getCurrentUserProfile(req: Request, res: Response, next: N
  *                 available:
  *                   type: boolean
  */
-export async function checkUsername(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { available } = await checkUserNameAvailabilityHandler(req);
-        res.status(200).json({ success: true, available });
-    } catch (error) {
-        next(error);
-    }
+export async function checkUsername(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { available } = await checkUserNameAvailabilityHandler(req);
+    res.status(200).json({ success: true, available });
+  } catch (error) {
+    next(error);
+  }
 }
 
 const pictureUpload = multer({
@@ -257,4 +269,3 @@ export const updateProfilePicture = [
     }
   },
 ];
-

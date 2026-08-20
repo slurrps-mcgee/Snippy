@@ -14,6 +14,7 @@ Snippy is an open-source [CodePen](https://codepen.io/)-style app for writing, p
 - [Auth0 setup](#auth0-setup)
 - [Environment variables](#environment-variables)
 - [Local development (testing)](#local-development-testing)
+- [Before a merge request](#before-a-merge-request)
 - [Production deployment (Docker Hub)](#production-deployment-docker-hub)
 - [Nginx Proxy Manager setup](#nginx-proxy-manager-setup)
 - [Updating production images](#updating-production-images)
@@ -79,6 +80,7 @@ Coming soon (UI may show placeholders):
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose v2 (`docker compose`)
+- [Node.js](https://nodejs.org/) 22+ and npm 10+ (for root scripts: format, generate OpenAPI, `check:all`)
 - A terminal and basic familiarity with Docker
 - An [Auth0](https://auth0.com/) free account (required for login)
 - For production behind a domain: something that terminates TLS (this repo documents [Nginx Proxy Manager](#nginx-proxy-manager-setup) + Portainer, which is optional but recommended)
@@ -312,6 +314,8 @@ docker compose down
 docker compose down -v
 ```
 
+Root npm scripts for format, OpenAPI, and CI parity: [Before a merge request](#before-a-merge-request).
+
 ### Optional: enable MinIO locally
 
 1. Uncomment the `minio` and `minio-init` services (and `minio_data` volume) in `docker-compose.yml`.
@@ -332,6 +336,55 @@ docker build -f snippy/minio/Dockerfile snippy/minio
 ```
 
 Prefer [Production deployment](#production-deployment-docker-hub) with published Hub tags for a full runtime test.
+
+---
+
+## Before a merge request
+
+The root [`package.json`](./package.json) wraps backend and frontend scripts so you can format, regenerate the OpenAPI client, and run the same checks as [`.github/workflows/ci.yml`](.github/workflows/ci.yml) before you open a PR.
+
+Install package dependencies once (CI does `npm ci` in each folder):
+
+```bash
+npm ci --prefix snippy/backend
+npm ci --prefix snippy/frontend
+```
+
+**Prepare** (writes files — commit what you intend to land):
+
+```bash
+npm run format:all      # Prettier on backend + frontend
+npm run generate:api    # Dump OpenAPI spec + regenerate SPA client
+```
+
+Run `generate:api` when routes, DTOs, or `openapi-definition.ts` changed. Commit both `openapi.json` files and `snippy/frontend/src/app/api/generated/`.
+
+**Verify** (must pass before you open the PR — this is what CI runs):
+
+```bash
+npm run check:all
+```
+
+`check:all` stops on the first failure. It runs, in CI order:
+
+| Step | Script | What it does |
+|---|---|---|
+| Audit | `check:audit` | `npm audit --audit-level=high` in backend and frontend |
+| Format | `check:format` | Prettier check (does not write) |
+| Types | `check:types` | `tsc --noEmit` (backend) and `tsc -p tsconfig.app.json` (frontend) |
+| OpenAPI | `check:openapi` | Regenerates spec + client, then `git diff --exit-code` |
+| Build | `check:build` | Backend `tsc` build and frontend production `ng build` |
+| Tests | `check:test` | Backend Vitest (`npm test`) |
+
+Other root scripts:
+
+| Script | Purpose |
+|---|---|
+| `npm run dev:backend` / `dev:frontend` | Run API or Angular outside Docker |
+| `npm run build:backend` / `build:frontend` | Build one package |
+| `npm run test:all` | Backend Vitest **and** frontend Karma (not in CI; Karma may need a browser) |
+| `npm run docker:compose:up` | `docker compose build && up` |
+| `npm run docker:compose:clear` | Wipe volumes, rebuild, and start |
 
 ---
 
@@ -552,6 +605,7 @@ Current version sources:
 
 ```text
 Snippy/
+├── package.json                       # Root scripts: format:all, generate:api, check:all
 ├── docker-compose.yml                 # Local development only
 ├── docker-compose.prod.example.yml    # Production pull-from-Hub example
 ├── .github/workflows/ci.yml           # format, tsc, OpenAPI drift, build, vitest, npm audit
@@ -579,7 +633,7 @@ Snippy/
 | [documentation/frontend.md](./documentation/frontend.md) | Angular architecture, editor preferences, themes how-to, embed player |
 | [documentation/backend.md](./documentation/backend.md) | API layers, auth, `PUT /users` + `editorPreferences` |
 | [documentation/db.md](./documentation/db.md) | Schema (including `users.editor_preferences`) |
-| [documentation/openapi.json](./documentation/openapi.json) | Exported OpenAPI snapshot (`npm run openapi:export` in `snippy/backend`; also copied to `snippy/frontend/src/app/api/openapi.json`). SPA client: `npm run openapi:generate` |
+| [documentation/openapi.json](./documentation/openapi.json) | Exported OpenAPI snapshot. From the repo root: `npm run generate:api` (dumps spec + generates the SPA client) |
 | [documentation/frontend-test-plan.md](./documentation/frontend-test-plan.md) | Manual QA checklist |
 
 In-app legal pages (when the frontend is running):

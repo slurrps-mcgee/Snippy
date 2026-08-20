@@ -18,7 +18,7 @@ export interface ImportedPen {
 export class ZipImportService {
   async importFile(file: File): Promise<ImportedPen> {
     const zip = await JSZip.loadAsync(file);
-    const entries = Object.values(zip.files).filter(e => !e.dir);
+    const entries = Object.values(zip.files).filter((e) => !e.dir);
     if (entries.length > MAX_FILES) {
       throw new Error('ZIP has too many files');
     }
@@ -63,7 +63,12 @@ export class ZipImportService {
     ];
   }
 
-  private extractFromHtml(html: string): { body: string; style: string; script: string; cdn: CdnResource[] } {
+  private extractFromHtml(html: string): {
+    body: string;
+    style: string;
+    script: string;
+    cdn: CdnResource[];
+  } {
     const cdn: CdnResource[] = [];
     const linkRe = /<link[^>]+href=["']([^"']+)["'][^>]*>/gi;
     const scriptRe = /<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi;

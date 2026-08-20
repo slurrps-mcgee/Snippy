@@ -25,9 +25,7 @@ export const retryInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  return defer(() =>
-    from(defaultPolicy.execute(() => lastValueFrom(next(request.clone()))))
-  );
+  return defer(() => from(defaultPolicy.execute(() => lastValueFrom(next(request.clone())))));
 };
 
 /** MinIO-backed routes: no retry on 503 (latched off). */
@@ -36,7 +34,5 @@ export const minioRetryInterceptor: HttpInterceptorFn = (request, next) => {
     return next(request);
   }
 
-  return defer(() =>
-    from(minioPolicy.execute(() => lastValueFrom(next(request.clone()))))
-  );
+  return defer(() => from(minioPolicy.execute(() => lastValueFrom(next(request.clone())))));
 };

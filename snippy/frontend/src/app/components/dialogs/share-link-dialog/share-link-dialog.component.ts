@@ -16,22 +16,27 @@ import { SnackbarService } from '@app/services/ui/snackbar.service';
     <h2 mat-dialog-title>Secret share link</h2>
     <mat-dialog-content>
       <p class="text-sm text-slate-300">
-        Anyone with this link can open the pen, even if it is private. They cannot edit or save unless they fork it.
+        Anyone with this link can open the pen, even if it is private. They cannot edit or save
+        unless they fork it.
       </p>
       @if (url()) {
-      <p class="mt-4 break-all rounded-md bg-white/5 px-3 py-2 text-sm">{{ url() }}</p>
+        <p class="mt-4 break-all rounded-md bg-white/5 px-3 py-2 text-sm">{{ url() }}</p>
       } @else {
-      <p class="mt-4 text-sm text-slate-400">No share link yet.</p>
+        <p class="mt-4 text-sm text-slate-400">No share link yet.</p>
       }
     </mat-dialog-content>
     <mat-divider></mat-divider>
     <mat-dialog-actions align="end">
       <button mat-button type="button" (click)="dialogRef.close()">Close</button>
       @if (url()) {
-      <button mat-button type="button" (click)="copy()">Copy</button>
-      <button mat-button type="button" color="warn" [disabled]="busy()" (click)="revoke()">Revoke</button>
+        <button mat-button type="button" (click)="copy()">Copy</button>
+        <button mat-button type="button" color="warn" [disabled]="busy()" (click)="revoke()">
+          Revoke
+        </button>
       } @else {
-      <button mat-raised-button color="primary" [disabled]="busy()" (click)="create()">Create link</button>
+        <button mat-raised-button color="primary" [disabled]="busy()" (click)="create()">
+          Create link
+        </button>
       }
     </mat-dialog-actions>
   `,

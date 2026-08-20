@@ -119,9 +119,8 @@ Use **collection** (`modules/collection/`) as the canonical full module. Follow 
 **OpenAPI / SPA — required when the HTTP contract changes** (new paths, methods, query/path params, bodies, status codes, DTO fields, `operationId`s):
 
 1. Update [`openapi-definition.ts`](../snippy/backend/src/common/utilities/openapi-definition.ts) (`components.schemas` + `paths`) to match DTOs/mappers. Mark public GETs `security: []`. Controller `@swagger` JSDoc is **not** the spec (`swagger-jsdoc` is unused).
-2. From `snippy/backend`: `npm run openapi:export`
-3. From `snippy/frontend`: `npm run openapi:generate`
-4. Commit both `openapi.json` files and `frontend/src/app/api/generated/`
+2. From the repo root: `npm run generate:api` (dumps the spec, then runs `ng-openapi-gen`)
+3. Commit both `openapi.json` files and `frontend/src/app/api/generated/`
 
 Skip export/generate only when handler/SQL change and the JSON/routes/`operationId`s are unchanged. The SPA never imports backend TypeScript DTOs.
 
@@ -130,8 +129,7 @@ entity + migration
   → dto / validator / repo / service / controller / routes
   → routes.ts + optional JWT
   → openapi-definition.ts
-  → npm run openapi:export
-  → npm run openapi:generate
+  → npm run generate:api
 ```
 
 ---
@@ -1021,23 +1019,15 @@ The spec source of truth is [`openapi-definition.ts`](../snippy/backend/src/comm
 After you change routes, request/response shapes, or `operationId`s:
 
 1. Update `openapi-definition.ts` (and the matching DTOs/mappers).
-2. From `snippy/backend`:
+2. From the **repo root**:
 
 ```bash
-npm run openapi:export
+npm run generate:api
 ```
 
-Writes [`documentation/openapi.json`](./openapi.json) and copies the same JSON to [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json).
+Dumps [`documentation/openapi.json`](./openapi.json) and copies the same JSON to [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json), then runs `ng-openapi-gen` into [`snippy/frontend/src/app/api/generated/`](../snippy/frontend/src/app/api/generated/) (`fn/`, models, `Api.invoke`).
 
-3. From `snippy/frontend`:
-
-```bash
-npm run openapi:generate
-```
-
-Runs `ng-openapi-gen` into [`snippy/frontend/src/app/api/generated/`](../snippy/frontend/src/app/api/generated/) (`fn/`, models, `Api.invoke`).
-
-4. Commit **both** `openapi.json` files **and** `src/app/api/generated/`. Do not generate during `ng serve`; Docker / `ng build` use the committed client.
+3. Commit **both** `openapi.json` files **and** `src/app/api/generated/`. Do not generate during `ng serve`; Docker / `ng build` use the committed client.
 
 If you only changed handler logic and the JSON contract is unchanged, skip export/generate. SPA-side detail: [frontend contracts](./frontend.md#contracts-spa-vs-api).
 

@@ -41,7 +41,10 @@ export class NavigationService {
     return this.router.navigate(['/', owner, 'snippet', shortId]);
   }
 
-  toParentSnippet(parentShortId: string | null | undefined, parentUserName: string | null | undefined) {
+  toParentSnippet(
+    parentShortId: string | null | undefined,
+    parentUserName: string | null | undefined
+  ) {
     if (!parentShortId || !parentUserName) return Promise.resolve(false);
     return this.router.navigate(['/', parentUserName, 'snippet', parentShortId]);
   }

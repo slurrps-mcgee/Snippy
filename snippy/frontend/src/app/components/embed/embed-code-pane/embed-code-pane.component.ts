@@ -21,10 +21,7 @@ import { html } from '@codemirror/lang-html';
 import { css } from '@codemirror/lang-css';
 import { javascript } from '@codemirror/lang-javascript';
 import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
-import {
-  baseEditorExtensions,
-  buildPreferenceExtensions,
-} from '@app/editor/codemirror-extensions';
+import { baseEditorExtensions, buildPreferenceExtensions } from '@app/editor/codemirror-extensions';
 import { EditorPreferences } from '@app/editor/editor-preferences';
 
 @Component({
@@ -88,9 +85,7 @@ export class EmbedCodePaneComponent implements AfterViewInit, OnChanges, OnDestr
 
     if (changes['editable'] && !changes['editable'].firstChange) {
       this.view.dispatch({
-        effects: this.readOnlyCompartment.reconfigure(
-          EditorState.readOnly.of(!this.editable)
-        ),
+        effects: this.readOnlyCompartment.reconfigure(EditorState.readOnly.of(!this.editable)),
       });
     }
 
@@ -142,7 +137,7 @@ export class EmbedCodePaneComponent implements AfterViewInit, OnChanges, OnDestr
           this.prefsCompartment.of(buildPreferenceExtensions(prefs)),
           this.languageExtension(),
           this.readOnlyCompartment.of(EditorState.readOnly.of(!this.editable)),
-          EditorView.updateListener.of(update => {
+          EditorView.updateListener.of((update) => {
             if (!update.docChanged || this.suppressEmit || !this.editable) return;
             this.contentChange.emit(update.state.doc.toString());
           }),

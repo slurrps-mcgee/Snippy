@@ -21,19 +21,19 @@ import { Assets } from './asset.entity';
   indexes: [
     {
       name: 'idx_users_username',
-      fields: ['user_name']
+      fields: ['user_name'],
     },
     {
       name: 'idx_users_display_name',
-      fields: ['display_name']
-    }
-  ]
+      fields: ['display_name'],
+    },
+  ],
 })
 export class Users extends Model<Users> {
   @PrimaryKey
   @Column({
     field: 'auth0_id',
-    type: DataType.STRING
+    type: DataType.STRING,
   })
   auth0Id!: string;
 
@@ -41,7 +41,7 @@ export class Users extends Model<Users> {
     field: 'user_name',
     type: DataType.STRING,
     allowNull: false,
-    unique: true
+    unique: true,
   })
   userName!: string;
 
@@ -72,7 +72,7 @@ export class Users extends Model<Users> {
     field: 'is_admin',
     type: DataType.BOOLEAN,
     allowNull: false,
-    defaultValue: false
+    defaultValue: false,
   })
   /** Unused / reserved — not exposed on UserDTO. */
   isAdmin!: boolean;
@@ -81,7 +81,7 @@ export class Users extends Model<Users> {
     field: 'is_private',
     type: DataType.BOOLEAN,
     allowNull: false,
-    defaultValue: false
+    defaultValue: false,
   })
   isPrivate!: boolean;
 

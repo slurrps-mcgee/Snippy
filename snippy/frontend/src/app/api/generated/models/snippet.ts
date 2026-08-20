@@ -15,10 +15,10 @@ export interface Snippet {
   isOwner?: boolean;
   isPrivate?: boolean;
   name?: string;
+  parentDeleted?: boolean;
   parentName?: string | null;
   parentShortId?: string | null;
   parentUserName?: string | null;
-  parentDeleted?: boolean;
   shareToken?: string | null;
   shortId?: string;
   snapshotUrl?: string | null;

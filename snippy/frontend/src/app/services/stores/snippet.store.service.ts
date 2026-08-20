@@ -213,9 +213,9 @@ export class SnippetStoreService {
     this.error.set(null);
     try {
       await this.api.invoke(deleteSnippet, { snippetId });
-      this.snippetList.update(list => {
+      this.snippetList.update((list) => {
         if (!list) return list;
-        const snippets = (list.snippets ?? []).filter(s => s.snippetId !== snippetId);
+        const snippets = (list.snippets ?? []).filter((s) => s.snippetId !== snippetId);
         return {
           ...list,
           snippets,
@@ -241,22 +241,24 @@ export class SnippetStoreService {
           isFavorited: response.isFavorited,
         });
         if (!response.isFavorited) {
-          this.favoritesList.update(list => {
+          this.favoritesList.update((list) => {
             if (!list) return list;
             return {
               ...list,
-              snippets: (list.snippets ?? []).filter(item => item.snippetId !== snippetId),
+              snippets: (list.snippets ?? []).filter((item) => item.snippetId !== snippetId),
               totalCount: Math.max(0, (list.totalCount ?? 0) - 1),
             };
           });
         } else {
-          const existing = this.favoritesList()?.snippets?.some(item => item.snippetId === snippetId);
+          const existing = this.favoritesList()?.snippets?.some(
+            (item) => item.snippetId === snippetId
+          );
           if (existing) {
-            this.favoritesList.update(list => {
+            this.favoritesList.update((list) => {
               if (!list) return list;
               return {
                 ...list,
-                snippets: (list.snippets ?? []).map(item =>
+                snippets: (list.snippets ?? []).map((item) =>
                   item.snippetId === snippetId
                     ? { ...item, favoriteCount: response.favoriteCount, isFavorited: true }
                     : item
@@ -266,7 +268,7 @@ export class SnippetStoreService {
           } else {
             const row = this.resolveSnippetListItem(snippetId, response.favoriteCount);
             if (row) {
-              this.favoritesList.update(list => {
+              this.favoritesList.update((list) => {
                 if (!list) {
                   return {
                     success: true,
@@ -276,8 +278,8 @@ export class SnippetStoreService {
                 }
                 return {
                   ...list,
-                    snippets: [row, ...(list.snippets ?? [])],
-                    totalCount: (list.totalCount ?? list.snippets?.length ?? 0) + 1,
+                  snippets: [row, ...(list.snippets ?? [])],
+                  totalCount: (list.totalCount ?? list.snippets?.length ?? 0) + 1,
                 };
               });
             } else {
@@ -295,7 +297,7 @@ export class SnippetStoreService {
 
   /** Build a favorites-list row from currently loaded list/detail state. */
   private resolveSnippetListItem(snippetId: string, favoriteCount: number): SnippetList | null {
-    const fromList = this.snippetList()?.snippets?.find(item => item.snippetId === snippetId);
+    const fromList = this.snippetList()?.snippets?.find((item) => item.snippetId === snippetId);
     if (fromList) {
       return {
         ...fromList,
@@ -329,10 +331,8 @@ export class SnippetStoreService {
     this.error.set(null);
     try {
       const res = await this.api.invoke(forkSnippet, { snippetId });
-      this.snippet.update(s =>
-        s && s.snippetId === snippetId
-          ? { ...s, forkCount: (s.forkCount ?? 0) + 1 }
-          : s
+      this.snippet.update((s) =>
+        s && s.snippetId === snippetId ? { ...s, forkCount: (s.forkCount ?? 0) + 1 } : s
       );
       return res;
     } catch (err) {
@@ -354,16 +354,14 @@ export class SnippetStoreService {
 
   bumpCommentCount(snippetId: string, delta: number) {
     const apply = (count: number) => Math.max(0, count + delta);
-    this.snippet.update(s =>
-      s && s.snippetId === snippetId
-        ? { ...s, commentCount: apply(s.commentCount ?? 0) }
-        : s
+    this.snippet.update((s) =>
+      s && s.snippetId === snippetId ? { ...s, commentCount: apply(s.commentCount ?? 0) } : s
     );
     const patchList = (list: SnippetListResponse | null) => {
       if (!list) return list;
       return {
         ...list,
-        snippets: (list.snippets ?? []).map(item =>
+        snippets: (list.snippets ?? []).map((item) =>
           item.snippetId === snippetId
             ? { ...item, commentCount: apply(item.commentCount ?? 0) }
             : item
@@ -388,7 +386,7 @@ export class SnippetStoreService {
       if (!list) return list;
       return {
         ...list,
-        snippets: (list.snippets ?? []).map(item =>
+        snippets: (list.snippets ?? []).map((item) =>
           item.snippetId === snippetId ? { ...item, ...patch } : item
         ),
       };
@@ -462,11 +460,11 @@ export class SnippetStoreService {
     this.previewUpdateType.set(
       fileType.toLowerCase() === 'html' || fileType.toLowerCase() === 'js' ? 'full' : 'partial'
     );
-    this.snippet.update(s => {
+    this.snippet.update((s) => {
       if (!s) return s;
       return {
         ...s,
-        snippetFiles: (s.snippetFiles ?? []).map(f =>
+        snippetFiles: (s.snippetFiles ?? []).map((f) =>
           f.fileType === fileType ? { ...f, content } : f
         ),
       };
@@ -475,7 +473,7 @@ export class SnippetStoreService {
 
   updateSnippetName(name: string) {
     this.previewUpdateType.set('full');
-    this.snippet.update(s => (s ? { ...s, name } : s));
+    this.snippet.update((s) => (s ? { ...s, name } : s));
   }
 
   updateSnippetSettings(settings: {
@@ -485,7 +483,7 @@ export class SnippetStoreService {
     cdnResources?: CdnResource[];
   }) {
     this.previewUpdateType.set('full');
-    this.snippet.update(s => {
+    this.snippet.update((s) => {
       if (!s) return s;
       return {
         ...s,
@@ -518,7 +516,7 @@ export class SnippetStoreService {
       isFavorited?: boolean;
     }
   ) {
-    this.snippet.update(s => {
+    this.snippet.update((s) => {
       if (!s || s.snippetId !== snippetId) return s;
       return {
         ...s,
@@ -530,21 +528,21 @@ export class SnippetStoreService {
       };
     });
 
-    this.snippetList.update(list => {
+    this.snippetList.update((list) => {
       if (!list) return list;
       return {
         ...list,
-        snippets: (list.snippets ?? []).map(item =>
+        snippets: (list.snippets ?? []).map((item) =>
           item.snippetId === snippetId ? this.applyListPatch(item, patch) : item
         ),
       };
     });
 
-    this.favoritesList.update(list => {
+    this.favoritesList.update((list) => {
       if (!list) return list;
       return {
         ...list,
-        snippets: (list.snippets ?? []).map(item =>
+        snippets: (list.snippets ?? []).map((item) =>
           item.snippetId === snippetId ? this.applyListPatch(item, patch) : item
         ),
       };

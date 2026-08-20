@@ -1,4 +1,4 @@
 export interface FollowStatusDTO {
-    isFollowing: boolean;
-    message?: string;
+  isFollowing: boolean;
+  message?: string;
 }

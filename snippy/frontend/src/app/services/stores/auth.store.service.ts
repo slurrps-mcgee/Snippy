@@ -68,7 +68,7 @@ export class AuthStoreService {
 
   /** Merge fields into the cached backend user (e.g. after settings save). */
   public patchUser(partial: Partial<User>) {
-    this.user.update(u => (u ? { ...u, ...partial } : u));
+    this.user.update((u) => (u ? { ...u, ...partial } : u));
   }
 
   public setUserFromApi(user: User) {

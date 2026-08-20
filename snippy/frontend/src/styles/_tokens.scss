@@ -74,7 +74,11 @@
   --warn-outline-from: rgba(248, 113, 113, 0.18);
   --warn-outline-to: rgba(127, 29, 29, 0.12);
   --warn-outline-fill: linear-gradient(135deg, var(--warn-outline-from), var(--warn-outline-to));
-  --warn-outline-fill-hover: linear-gradient(135deg, rgba(248, 113, 113, 0.28), rgba(127, 29, 29, 0.18));
+  --warn-outline-fill-hover: linear-gradient(
+    135deg,
+    rgba(248, 113, 113, 0.28),
+    rgba(127, 29, 29, 0.18)
+  );
   --warn-border: rgba(248, 113, 113, 0.45);
   --warn-outline-color: rgba(248, 113, 113, 0.5);
   --warn-border-hover: rgba(252, 165, 165, 0.65);
@@ -102,8 +106,16 @@
   --btn-accent-text: #ecfeff;
 
   /* Atmosphere */
-  --orb-cyan: radial-gradient(circle at center, rgba(6, 182, 212, 0.7) 0%, rgba(8, 47, 73, 0.1) 70%);
-  --orb-violet: radial-gradient(circle at center, rgba(124, 58, 237, 0.75) 0%, rgba(30, 27, 75, 0.08) 68%);
+  --orb-cyan: radial-gradient(
+    circle at center,
+    rgba(6, 182, 212, 0.7) 0%,
+    rgba(8, 47, 73, 0.1) 70%
+  );
+  --orb-violet: radial-gradient(
+    circle at center,
+    rgba(124, 58, 237, 0.75) 0%,
+    rgba(30, 27, 75, 0.08) 68%
+  );
   --grid-line: rgba(255, 255, 255, 0.03);
 
   /* Snackbar tones */
@@ -126,15 +138,9 @@
   --blur-sm: blur(8px);
   --blur-md: blur(18px);
   --blur-lg: blur(32px);
-  --shadow-glass:
-    0 8px 32px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 var(--inset-highlight);
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.28), inset 0 1px 0 var(--inset-highlight);
   --shadow-float: 0 16px 48px rgba(0, 0, 0, 0.35), 0 4px 16px rgba(0, 0, 0, 0.18);
-  --reflection-top: linear-gradient(
-    135deg,
-    var(--inset-highlight) 0%,
-    rgba(255, 255, 255, 0) 48%
-  );
+  --reflection-top: linear-gradient(135deg, var(--inset-highlight) 0%, rgba(255, 255, 255, 0) 48%);
 
   /* Compat aliases used by Material overrides */
   --card-bg-glass: var(--glass-white);

@@ -8,9 +8,8 @@ describe('FullpageViewComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [FullpageViewComponent]
-    })
-    .compileComponents();
+      imports: [FullpageViewComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(FullpageViewComponent);
     component = fixture.componentInstance;

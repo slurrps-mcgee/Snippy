@@ -23,8 +23,16 @@ vi.mock('../snippet/snippet.repo', () => ({
 }));
 
 import { favoriteHandler } from './favorite.service';
-import { findFavoriteSnippetByUserAndSnippet, createFavorite, deleteFavorite } from './favorite.repo';
-import { findBySnippetId, incrementSnippetFavoriteCount, decrementSnippetFavoriteCount } from '../snippet/snippet.repo';
+import {
+  findFavoriteSnippetByUserAndSnippet,
+  createFavorite,
+  deleteFavorite,
+} from './favorite.repo';
+import {
+  findBySnippetId,
+  incrementSnippetFavoriteCount,
+  decrementSnippetFavoriteCount,
+} from '../snippet/snippet.repo';
 
 const auth = { payload: { sub: 'user-1' } };
 
@@ -35,7 +43,12 @@ describe('favoriteHandler', () => {
 
   it('creates a favorite on a public snippet', async () => {
     vi.mocked(findBySnippetId)
-      .mockResolvedValueOnce({ snippetId: 's1', isPrivate: false, auth0Id: 'other', favoriteCount: 0 } as any)
+      .mockResolvedValueOnce({
+        snippetId: 's1',
+        isPrivate: false,
+        auth0Id: 'other',
+        favoriteCount: 0,
+      } as any)
       .mockResolvedValueOnce({ snippetId: 's1', favoriteCount: 1 } as any);
     vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue(null);
 
@@ -48,7 +61,12 @@ describe('favoriteHandler', () => {
 
   it('removes an existing favorite', async () => {
     vi.mocked(findBySnippetId)
-      .mockResolvedValueOnce({ snippetId: 's1', isPrivate: false, auth0Id: 'other', favoriteCount: 1 } as any)
+      .mockResolvedValueOnce({
+        snippetId: 's1',
+        isPrivate: false,
+        auth0Id: 'other',
+        favoriteCount: 1,
+      } as any)
       .mockResolvedValueOnce({ snippetId: 's1', favoriteCount: 0 } as any);
     vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
 

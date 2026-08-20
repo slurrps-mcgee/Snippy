@@ -9,7 +9,9 @@
     "test": "ng test",
     "format": "prettier --write \"src/**/*.{ts,html,scss,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,html,scss,json}\"",
-    "openapi:generate": "ng-openapi-gen -c ng-openapi-gen.json"
+    "typecheck": "tsc -p tsconfig.app.json --noEmit",
+    "generate:api": "ng-openapi-gen --config ng-openapi-gen.json",
+    "openapi:generate": "npm run generate:api"
   },
   "keywords": [
     "Angular",

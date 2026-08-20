@@ -6,28 +6,28 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
-} from "sequelize-typescript";
-import { Snippets } from "./snippet.entity";
+} from 'sequelize-typescript';
+import { Snippets } from './snippet.entity';
 
 @Table({
-  tableName: "snippet_files",
+  tableName: 'snippet_files',
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   indexes: [
     {
       unique: true,
-      fields: ["snippet_id", "file_type"],
-      name: "unique_snippet_file_type_per_snippet",
+      fields: ['snippet_id', 'file_type'],
+      name: 'unique_snippet_file_type_per_snippet',
     },
   ],
 })
 export class SnippetFiles extends Model<SnippetFiles> {
   @PrimaryKey
-  @Column({ 
+  @Column({
     field: 'snippet_file_id',
     type: DataType.UUID,
-    defaultValue: DataType.UUIDV4
+    defaultValue: DataType.UUIDV4,
   })
   snippetFileID!: string;
 
@@ -40,11 +40,11 @@ export class SnippetFiles extends Model<SnippetFiles> {
   snippetId!: string;
 
   @Column({
-    field: "file_type",
-    type: DataType.ENUM("html", "css", "js"),
+    field: 'file_type',
+    type: DataType.ENUM('html', 'css', 'js'),
     allowNull: false,
   })
-  fileType!: "html" | "css" | "js";
+  fileType!: 'html' | 'css' | 'js';
 
   @Column({
     type: DataType.TEXT,

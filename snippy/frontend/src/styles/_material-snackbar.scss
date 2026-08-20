@@ -28,7 +28,11 @@
   --mdc-snackbar-container-color: transparent;
   --mat-snack-bar-button-color: var(--text-white);
   --mdc-snackbar-supporting-text-color: var(--text-white);
-  background: linear-gradient(110deg, var(--snackbar-success-from), var(--glass-dark-md)) !important;
+  background: linear-gradient(
+    110deg,
+    var(--snackbar-success-from),
+    var(--glass-dark-md)
+  ) !important;
   border-color: var(--snackbar-success-border) !important;
 }
 
@@ -52,6 +56,10 @@
   --mdc-snackbar-container-color: transparent;
   --mat-snack-bar-button-color: var(--text-white);
   --mdc-snackbar-supporting-text-color: var(--text-white);
-  background: linear-gradient(110deg, var(--snackbar-warning-from), var(--glass-dark-md)) !important;
+  background: linear-gradient(
+    110deg,
+    var(--snackbar-warning-from),
+    var(--glass-dark-md)
+  ) !important;
   border-color: var(--snackbar-warning-border) !important;
 }
