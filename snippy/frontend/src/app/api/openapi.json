@@ -327,10 +327,7 @@
           },
           "indentWith": {
             "type": "string",
-            "enum": [
-              "spaces",
-              "tabs"
-            ]
+            "enum": ["spaces", "tabs"]
           },
           "indentWidth": {
             "type": "integer"
@@ -694,9 +691,7 @@
     "/health": {
       "get": {
         "operationId": "getHealth",
-        "tags": [
-          "Ops"
-        ],
+        "tags": ["Ops"],
         "summary": "Liveness",
         "security": [],
         "responses": {
@@ -716,9 +711,7 @@
     "/ready": {
       "get": {
         "operationId": "getReady",
-        "tags": [
-          "Ops"
-        ],
+        "tags": ["Ops"],
         "summary": "Readiness",
         "security": [],
         "responses": {
@@ -738,9 +731,7 @@
     "/snippets": {
       "post": {
         "operationId": "createSnippet",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -813,18 +804,14 @@
     "/snippets/{shortId}": {
       "get": {
         "operationId": "getSnippetByShortId",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": []
       }
     },
     "/snippets/{snippetId}": {
       "put": {
         "operationId": "updateSnippet",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -905,9 +892,7 @@
       },
       "delete": {
         "operationId": "deleteSnippet",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -973,9 +958,7 @@
     "/snippets/{shortId}/embed": {
       "get": {
         "operationId": "getSnippetEmbed",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [],
         "parameters": [
           {
@@ -1044,9 +1027,7 @@
     "/snippets/{shortId}/forks": {
       "get": {
         "operationId": "getSnippetForks",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [],
         "parameters": [
           {
@@ -1136,9 +1117,7 @@
     "/snippets/{snippetId}/snapshot": {
       "post": {
         "operationId": "uploadSnippetSnapshot",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -1227,9 +1206,7 @@
     "/snippets/fork/{snippetId}": {
       "post": {
         "operationId": "forkSnippet",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -1302,9 +1279,7 @@
     "/snippets/public": {
       "get": {
         "operationId": "getPublicSnippets",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [],
         "parameters": [
           {
@@ -1333,12 +1308,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "newest",
-                "views",
-                "favorites",
-                "forks"
-              ]
+              "enum": ["newest", "views", "favorites", "forks"]
             }
           },
           {
@@ -1406,9 +1376,7 @@
     "/snippets/feed": {
       "get": {
         "operationId": "getFeedSnippets",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -1441,12 +1409,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "newest",
-                "views",
-                "favorites",
-                "forks"
-              ]
+              "enum": ["newest", "views", "favorites", "forks"]
             }
           },
           {
@@ -1514,9 +1477,7 @@
     "/snippets/me": {
       "get": {
         "operationId": "getMySnippets",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -1602,9 +1563,7 @@
     "/snippets/search": {
       "get": {
         "operationId": "searchSnippets",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [],
         "parameters": [
           {
@@ -1633,12 +1592,7 @@
             "in": "query",
             "schema": {
               "type": "string",
-              "enum": [
-                "newest",
-                "views",
-                "favorites",
-                "forks"
-              ]
+              "enum": ["newest", "views", "favorites", "forks"]
             }
           },
           {
@@ -1706,9 +1660,7 @@
     "/snippets/user/{userName}": {
       "get": {
         "operationId": "getUserPublicSnippets",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [],
         "parameters": [
           {
@@ -1798,9 +1750,7 @@
     "/snippets/{snippetId}/view": {
       "post": {
         "operationId": "recordSnippetView",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -1873,9 +1823,7 @@
     "/snippets/shared/{token}": {
       "get": {
         "operationId": "getSharedSnippet",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [],
         "parameters": [
           {
@@ -1944,9 +1892,7 @@
     "/snippets/{snippetId}/share": {
       "post": {
         "operationId": "createSnippetShareLink",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -2017,9 +1963,7 @@
       },
       "delete": {
         "operationId": "revokeSnippetShareLink",
-        "tags": [
-          "Snippet"
-        ],
+        "tags": ["Snippet"],
         "security": [
           {
             "bearerAuth": []
@@ -2085,9 +2029,7 @@
     "/users": {
       "post": {
         "operationId": "ensureUser",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [
           {
             "bearerAuth": []
@@ -2176,9 +2118,7 @@
       },
       "put": {
         "operationId": "updateUser",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [
           {
             "bearerAuth": []
@@ -2271,9 +2211,7 @@
       },
       "delete": {
         "operationId": "deleteUser",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [
           {
             "bearerAuth": []
@@ -2329,9 +2267,7 @@
     "/users/{userName}": {
       "get": {
         "operationId": "getUserProfile",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [],
         "parameters": [
           {
@@ -2400,9 +2336,7 @@
     "/users/me": {
       "get": {
         "operationId": "getCurrentUser",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [
           {
             "bearerAuth": []
@@ -2465,9 +2399,7 @@
     "/users/check-username/{userName}": {
       "get": {
         "operationId": "checkUsername",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [
           {
             "bearerAuth": []
@@ -2540,9 +2472,7 @@
     "/users/picture": {
       "post": {
         "operationId": "uploadProfilePicture",
-        "tags": [
-          "User"
-        ],
+        "tags": ["User"],
         "security": [
           {
             "bearerAuth": []
@@ -2621,9 +2551,7 @@
     "/users/{userName}/follow": {
       "post": {
         "operationId": "followUser",
-        "tags": [
-          "Follow"
-        ],
+        "tags": ["Follow"],
         "security": [
           {
             "bearerAuth": []
@@ -2694,9 +2622,7 @@
       },
       "delete": {
         "operationId": "unfollowUser",
-        "tags": [
-          "Follow"
-        ],
+        "tags": ["Follow"],
         "security": [
           {
             "bearerAuth": []
@@ -2769,9 +2695,7 @@
     "/users/{userName}/followers": {
       "get": {
         "operationId": "getFollowers",
-        "tags": [
-          "Follow"
-        ],
+        "tags": ["Follow"],
         "security": [
           {
             "bearerAuth": []
@@ -2865,9 +2789,7 @@
     "/users/{userName}/following": {
       "get": {
         "operationId": "getFollowing",
-        "tags": [
-          "Follow"
-        ],
+        "tags": ["Follow"],
         "security": [
           {
             "bearerAuth": []
@@ -2961,9 +2883,7 @@
     "/favorites/{snippetId}": {
       "post": {
         "operationId": "toggleFavorite",
-        "tags": [
-          "Favorites"
-        ],
+        "tags": ["Favorites"],
         "security": [
           {
             "bearerAuth": []
@@ -3034,9 +2954,7 @@
       },
       "get": {
         "operationId": "getFavoriteStatus",
-        "tags": [
-          "Favorites"
-        ],
+        "tags": ["Favorites"],
         "security": [
           {
             "bearerAuth": []
@@ -3109,9 +3027,7 @@
     "/favorites": {
       "get": {
         "operationId": "getFavorites",
-        "tags": [
-          "Favorites"
-        ],
+        "tags": ["Favorites"],
         "security": [
           {
             "bearerAuth": []
@@ -3197,9 +3113,7 @@
     "/comments/{snippetId}": {
       "get": {
         "operationId": "getComments",
-        "tags": [
-          "Comments"
-        ],
+        "tags": ["Comments"],
         "security": [],
         "parameters": [
           {
@@ -3287,9 +3201,7 @@
       },
       "post": {
         "operationId": "createComment",
-        "tags": [
-          "Comments"
-        ],
+        "tags": ["Comments"],
         "security": [
           {
             "bearerAuth": []
@@ -3380,9 +3292,7 @@
     "/comments/{commentId}": {
       "put": {
         "operationId": "updateComment",
-        "tags": [
-          "Comments"
-        ],
+        "tags": ["Comments"],
         "security": [
           {
             "bearerAuth": []
@@ -3468,9 +3378,7 @@
       },
       "delete": {
         "operationId": "deleteComment",
-        "tags": [
-          "Comments"
-        ],
+        "tags": ["Comments"],
         "security": [
           {
             "bearerAuth": []
@@ -3536,9 +3444,7 @@
     "/collections": {
       "post": {
         "operationId": "createCollection",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -3623,9 +3529,7 @@
     "/collections/me": {
       "get": {
         "operationId": "getMyCollections",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -3718,9 +3622,7 @@
     "/collections/user/{userName}": {
       "get": {
         "operationId": "getUserCollections",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [],
         "parameters": [
           {
@@ -3810,9 +3712,7 @@
     "/collections/{shortId}": {
       "get": {
         "operationId": "getCollection",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [],
         "parameters": [
           {
@@ -3888,9 +3788,7 @@
     "/collections/{collectionId}": {
       "put": {
         "operationId": "updateCollection",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -3983,9 +3881,7 @@
       },
       "delete": {
         "operationId": "deleteCollection",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -4051,9 +3947,7 @@
     "/collections/{collectionId}/snippets": {
       "post": {
         "operationId": "addSnippetToCollection",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -4141,9 +4035,7 @@
     "/collections/{collectionId}/snippets/{snippetId}": {
       "delete": {
         "operationId": "removeSnippetFromCollection",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -4217,9 +4109,7 @@
     "/collections/{collectionId}/snippets/order": {
       "put": {
         "operationId": "reorderCollectionSnippets",
-        "tags": [
-          "Collection"
-        ],
+        "tags": ["Collection"],
         "security": [
           {
             "bearerAuth": []
@@ -4310,9 +4200,7 @@
     "/assets": {
       "get": {
         "operationId": "listAssets",
-        "tags": [
-          "Asset"
-        ],
+        "tags": ["Asset"],
         "security": [
           {
             "bearerAuth": []
@@ -4396,9 +4284,7 @@
       },
       "post": {
         "operationId": "uploadAsset",
-        "tags": [
-          "Asset"
-        ],
+        "tags": ["Asset"],
         "security": [
           {
             "bearerAuth": []
@@ -4480,9 +4366,7 @@
     "/assets/{assetId}": {
       "delete": {
         "operationId": "deleteAsset",
-        "tags": [
-          "Asset"
-        ],
+        "tags": ["Asset"],
         "security": [
           {
             "bearerAuth": []
