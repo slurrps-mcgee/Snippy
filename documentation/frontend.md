@@ -179,7 +179,7 @@ src/app/
 │   └── ui/                 # list-toolbar, list-paginator, list-empty-state,
 │                           # fork-attribution, snippet-stat-bar
 ├── api/
-│   ├── openapi.json        # copied by backend openapi:export
+│   ├── openapi.json        # copied by npm run generate:api
 │   └── generated/          # ng-openapi-gen: fn/, models, Api.invoke
 ├── config/                 # runtime-env.ts
 ├── editor/                 # preferences types, service, CodeMirror factory, themes/
@@ -437,9 +437,8 @@ Path: [`services/ui/editor-ui.service.ts`](../snippy/frontend/src/app/services/u
 
 The SPA contract is the copied OpenAPI spec plus generated functions — not hand-written `*.api.service.ts` types.
 
-1. `npm run openapi:export` in `snippy/backend` writes [`documentation/openapi.json`](./openapi.json) and copies it to [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json).
-2. `npm run openapi:generate` in `snippy/frontend` runs `ng-openapi-gen` into [`src/app/api/generated/`](../snippy/frontend/src/app/api/generated/) (`fn/`, `models.ts`, `Api.invoke`).
-3. Commit both `openapi.json` files and `generated/` so Docker / `ng build` does not need a running API. Do not generate on `ng serve`.
+1. From the repo root, `npm run generate:api` writes [`documentation/openapi.json`](./openapi.json) and copies it to [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json), then runs `ng-openapi-gen` into [`src/app/api/generated/`](../snippy/frontend/src/app/api/generated/) (`fn/`, `models.ts`, `Api.invoke`).
+2. Commit both `openapi.json` files and `generated/` so Docker / `ng build` does not need a running API. Do not generate on `ng serve`.
 
 Stores and dialogs: `inject(Api)` then `this.api.invoke(getSnippetByShortId, { shortId })`. Import models from `@app/api/generated/models/...`. Unsaved pens use the generated `Snippet` with optional `snippetId` (blank template in the snippet web-view). Editor font/theme unions stay in [`editor/editor-preferences.ts`](../snippy/frontend/src/app/editor/editor-preferences.ts); merge generated prefs with `mergeEditorPreferences`.
 
@@ -913,9 +912,8 @@ Generated `Snippet.snippetId` is optional so a blank unsaved pen can live in the
 
 Snippy does **not** use a shared TypeScript package. The **source of truth** is Express OpenAPI (JSDoc / definition in the API). The SPA does **not** import backend DTO modules.
 
-1. Export: `npm run openapi:export` in `snippy/backend` → [`documentation/openapi.json`](./openapi.json) **and** [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json).
-2. Generate: `npm run openapi:generate` in `snippy/frontend` → `src/app/api/generated/`.
-3. Commit spec + generated client. Theme allowlists still live in both codebases (`EDITOR_THEME_KEYS`).
+1. From the repo root: `npm run generate:api` → [`documentation/openapi.json`](./openapi.json), [`snippy/frontend/src/app/api/openapi.json`](../snippy/frontend/src/app/api/openapi.json), and `src/app/api/generated/`.
+2. Commit spec + generated client. Theme allowlists still live in both codebases (`EDITOR_THEME_KEYS`).
 
 **Runtime independence** is already how containers work: API, nginx SPA, MySQL, and MinIO are separate images. Independent deploys do **not** require a shared `.ts` workspace package.
 
