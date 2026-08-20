@@ -7,24 +7,21 @@ import { filter, map } from 'rxjs/operators';
 import { StrictHttpResponse } from '../../strict-http-response';
 import { RequestBuilder } from '../../request-builder';
 
-import { SnippetResponse } from '../../models/snippet-response';
 
 export interface GetSnippetByShortId$Params {
-  shortId: string;
 }
 
-export function getSnippetByShortId(http: HttpClient, rootUrl: string, params: GetSnippetByShortId$Params, context?: HttpContext): Observable<StrictHttpResponse<SnippetResponse>> {
+export function getSnippetByShortId(http: HttpClient, rootUrl: string, params?: GetSnippetByShortId$Params, context?: HttpContext): Observable<StrictHttpResponse<void>> {
   const rb = new RequestBuilder(rootUrl, getSnippetByShortId.PATH, 'get');
   if (params) {
-    rb.path('shortId', params.shortId, {});
   }
 
   return http.request(
-    rb.build({ responseType: 'json', accept: 'application/json', context })
+    rb.build({ responseType: 'text', accept: '*/*', context })
   ).pipe(
     filter((r: any): r is HttpResponse<any> => r instanceof HttpResponse),
     map((r: HttpResponse<any>) => {
-      return r as StrictHttpResponse<SnippetResponse>;
+      return (r as HttpResponse<any>).clone({ body: undefined }) as StrictHttpResponse<void>;
     })
   );
 }

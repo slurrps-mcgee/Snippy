@@ -12,13 +12,15 @@ import { filter, take } from 'rxjs';
   imports: [MatButton, MatAnchor, MatIconModule, RouterLink],
   templateUrl: './home-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './home-page.component.scss'
+  styleUrl: './home-page.component.scss',
 })
 export class HomePageComponent {
   private router = inject(Router);
   private destroyRef = inject(DestroyRef);
 
-  get user() { return this.authStoreService.user; }
+  get user() {
+    return this.authStoreService.user;
+  }
 
   document = inject(DOCUMENT);
   private auth0Service = inject(AuthService);
@@ -27,11 +29,7 @@ export class HomePageComponent {
   constructor() {
     // Logged-in users leave the marketing page for the app shell
     this.auth0Service.isAuthenticated$
-      .pipe(
-        filter(Boolean),
-        take(1),
-        takeUntilDestroyed(this.destroyRef)
-      )
+      .pipe(filter(Boolean), take(1), takeUntilDestroyed(this.destroyRef))
       .subscribe(() => {
         void this.router.navigateByUrl('/home');
       });

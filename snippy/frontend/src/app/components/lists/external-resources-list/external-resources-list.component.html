@@ -1,11 +1,7 @@
 <div class="cdn-search mb-3">
   <mat-form-field appearance="outline" class="w-full">
     <mat-label>Search cdnjs libraries</mat-label>
-    <input
-      matInput
-      [formControl]="searchControl"
-      [matAutocomplete]="cdnAuto"
-      autocomplete="off" />
+    <input matInput [formControl]="searchControl" [matAutocomplete]="cdnAuto" autocomplete="off" />
     @if (searching) {
       <mat-spinner matSuffix diameter="20"></mat-spinner>
     } @else {
@@ -14,7 +10,8 @@
     <mat-autocomplete
       #cdnAuto="matAutocomplete"
       [displayWith]="displayLibrary"
-      (optionSelected)="onLibrarySelected($event)">
+      (optionSelected)="onLibrarySelected($event)"
+    >
       @for (hit of searchResults; track hit.name) {
         <mat-option [value]="hit">
           <div class="cdn-option">
@@ -43,10 +40,12 @@
           <mat-icon>drag_indicator</mat-icon>
         </span>
         <mat-form-field appearance="outline" class="flex-1">
-          <input matInput
+          <input
+            matInput
             [(ngModel)]="resource.url"
             (ngModelChange)="resourcesChange.emit(resources)"
-            [placeholder]="`https://yourwebsite.com/script.${resourceType}`"/>
+            [placeholder]="`https://yourwebsite.com/script.${resourceType}`"
+          />
         </mat-form-field>
         <button mat-button (click)="removeResource(i)" title="Remove">
           <mat-icon>close</mat-icon>
@@ -56,4 +55,6 @@
   }
 </mat-list>
 
-<button mat-raised-button color="primary" class="w-full" (click)="addResource()">+ add another CDN library</button>
+<button mat-raised-button color="primary" class="w-full" (click)="addResource()">
+  + add another CDN library
+</button>

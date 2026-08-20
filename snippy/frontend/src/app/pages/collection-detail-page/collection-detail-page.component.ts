@@ -1,4 +1,12 @@
-import { Component, DestroyRef, OnInit, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  computed,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -23,8 +31,8 @@ import { ListPageState } from '@app/utils/list-page-state';
     MatProgressSpinnerModule,
     MatChipsModule,
     SnippetListComponent,
-    AsyncStateComponent
-],
+    AsyncStateComponent,
+  ],
   templateUrl: './collection-detail-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './collection-detail-page.component.scss',
@@ -43,7 +51,7 @@ export class CollectionDetailPageComponent implements OnInit {
   private shortId = '';
 
   /** Search hits the API; paging slices the already-filtered result client-side. */
-  state: ListPageState = new ListPageState(state => this.load(this.shortId, state.query));
+  state: ListPageState = new ListPageState((state) => this.load(this.shortId, state.query));
 
   get collection() {
     return this.collectionStoreService.activeCollection();
@@ -65,15 +73,13 @@ export class CollectionDetailPageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
-        const shortId = params.get('shortId');
-        if (!shortId) return;
-        this.shortId = shortId;
-        this.state.reset();
-        this.load(shortId);
-      });
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const shortId = params.get('shortId');
+      if (!shortId) return;
+      this.shortId = shortId;
+      this.state.reset();
+      this.load(shortId);
+    });
   }
 
   async load(shortId: string, q?: string) {

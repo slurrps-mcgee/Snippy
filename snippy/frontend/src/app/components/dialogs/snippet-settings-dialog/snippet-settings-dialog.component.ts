@@ -30,11 +30,11 @@ export type SnippetSettingsDialogData = Snippet & { guestMode?: boolean };
     MatTabsModule,
     MatIconModule,
     MatDividerModule,
-    ExternalResourcesListComponent
-],
+    ExternalResourcesListComponent,
+  ],
   templateUrl: './snippet-settings-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './snippet-settings-dialog.component.scss'
+  styleUrl: './snippet-settings-dialog.component.scss',
 })
 export class SnippetSettingsDialogComponent {
   dialogRef = inject(MatDialogRef<SnippetSettingsDialogComponent>);
@@ -55,8 +55,8 @@ export class SnippetSettingsDialogComponent {
     this.isPrivate = !!this.data.isPrivate;
     this.tags = [...(this.data.tags || [])];
     const allResources = [...(this.data.cdnResources || [])];
-    this.cssResources = allResources.filter(r => r.resourceType === 'css');
-    this.jsResources = allResources.filter(r => r.resourceType === 'js');
+    this.cssResources = allResources.filter((r) => r.resourceType === 'css');
+    this.jsResources = allResources.filter((r) => r.resourceType === 'js');
   }
 
   addTag() {
@@ -68,7 +68,7 @@ export class SnippetSettingsDialogComponent {
   }
 
   removeTag(tag: string) {
-    this.tags = this.tags.filter(t => t !== tag);
+    this.tags = this.tags.filter((t) => t !== tag);
   }
 
   onCancel() {
@@ -78,12 +78,16 @@ export class SnippetSettingsDialogComponent {
   onSave() {
     // Combine CSS and JS resources into one array, filter out empty URLs
     const cdnResources = [
-      ...this.cssResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'css' })),
-      ...this.jsResources.filter(r => r.url && r.url.trim()).map(r => ({ ...r, resourceType: 'js' }))
+      ...this.cssResources
+        .filter((r) => r.url && r.url.trim())
+        .map((r) => ({ ...r, resourceType: 'css' })),
+      ...this.jsResources
+        .filter((r) => r.url && r.url.trim())
+        .map((r) => ({ ...r, resourceType: 'js' })),
     ];
 
     // Validate all CDN URLs
-    const invalidUrls = cdnResources.filter(r => !r.url || !this.isValidUrl(r.url));
+    const invalidUrls = cdnResources.filter((r) => !r.url || !this.isValidUrl(r.url));
     if (invalidUrls.length > 0) {
       this.dialogService.error(
         'Invalid URL',
@@ -96,7 +100,7 @@ export class SnippetSettingsDialogComponent {
       description: this.description,
       isPrivate: this.isPrivate,
       tags: this.tags,
-      cdnResources
+      cdnResources,
     });
   }
 

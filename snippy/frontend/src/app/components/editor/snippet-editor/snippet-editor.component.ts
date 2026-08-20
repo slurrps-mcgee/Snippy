@@ -1,4 +1,17 @@
-import { Component, ViewChild, ElementRef, AfterViewInit, OnDestroy, Input, OnInit, signal, effect, inject, ChangeDetectionStrategy, untracked } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  OnDestroy,
+  Input,
+  OnInit,
+  signal,
+  effect,
+  inject,
+  ChangeDetectionStrategy,
+  untracked,
+} from '@angular/core';
 
 import { MatMenuModule } from '@angular/material/menu';
 import { MatIconModule } from '@angular/material/icon';
@@ -13,10 +26,7 @@ import { SnippetStoreService } from '@app/services/stores/snippet.store.service'
 import { DialogService } from '@app/services/ui/dialog.service';
 import { EditorPreferencesService } from '@app/editor/editor-preferences.service';
 import { EditorInsertService } from '@app/services/ui/editor-insert.service';
-import {
-  baseEditorExtensions,
-  buildPreferenceExtensions,
-} from '@app/editor/codemirror-extensions';
+import { baseEditorExtensions, buildPreferenceExtensions } from '@app/editor/codemirror-extensions';
 
 @Component({
   selector: 'app-snippet-editor',
@@ -47,7 +57,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     effect(() => {
       const snippet = this.snippetStoreService.snippet();
       if (snippet?.snippetFiles) {
-        const file = snippet.snippetFiles.find(f => f.fileType === this.editorType);
+        const file = snippet.snippetFiles.find((f) => f.fileType === this.editorType);
         if (file && file.content !== this.code()) {
           this.code.set(file.content ?? '');
           // Update editor content if it's already initialized
@@ -89,7 +99,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
   private updateEditorContent(content: string) {
     if (!this.editorInstance) return;
     this.editorInstance.dispatch({
-      changes: { from: 0, to: this.editorInstance.state.doc.length, insert: content }
+      changes: { from: 0, to: this.editorInstance.state.doc.length, insert: content },
     });
   }
 
@@ -140,10 +150,10 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     if (!this.editorInstance) return;
 
     const formatted = this.basicFormat(this.code(), this.editorType);
-    
+
     // Update the editor content
     this.editorInstance.dispatch({
-      changes: { from: 0, to: this.editorInstance.state.doc.length, insert: formatted }
+      changes: { from: 0, to: this.editorInstance.state.doc.length, insert: formatted },
     });
   }
 
@@ -169,16 +179,20 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     let formatted = '';
     let indent = 0;
     const tab = '  ';
-    
-    html.split(/(<[^>]+>)/g).forEach(part => {
+
+    html.split(/(<[^>]+>)/g).forEach((part) => {
       if (part.trim() === '') return;
-      
+
       if (part.startsWith('</')) {
         indent = Math.max(0, indent - 1);
         formatted += tab.repeat(indent) + part.trim() + '\n';
       } else if (part.startsWith('<') && !part.startsWith('<!') && !part.endsWith('/>')) {
         formatted += tab.repeat(indent) + part.trim() + '\n';
-        if (!part.match(/<(br|hr|img|input|link|meta|area|base|col|command|embed|keygen|param|source|track|wbr)/)) {
+        if (
+          !part.match(
+            /<(br|hr|img|input|link|meta|area|base|col|command|embed|keygen|param|source|track|wbr)/
+          )
+        ) {
           indent++;
         }
       } else if (part.startsWith('<')) {
@@ -187,7 +201,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
         formatted += tab.repeat(indent) + part.trim() + '\n';
       }
     });
-    
+
     return formatted.trim();
   }
 
@@ -204,8 +218,8 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
     let formatted = '';
     let indent = 0;
     const tab = '  ';
-    
-    js.split('\n').forEach(line => {
+
+    js.split('\n').forEach((line) => {
       const trimmed = line.trim();
       if (trimmed.endsWith('{')) {
         formatted += tab.repeat(indent) + trimmed + '\n';
@@ -217,7 +231,7 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
         formatted += tab.repeat(indent) + trimmed + '\n';
       }
     });
-    
+
     return formatted.trim();
   }
   //#endregion Code Formatting and Analysis
@@ -250,54 +264,54 @@ export class SnippetEditorComponent implements OnInit, AfterViewInit, OnDestroy 
 
   private analyzeHTML(html: string): string[] {
     const issues: string[] = [];
-    
+
     // Check for unclosed tags
     const openTags = html.match(/<([a-z]+)[^>]*>/gi) || [];
     const closeTags = html.match(/<\/([a-z]+)>/gi) || [];
-    
+
     if (openTags.length !== closeTags.length) {
       issues.push('Potential unclosed tags detected');
     }
-    
+
     return issues;
   }
 
   private analyzeCSS(css: string): string[] {
     const issues: string[] = [];
-    
+
     // Check for missing semicolons
     const rules = css.match(/[^{}]+\{[^}]*\}/g) || [];
-    rules.forEach(rule => {
+    rules.forEach((rule) => {
       const declarations = rule.match(/\{([^}]*)\}/)?.[1] || '';
-      const lines = declarations.split(';').filter(l => l.trim());
-      lines.forEach(line => {
+      const lines = declarations.split(';').filter((l) => l.trim());
+      lines.forEach((line) => {
         if (line.trim() && !line.includes(':')) {
           issues.push('Invalid CSS declaration: ' + line.trim());
         }
       });
     });
-    
+
     return issues;
   }
 
   private analyzeJS(js: string): string[] {
     const issues: string[] = [];
-    
+
     // Basic syntax checks
     const openBraces = (js.match(/\{/g) || []).length;
     const closeBraces = (js.match(/\}/g) || []).length;
-    
+
     if (openBraces !== closeBraces) {
       issues.push('Mismatched braces detected');
     }
-    
+
     const openParens = (js.match(/\(/g) || []).length;
     const closeParens = (js.match(/\)/g) || []).length;
-    
+
     if (openParens !== closeParens) {
       issues.push('Mismatched parentheses detected');
     }
-    
+
     return issues;
   }
   //#endregion Code Formatting and Analysis

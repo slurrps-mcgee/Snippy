@@ -8,9 +8,8 @@ describe('SnippetEditorComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SnippetEditorComponent]
-    })
-    .compileComponents();
+      imports: [SnippetEditorComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SnippetEditorComponent);
     component = fixture.componentInstance;

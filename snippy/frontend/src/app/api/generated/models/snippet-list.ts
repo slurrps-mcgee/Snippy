@@ -12,10 +12,10 @@ export interface SnippetList {
   isFollowing?: boolean;
   isOwner?: boolean;
   name?: string;
+  parentDeleted?: boolean;
   parentName?: string | null;
   parentShortId?: string | null;
   parentUserName?: string | null;
-  parentDeleted?: boolean;
   shortId?: string;
   snapshotUrl?: string | null;
   snippetId?: string;

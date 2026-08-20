@@ -2,7 +2,7 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Snippy API",
-    "version": "0.9.2",
+    "version": "0.9.3",
     "description": "API documentation for Snippy"
   },
   "servers": [
@@ -113,6 +113,9 @@
             "type": "string",
             "nullable": true
           },
+          "parentDeleted": {
+            "type": "boolean"
+          },
           "isOwner": {
             "type": "boolean"
           },
@@ -189,6 +192,9 @@
           "viewCount": {
             "type": "integer"
           },
+          "forkCount": {
+            "type": "integer"
+          },
           "embedCount": {
             "type": "integer"
           },
@@ -212,6 +218,9 @@
           "parentUserName": {
             "type": "string",
             "nullable": true
+          },
+          "parentDeleted": {
+            "type": "boolean"
           },
           "snapshotUrl": {
             "type": "string",
@@ -343,6 +352,9 @@
           },
           "theme": {
             "type": "string"
+          },
+          "keymap": {
+            "type": "string"
           }
         }
       },
@@ -363,6 +375,9 @@
           },
           "objectKey": {
             "type": "string"
+          },
+          "usedInCount": {
+            "type": "integer"
           }
         }
       },
@@ -521,6 +536,19 @@
             "type": "string"
           },
           "isOwner": {
+            "type": "boolean"
+          },
+          "parentId": {
+            "type": "string",
+            "nullable": true
+          },
+          "mentions": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "isDeleted": {
             "type": "boolean"
           },
           "createdAt": {
@@ -788,73 +816,7 @@
         "tags": [
           "Snippet"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "shortId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Snippet",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SnippetResponse"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad request",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Not found",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ErrorResponse"
-                }
-              }
-            }
-          }
-        }
+        "security": []
       }
     },
     "/snippets/{snippetId}": {
@@ -1079,6 +1041,98 @@
         }
       }
     },
+    "/snippets/{shortId}/forks": {
+      "get": {
+        "operationId": "getSnippetForks",
+        "tags": [
+          "Snippet"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "name": "shortId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Forks",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SnippetListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/snippets/{snippetId}/snapshot": {
       "post": {
         "operationId": "uploadSnippetSnapshot",
@@ -1251,11 +1305,7 @@
         "tags": [
           "Snippet"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "page",
@@ -1555,11 +1605,7 @@
         "tags": [
           "Snippet"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "page",
@@ -1663,11 +1709,7 @@
         "tags": [
           "Snippet"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "userName",
@@ -2290,11 +2332,7 @@
         "tags": [
           "User"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "userName",
@@ -3162,11 +3200,7 @@
         "tags": [
           "Comments"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "snippetId",
@@ -3279,6 +3313,9 @@
                 "type": "object",
                 "properties": {
                   "content": {
+                    "type": "string"
+                  },
+                  "parentId": {
                     "type": "string"
                   }
                 }
@@ -3684,11 +3721,7 @@
         "tags": [
           "Collection"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "userName",
@@ -3780,11 +3813,7 @@
         "tags": [
           "Collection"
         ],
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [],
         "parameters": [
           {
             "name": "shortId",

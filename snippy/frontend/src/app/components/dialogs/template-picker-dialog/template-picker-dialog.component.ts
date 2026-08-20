@@ -13,12 +13,14 @@ import { SNIPPET_TEMPLATES, SnippetTemplate } from '@app/editor/snippet-template
     <mat-dialog-content>
       <div class="grid gap-3 sm:grid-cols-2">
         @for (tpl of templates; track tpl.id) {
-        <button type="button"
-          class="rounded-lg border border-white/15 p-3 text-left hover:bg-white/5"
-          (click)="dialogRef.close(tpl)">
-          <div class="font-medium text-slate-100">{{ tpl.name }}</div>
-          <div class="mt-1 text-sm text-slate-400">{{ tpl.description }}</div>
-        </button>
+          <button
+            type="button"
+            class="rounded-lg border border-white/15 p-3 text-left hover:bg-white/5"
+            (click)="dialogRef.close(tpl)"
+          >
+            <div class="font-medium text-slate-100">{{ tpl.name }}</div>
+            <div class="mt-1 text-sm text-slate-400">{{ tpl.description }}</div>
+          </button>
         }
       </div>
     </mat-dialog-content>

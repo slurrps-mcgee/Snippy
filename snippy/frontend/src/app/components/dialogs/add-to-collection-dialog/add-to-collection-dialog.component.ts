@@ -22,8 +22,8 @@ export interface AddToCollectionDialogData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
-    MatDividerModule
-],
+    MatDividerModule,
+  ],
   templateUrl: './add-to-collection-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './add-to-collection-dialog.component.scss',
@@ -71,10 +71,11 @@ export class AddToCollectionDialogComponent implements OnInit {
   }
 
   createNewCollection() {
-    const createRef = this.dialogService.open<CollectionCreateDialogComponent, unknown, Collection | false>(
+    const createRef = this.dialogService.open<
       CollectionCreateDialogComponent,
-      'md'
-    );
+      unknown,
+      Collection | false
+    >(CollectionCreateDialogComponent, 'md');
     createRef.afterClosed().subscribe((collection) => {
       if (collection) {
         void this.addTo(collection);

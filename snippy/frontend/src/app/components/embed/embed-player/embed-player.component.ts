@@ -7,7 +7,7 @@ import {
   computed,
   inject,
   signal,
-  ChangeDetectionStrategy
+  ChangeDetectionStrategy,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
@@ -65,16 +65,12 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   previewTick = signal(0);
 
   readonly codeTabs = computed(() =>
-    (['html', 'css', 'js'] as const).filter(t => this.enabledTabs().includes(t))
+    (['html', 'css', 'js'] as const).filter((t) => this.enabledTabs().includes(t))
   );
 
-  readonly cssResources = computed(() =>
-    this.resources().filter(r => r.resourceType === 'css')
-  );
+  readonly cssResources = computed(() => this.resources().filter((r) => r.resourceType === 'css'));
 
-  readonly jsResources = computed(() =>
-    this.resources().filter(r => r.resourceType === 'js')
-  );
+  readonly jsResources = computed(() => this.resources().filter((r) => r.resourceType === 'js'));
 
   readonly showCodePane = computed(() => this.codeTabs().length > 0);
   readonly editUrl = computed(() => {
@@ -85,12 +81,12 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   });
 
   constructor() {
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const shortId = params.get('shortId');
       if (shortId) void this.load(shortId);
     });
 
-    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(q => {
+    this.route.queryParamMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((q) => {
       this.editable.set(q.get('editable') === 'true');
       const themeRaw = (q.get('theme') || '').toLowerCase();
       this.theme.set(
@@ -101,12 +97,12 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
       const raw = (q.get('default-tab') || 'html,result').toLowerCase();
       const tabs = raw
         .split(',')
-        .map(t => t.trim())
+        .map((t) => t.trim())
         .filter((t): t is EmbedTab => ['html', 'css', 'js', 'result'].includes(t));
       const enabled = tabs.length ? [...new Set(tabs)] : (['html', 'result'] as EmbedTab[]);
       this.enabledTabs.set(enabled);
       this.showResult.set(enabled.includes('result'));
-      const firstCode = (['html', 'css', 'js'] as const).find(t => enabled.includes(t));
+      const firstCode = (['html', 'css', 'js'] as const).find((t) => enabled.includes(t));
       if (firstCode) this.activeCodeTab.set(firstCode);
     });
   }
@@ -123,7 +119,7 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   toggleResources() {
-    this.showResources.update(v => !v);
+    this.showResources.update((v) => !v);
   }
 
   setZoom(z: EmbedZoom) {
@@ -131,7 +127,7 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   rerun() {
-    this.previewTick.update(n => n + 1);
+    this.previewTick.update((n) => n + 1);
     this.refreshPreview();
   }
 
@@ -151,9 +147,9 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
       const snip = res.snippet;
       if (!snip) throw new Error('not found');
       this.snippet.set(snip);
-      this.html.set(snip.snippetFiles?.find(f => f.fileType === 'html')?.content ?? '');
-      this.css.set(snip.snippetFiles?.find(f => f.fileType === 'css')?.content ?? '');
-      this.js.set(snip.snippetFiles?.find(f => f.fileType === 'js')?.content ?? '');
+      this.html.set(snip.snippetFiles?.find((f) => f.fileType === 'html')?.content ?? '');
+      this.css.set(snip.snippetFiles?.find((f) => f.fileType === 'css')?.content ?? '');
+      this.js.set(snip.snippetFiles?.find((f) => f.fileType === 'js')?.content ?? '');
       this.resources.set(snip.cdnResources ?? []);
       this.loading.set(false);
       queueMicrotask(() => this.refreshPreview());
@@ -168,12 +164,6 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
       setTimeout(() => this.refreshPreview(type), 50);
       return;
     }
-    this.preview.updatePreview(
-      this.html(),
-      this.css(),
-      this.js(),
-      type,
-      this.resources()
-    );
+    this.preview.updatePreview(this.html(), this.css(), this.js(), type, this.resources());
   }
 }

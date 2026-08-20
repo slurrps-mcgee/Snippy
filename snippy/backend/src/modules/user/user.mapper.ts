@@ -8,50 +8,50 @@ import { AssetMapper } from '../asset/asset.mapper';
  * Maps User entities to DTOs
  */
 export class UserMapper {
-    /**
-     * Map user entity to DTO
-     */
-    static toDTO(
-        user: Users,
-        includeOwnerFields: boolean = false,
-        extras?: { isFollowing?: boolean; followerCount?: number; followingCount?: number }
-    ): UserDTO {
-        const dto: UserDTO = {
-            userName: user.userName,
-            displayName: user.displayName ?? null,
-            bio: user.bio ?? null,
-            pictureUrl: user.pictureUrl ?? null,
-            assets: user.assets
-                ? user.assets
-                    .filter(asset => !isSystemObjectKey(user.auth0Id, asset.objectKey))
-                    .map(asset => AssetMapper.toDTO(asset))
-                : []
-        };
+  /**
+   * Map user entity to DTO
+   */
+  static toDTO(
+    user: Users,
+    includeOwnerFields: boolean = false,
+    extras?: { isFollowing?: boolean; followerCount?: number; followingCount?: number }
+  ): UserDTO {
+    const dto: UserDTO = {
+      userName: user.userName,
+      displayName: user.displayName ?? null,
+      bio: user.bio ?? null,
+      pictureUrl: user.pictureUrl ?? null,
+      assets: user.assets
+        ? user.assets
+            .filter((asset) => !isSystemObjectKey(user.auth0Id, asset.objectKey))
+            .map((asset) => AssetMapper.toDTO(asset))
+        : [],
+    };
 
-        if (includeOwnerFields) {
-            dto.isPrivate = user.isPrivate;
-            dto.editorPreferences = mergeEditorPreferences(
-                user.editorPreferences as Parameters<typeof mergeEditorPreferences>[0]
-            );
-        }
-
-        if (extras?.isFollowing !== undefined) {
-            dto.isFollowing = extras.isFollowing;
-        }
-        if (extras?.followerCount !== undefined) {
-            dto.followerCount = extras.followerCount;
-        }
-        if (extras?.followingCount !== undefined) {
-            dto.followingCount = extras.followingCount;
-        }
-
-        return dto;
+    if (includeOwnerFields) {
+      dto.isPrivate = user.isPrivate;
+      dto.editorPreferences = mergeEditorPreferences(
+        user.editorPreferences as Parameters<typeof mergeEditorPreferences>[0]
+      );
     }
 
-    /**
-     * Map multiple user entities to DTOs
-     */
-    static toDTOs(users: Users[], includeOwnerFields: boolean = false): UserDTO[] {
-        return users.map(user => this.toDTO(user, includeOwnerFields));
+    if (extras?.isFollowing !== undefined) {
+      dto.isFollowing = extras.isFollowing;
     }
+    if (extras?.followerCount !== undefined) {
+      dto.followerCount = extras.followerCount;
+    }
+    if (extras?.followingCount !== undefined) {
+      dto.followingCount = extras.followingCount;
+    }
+
+    return dto;
+  }
+
+  /**
+   * Map multiple user entities to DTOs
+   */
+  static toDTOs(users: Users[], includeOwnerFields: boolean = false): UserDTO[] {
+    return users.map((user) => this.toDTO(user, includeOwnerFields));
+  }
 }

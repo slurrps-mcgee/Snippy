@@ -28,11 +28,7 @@ import {
   lineNumbers,
   rectangularSelection,
 } from '@codemirror/view';
-import {
-  EditorPreferences,
-  FONT_FAMILY_CSS,
-  EditorFontKey,
-} from './editor-preferences';
+import { EditorPreferences, FONT_FAMILY_CSS, EditorFontKey } from './editor-preferences';
 import { getThemeExtension } from './themes';
 import { vim } from '@replit/codemirror-vim';
 
@@ -69,8 +65,7 @@ export function baseEditorExtensions(): Extension[] {
 
 /** Preference-driven extensions (theme, font, toggles, indent). */
 export function buildPreferenceExtensions(prefs: EditorPreferences): Extension[] {
-  const indent =
-    prefs.indentWith === 'tabs' ? '\t' : ' '.repeat(Math.max(1, prefs.indentWidth));
+  const indent = prefs.indentWith === 'tabs' ? '\t' : ' '.repeat(Math.max(1, prefs.indentWidth));
 
   const extensions: Extension[] = [
     getThemeExtension(prefs.theme),
@@ -111,6 +106,9 @@ export function buildPreferenceExtensions(prefs: EditorPreferences): Extension[]
   return extensions;
 }
 
-export function buildEditorExtensions(prefs: EditorPreferences, extra: Extension[] = []): Extension[] {
+export function buildEditorExtensions(
+  prefs: EditorPreferences,
+  extra: Extension[] = []
+): Extension[] {
   return [...baseEditorExtensions(), ...buildPreferenceExtensions(prefs), ...extra];
 }

@@ -1,6 +1,10 @@
 import { NextFunction, Request, Response } from 'express';
 import { validateCreateOrDeleteFavorite } from './favorite.validator';
-import { favoriteHandler, getFavoriteSnippetsByUserHandler, isFavoriteHandler } from './favorite.service';
+import {
+  favoriteHandler,
+  getFavoriteSnippetsByUserHandler,
+  isFavoriteHandler,
+} from './favorite.service';
 
 /**
  * @swagger
@@ -27,13 +31,13 @@ import { favoriteHandler, getFavoriteSnippetsByUserHandler, isFavoriteHandler } 
  *         description: Snippet not found
  */
 export async function favorite(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateCreateOrDeleteFavorite(req.params);
-        const { favoriteCount, isFavorited } = await favoriteHandler(req);
-        res.status(200).json({ success: true, isFavorited, favoriteCount });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    validateCreateOrDeleteFavorite(req.params);
+    const { favoriteCount, isFavorited } = await favoriteHandler(req);
+    res.status(200).json({ success: true, isFavorited, favoriteCount });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -55,13 +59,13 @@ export async function favorite(req: Request, res: Response, next: NextFunction):
  *         description: Favorite status
  */
 export async function isFavorite(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        validateCreateOrDeleteFavorite(req.params);
-        const { isFavorited } = await isFavoriteHandler(req);
-        res.status(200).json({ success: true, isFavorited });
-    } catch (error) {
-        next(error);
-    }
+  try {
+    validateCreateOrDeleteFavorite(req.params);
+    const { isFavorited } = await isFavoriteHandler(req);
+    res.status(200).json({ success: true, isFavorited });
+  } catch (error) {
+    next(error);
+  }
 }
 
 /**
@@ -93,11 +97,15 @@ export async function isFavorite(req: Request, res: Response, next: NextFunction
  *       401:
  *         description: Authentication required
  */
-export async function getFavoriteSnippets(req: Request, res: Response, next: NextFunction): Promise<void> {
-    try {
-        const { snippets, totalCount } = await getFavoriteSnippetsByUserHandler(req);
-        res.status(200).json({ success: true, snippets, totalCount });
-    } catch (error) {
-        next(error);
-    }
+export async function getFavoriteSnippets(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { snippets, totalCount } = await getFavoriteSnippetsByUserHandler(req);
+    res.status(200).json({ success: true, snippets, totalCount });
+  } catch (error) {
+    next(error);
+  }
 }

@@ -131,7 +131,7 @@ export class EmbedDialogComponent {
     const current = this.defaultTabs();
     if (current.includes(tab)) {
       if (current.length === 1) return;
-      this.defaultTabs.set(current.filter(t => t !== tab));
+      this.defaultTabs.set(current.filter((t) => t !== tab));
     } else {
       this.defaultTabs.set([...current, tab]);
     }

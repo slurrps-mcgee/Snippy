@@ -1,6 +1,5 @@
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
-
 @Component({
   selector: 'app-user-identity-header',
   imports: [],

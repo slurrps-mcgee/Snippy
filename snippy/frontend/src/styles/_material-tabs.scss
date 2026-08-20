@@ -62,7 +62,9 @@
   .mat-mdc-tab.mdc-tab--active {
     background: var(--glass-white-md);
     border: 1px solid var(--glass-border);
-    box-shadow: var(--shadow-glass), inset 0 1px 0 var(--inset-highlight);
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 0 var(--inset-highlight);
     backdrop-filter: var(--blur-md);
     -webkit-backdrop-filter: var(--blur-md);
   }

@@ -216,11 +216,11 @@ const DEFAULT_GUTTERS: SplitGutterColors = {
 };
 
 export function getThemeExtension(themeKey: string): Extension {
-  return EDITOR_THEMES.find(t => t.key === themeKey)?.extension ?? oneDark;
+  return EDITOR_THEMES.find((t) => t.key === themeKey)?.extension ?? oneDark;
 }
 
 export function getSplitGutterColors(themeKey: string): SplitGutterColors {
-  const theme = EDITOR_THEMES.find(t => t.key === themeKey);
+  const theme = EDITOR_THEMES.find((t) => t.key === themeKey);
   if (!theme) return DEFAULT_GUTTERS;
   return { gutter: theme.gutter, gutterHover: theme.gutterHover };
 }

@@ -18,9 +18,7 @@ export class FollowUiService {
         ? await this.api.invoke(unfollowUser, { userName })
         : await this.api.invoke(followUser, { userName });
       const nowFollowing = res.isFollowing ?? !isFollowing;
-      this.snackbar.success(
-        nowFollowing ? `Following @${userName}` : `Unfollowed @${userName}`
-      );
+      this.snackbar.success(nowFollowing ? `Following @${userName}` : `Unfollowed @${userName}`);
       return nowFollowing;
     } catch {
       this.snackbar.error('Failed to update follow status');

@@ -8,11 +8,17 @@ import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
   changeDetection: ChangeDetectionStrategy.Eager,
   template: `
     @if (!hideWhenSinglePage || total > pageSize || pageIndex > 0) {
-    <div class="flex justify-center p-3">
-      <mat-paginator [length]="total" [pageSize]="pageSize" [pageSizeOptions]="pageSizeOptions"
-        [pageIndex]="pageIndex" (page)="pageChange.emit($event)" showFirstLastButtons>
-      </mat-paginator>
-    </div>
+      <div class="flex justify-center p-3">
+        <mat-paginator
+          [length]="total"
+          [pageSize]="pageSize"
+          [pageSizeOptions]="pageSizeOptions"
+          [pageIndex]="pageIndex"
+          (page)="pageChange.emit($event)"
+          showFirstLastButtons
+        >
+        </mat-paginator>
+      </div>
     }
   `,
 })

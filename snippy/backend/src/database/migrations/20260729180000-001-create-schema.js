@@ -132,14 +132,24 @@ module.exports = {
     // Entity uses type: DataType.JSON without field override — Sequelize underscored is false, so column is externalResources
     await queryInterface.addIndex('snippets', ['auth0_id'], { name: 'idx_snippets_auth0' });
     await queryInterface.addIndex('snippets', ['short_id'], { name: 'idx_snippets_short_id' });
-    await queryInterface.addIndex('snippets', ['parent_snippet_short_id'], { name: 'idx_snippets_parent' });
+    await queryInterface.addIndex('snippets', ['parent_snippet_short_id'], {
+      name: 'idx_snippets_parent',
+    });
     await queryInterface.addIndex('snippets', ['view_count'], { name: 'idx_snippets_view_count' });
     await queryInterface.addIndex('snippets', ['fork_count'], { name: 'idx_snippets_fork_count' });
-    await queryInterface.addIndex('snippets', ['favorite_count'], { name: 'idx_snippets_favorite_count' });
-    await queryInterface.addIndex('snippets', ['auth0_id', 'is_private'], { name: 'idx_snippets_auth0_private' });
-    await queryInterface.addIndex('snippets', ['is_private', 'created_at'], { name: 'idx_snippets_private_created' });
+    await queryInterface.addIndex('snippets', ['favorite_count'], {
+      name: 'idx_snippets_favorite_count',
+    });
+    await queryInterface.addIndex('snippets', ['auth0_id', 'is_private'], {
+      name: 'idx_snippets_auth0_private',
+    });
+    await queryInterface.addIndex('snippets', ['is_private', 'created_at'], {
+      name: 'idx_snippets_private_created',
+    });
     await queryInterface.addIndex('snippets', ['name'], { name: 'idx_snippets_name_search' });
-    await queryInterface.addIndex('snippets', ['description'], { name: 'idx_snippets_description_search' });
+    await queryInterface.addIndex('snippets', ['description'], {
+      name: 'idx_snippets_description_search',
+    });
 
     await queryInterface.createTable('snippet_files', {
       snippet_file_id: {
@@ -214,7 +224,9 @@ module.exports = {
 
     await queryInterface.addIndex('comments', ['auth0_id'], { name: 'idx_comments_auth0' });
     await queryInterface.addIndex('comments', ['snippet_id'], { name: 'idx_comments_snippet' });
-    await queryInterface.addIndex('comments', ['snippet_id', 'created_at'], { name: 'idx_comments_snippet_created' });
+    await queryInterface.addIndex('comments', ['snippet_id', 'created_at'], {
+      name: 'idx_comments_snippet_created',
+    });
 
     await queryInterface.createTable('favorites', {
       favorite_id: {

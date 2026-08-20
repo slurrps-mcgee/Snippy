@@ -3,7 +3,6 @@ import { MatDialogModule, MAT_DIALOG_DATA, MatDialogRef } from '@angular/materia
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
 
-
 export interface ConfirmDialogData {
   title: string;
   message: string;
@@ -13,14 +12,10 @@ export interface ConfirmDialogData {
 
 @Component({
   selector: 'app-confirm-dialog',
-  imports: [
-    MatDialogModule,
-    MatButtonModule,
-    MatDividerModule
-],
+  imports: [MatDialogModule, MatButtonModule, MatDividerModule],
   templateUrl: './confirm-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './confirm-dialog.component.scss'
+  styleUrl: './confirm-dialog.component.scss',
 })
 export class ConfirmDialogComponent {
   constructor(

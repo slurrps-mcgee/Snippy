@@ -52,7 +52,12 @@ import {
   getSnippetByShortIdHandler,
   updateSnippetViewCountHandler,
 } from './snippet.service';
-import { findByShortId, findBySnippetId, createSnippet, incrementSnippetForkCount } from './snippet.repo';
+import {
+  findByShortId,
+  findBySnippetId,
+  createSnippet,
+  incrementSnippetForkCount,
+} from './snippet.repo';
 import { findSnippetView, upsertSnippetView } from './snippetView.repo';
 import { incrementSnippetViewCount } from './snippet.repo';
 
@@ -110,7 +115,9 @@ describe('snippet privacy and social rules', () => {
   it('forks a public snippet', async () => {
     vi.mocked(findBySnippetId)
       .mockResolvedValueOnce(publicSnippet() as any)
-      .mockResolvedValueOnce(publicSnippet({ snippetId: 'fork-1', auth0Id: 'viewer', parentShortId: 'abc1234' }) as any);
+      .mockResolvedValueOnce(
+        publicSnippet({ snippetId: 'fork-1', auth0Id: 'viewer', parentShortId: 'abc1234' }) as any
+      );
     vi.mocked(createSnippet).mockResolvedValue({ snippetId: 'fork-1' } as any);
 
     const result = await forkSnippetHandler({ auth: viewer, params: { snippetId: 'uuid-1' } });

@@ -1,6 +1,15 @@
-import { Component, inject, OnInit, OnDestroy, ViewChild, effect, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  inject,
+  OnInit,
+  OnDestroy,
+  ViewChild,
+  effect,
+  DestroyRef,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { SnippetPreviewComponent } from "@app/components/editor/snippet-preview/snippet-preview.component";
+import { SnippetPreviewComponent } from '@app/components/editor/snippet-preview/snippet-preview.component';
 import { SnippetStoreService } from '@app/services/stores/snippet.store.service';
 import { AuthStoreService } from '@app/services/stores/auth.store.service';
 import { ActivatedRoute } from '@angular/router';
@@ -30,9 +39,9 @@ export class FullpageViewComponent implements OnInit, OnDestroy {
 
       if (snippet && this.previewComponent) {
         const files = snippet.snippetFiles ?? [];
-        const htmlFile = files.find(f => f.fileType === 'html');
-        const cssFile = files.find(f => f.fileType === 'css');
-        const jsFile = files.find(f => f.fileType === 'js');
+        const htmlFile = files.find((f) => f.fileType === 'html');
+        const cssFile = files.find((f) => f.fileType === 'css');
+        const jsFile = files.find((f) => f.fileType === 'js');
 
         this.previewComponent.updatePreview(
           htmlFile?.content || '',
@@ -54,16 +63,14 @@ export class FullpageViewComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    this.route.paramMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
-        const id = params.get('id');
-        this.snippetId = id;
-        this.viewRecorded = false;
-        if (id) {
-          void this.snippetStoreService.loadSnippet(id);
-        }
-      });
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const id = params.get('id');
+      this.snippetId = id;
+      this.viewRecorded = false;
+      if (id) {
+        void this.snippetStoreService.loadSnippet(id);
+      }
+    });
   }
 
   ngOnDestroy(): void {

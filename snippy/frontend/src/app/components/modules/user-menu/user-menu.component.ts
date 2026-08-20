@@ -16,7 +16,9 @@ import { NavigationService } from '@app/services/ui/navigation.service';
   styleUrl: './user-menu.component.scss',
 })
 export class UserMenuComponent {
-  get user() { return this.authStoreService.user; }
+  get user() {
+    return this.authStoreService.user;
+  }
 
   document = inject(DOCUMENT);
   private navigation = inject(NavigationService);

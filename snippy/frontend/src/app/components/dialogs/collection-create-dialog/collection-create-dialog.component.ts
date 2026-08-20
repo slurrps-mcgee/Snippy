@@ -24,8 +24,8 @@ const DESCRIPTION_MAX_LENGTH = 2500;
     MatButtonModule,
     MatSlideToggleModule,
     MatProgressSpinnerModule,
-    MatDividerModule
-],
+    MatDividerModule,
+  ],
   templateUrl: './collection-create-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './collection-create-dialog.component.scss',

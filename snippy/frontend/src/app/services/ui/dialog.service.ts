@@ -52,7 +52,7 @@ export class DialogService {
       ...SIZE_PRESETS[size],
       ...config,
       maxHeight: DIALOG_MAX_HEIGHT,
-      panelClass: ['snippy-dialog', ...(asArray(config.panelClass))],
+      panelClass: ['snippy-dialog', ...asArray(config.panelClass)],
     });
   }
 
