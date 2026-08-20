@@ -380,6 +380,8 @@ export const openapiDefinition = {
         operationId: 'getSnippetByShortId',
         tags: ['Snippet'],
         security: [],
+        parameters: [{ name: 'shortId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Snippet', ...json(ref('SnippetResponse')) }, ...err },
       },
     },
     '/snippets/{snippetId}': {
