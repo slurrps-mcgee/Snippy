@@ -6,35 +6,65 @@ on:
     branches: [main]
 
 jobs:
-  backend:
+  ci:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: snippy/backend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: npm
-          cache-dependency-path: snippy/backend/package-lock.json
-      - run: npm ci
-      - run: npm audit --audit-level=high
-      - run: npx tsc --noEmit
-      - run: npm test
 
-  frontend:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: snippy/frontend
-    steps:
-      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
           cache: npm
-          cache-dependency-path: snippy/frontend/package-lock.json
-      - run: npm ci
-      - run: npm audit --audit-level=high
-      - run: npx tsc -p tsconfig.app.json --noEmit
+          cache-dependency-path: |
+            snippy/backend/package-lock.json
+            snippy/frontend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: snippy/backend
+        run: npm ci
+
+      - name: Audit backend dependencies
+        working-directory: snippy/backend
+        run: npm audit --audit-level=high
+
+      - name: Check backend formatting
+        working-directory: snippy/backend
+        run: npm run format:check
+
+      - name: Typecheck backend
+        working-directory: snippy/backend
+        run: npx tsc --noEmit
+
+      - name: Install frontend dependencies
+        working-directory: snippy/frontend
+        run: npm ci
+
+      - name: Audit frontend dependencies
+        working-directory: snippy/frontend
+        run: npm audit --audit-level=high
+
+      - name: Check frontend formatting
+        working-directory: snippy/frontend
+        run: npm run format:check
+
+      - name: Typecheck frontend
+        working-directory: snippy/frontend
+        run: npx tsc -p tsconfig.app.json --noEmit
+
+      - name: Check OpenAPI artifacts are up to date
+        run: |
+          npm run openapi:export --prefix snippy/backend
+          npm run openapi:generate --prefix snippy/frontend
+          git diff --exit-code -- documentation/openapi.json snippy/frontend/src/app/api/openapi.json snippy/frontend/src/app/api/generated/
+
+      - name: Build backend
+        working-directory: snippy/backend
+        run: npm run build
+
+      - name: Build frontend (production)
+        working-directory: snippy/frontend
+        run: npm run build -- --configuration production
+
+      - name: Test backend
+        working-directory: snippy/backend
+        run: npm test
