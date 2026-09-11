@@ -180,6 +180,7 @@ DB_PASS=change-me-app-password
 # DB_PORT=3306
 # DB_NAME=snippy
 # DB_USER=snippy_api
+# DB_SSL=true  # TLS to a remote MySQL only — leave unset for Docker MySQL on the compose network
 
 # ── Auth0 (required for login) ───────────────────────────────────
 AUTH0_DOMAIN=your-tenant.us.auth0.com
@@ -223,12 +224,13 @@ ENABLE_MINIO=false
 | `DB_PORT` | No | `3306` (host publish in prod compose uses `${DB_PORT:-3306}`) |
 | `DB_NAME` | No | `snippy` |
 | `DB_USER` | No | `snippy_api` |
+| `DB_SSL` | No | unset / `false` — set `true` only for a remote MySQL that requires TLS (not Docker MySQL on the compose network) |
 | `AUTH0_DOMAIN` | Yes (login) | Auth0 tenant domain |
 | `AUTH0_CLIENT_ID` | Yes (login) | SPA Client ID (written into frontend `env.js`) |
 | `AUTH0_AUDIENCE` | No | `http://localhost:3000` — must match Auth0 API Identifier |
 | `FRONTEND_URL` | Strongly recommended | `http://localhost:4200` — **must** match the browser origin or CORS will block the API |
 | `API_PORT` | No | Host port mapped to API `3000` |
-| `FRONTEND_PORT` | No (prod) | Host port mapped to frontend nginx `80` (prod example default `4200:80`) |
+| `FRONTEND_PORT` | No (prod) | Host port mapped to frontend nginx `8080` (prod example default `4200:8080`) |
 | `ENABLE_MINIO` | No | `false` — set `true` only when MinIO is running and reachable as `minio:9000` |
 | `MINIO_*` | When MinIO enabled | Root/app credentials, bucket name/policy, endpoint |
 
@@ -407,7 +409,7 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
 - Expects env file name **`stack.env`**
 - Attaches services to an **external** Docker network named **`NPM`**
 - Includes MinIO + `minio-init`
-- Maps frontend host port `${FRONTEND_PORT:-4200}` → container `80`
+- Maps frontend host port `${FRONTEND_PORT:-4200}` → container `8080`
 
 ### Important production requirements
 
@@ -429,6 +431,7 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
    ```ini
    MYSQL_ROOT_PASSWORD=change-me-root-password
    DB_PASS=change-me-app-password
+   # DB_SSL=true  # only for a remote TLS MySQL, not Docker MySQL on this network
 
    AUTH0_DOMAIN=your-tenant.us.auth0.com
    AUTH0_CLIENT_ID=your-spa-client-id
@@ -461,7 +464,7 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
    docker compose -f docker-compose.prod.yml --env-file stack.env up -d
    ```
 
-5. **Put TLS in front of the frontend** (recommended): point Nginx Proxy Manager (or another reverse proxy) at the `snippy-frontend` container on port `80` (or whatever host port you published). See [Nginx Proxy Manager setup](#nginx-proxy-manager-setup).
+5. **Put TLS in front of the frontend** (recommended): point Nginx Proxy Manager (or another reverse proxy) at the `snippy-frontend` container on port `8080` (or whatever host port you published). See [Nginx Proxy Manager setup](#nginx-proxy-manager-setup).
 
 6. **Verify**
 
@@ -487,13 +490,13 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
    - place a `stack.env` on the host path Portainer uses for that stack, or
    - adjust the compose `env_file` entries to match how you inject env in Portainer.
 5. Deploy the stack.
-6. Configure Nginx Proxy Manager to proxy your domain to `snippy-frontend:80` on the `NPM` network (container-to-container), or to the published host port if you prefer.
+6. Configure Nginx Proxy Manager to proxy your domain to `snippy-frontend:8080` on the `NPM` network (container-to-container), or to the published host port if you prefer.
 
 ### Production port map (defaults from the example file)
 
 | Service | Container port | Default host publish |
 |---|---|---|
-| frontend | `80` | `4200` (`FRONTEND_PORT`) |
+| frontend | `8080` | `4200` (`FRONTEND_PORT`) |
 | api | `3000` | `3000` (`API_PORT`) |
 | db | `3306` | `3306` (`DB_PORT`) |
 | minio API | `9000` | `32570` |
@@ -556,7 +559,7 @@ networks:
    - **Scheme:** `http`
    - **Forward hostname:** `snippy-frontend` (container name)  
      or the Docker host IP if forwarding to a published port
-   - **Forward port:** `80` (container) or your published `FRONTEND_PORT`
+   - **Forward port:** `8080` (container) or your published `FRONTEND_PORT`
 3. Enable **SSL** (Let’s Encrypt or custom/self-signed).
 4. Confirm Auth0 Application URIs and `FRONTEND_URL` use `https://snippy.example.com`.
 

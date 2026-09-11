@@ -22,6 +22,7 @@ export const config = {
     host: process.env.DB_HOST || 'db',
     port: Number(process.env.DB_PORT) || 3306,
     dialect: 'mysql' as const,
+    ssl: process.env.DB_SSL === 'true',
   },
 
   // MinIO Configuration

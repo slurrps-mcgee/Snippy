@@ -28,6 +28,9 @@ COPY --from=build /app/src/database/migrations ./dist/database/migrations
 COPY --from=build /app/src/database/config.cjs ./src/database/config.cjs
 COPY --from=build /app/.sequelizerc ./.sequelizerc
 
+RUN chown -R node:node /app
+USER node
+
 # Expose port from env or default
 EXPOSE 3000
 

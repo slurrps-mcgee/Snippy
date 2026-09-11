@@ -5,6 +5,8 @@
 
 @use '@angular/material' as mat;
 
+@import 'styles/fonts';
+
 html {
   @include mat.theme(
     (
