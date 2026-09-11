@@ -80,7 +80,10 @@ export class CommentDialogComponent implements OnInit {
   async loadComments() {
     this.loading.set(true);
     try {
-      const res = await this.api.invoke(getComments, { snippetId: this.data.snippetId, limit: 200 });
+      const res = await this.api.invoke(getComments, {
+        snippetId: this.data.snippetId,
+        limit: 200,
+      });
       this.comments.set(res.comments ?? []);
       this.totalCount.set(res.totalCount ?? 0);
     } catch {
@@ -91,12 +94,12 @@ export class CommentDialogComponent implements OnInit {
   }
 
   roots(): PenComment[] {
-    return this.comments().filter(c => !c.parentId);
+    return this.comments().filter((c) => !c.parentId);
   }
 
   repliesOf(parentId: string | undefined): PenComment[] {
     if (!parentId) return [];
-    return this.comments().filter(c => c.parentId === parentId);
+    return this.comments().filter((c) => c.parentId === parentId);
   }
 
   mentionSuggestions(): string[] {
@@ -108,7 +111,7 @@ export class CommentDialogComponent implements OnInit {
     }
     if (this.data.ownerUserName) names.add(this.data.ownerUserName);
     const needle = q.toLowerCase();
-    return [...names].filter(n => n.toLowerCase().includes(needle)).slice(0, 6);
+    return [...names].filter((n) => n.toLowerCase().includes(needle)).slice(0, 6);
   }
 
   onComposerInput() {
@@ -156,9 +159,9 @@ export class CommentDialogComponent implements OnInit {
         body: { content, parentId: parent?.commentId },
       });
       if (res.comment) {
-        this.comments.update(list => [...list, res.comment!]);
+        this.comments.update((list) => [...list, res.comment!]);
       }
-      this.totalCount.update(n => n + 1);
+      this.totalCount.update((n) => n + 1);
       this.snippetStoreService.bumpCommentCount(this.data.snippetId, 1);
       this.newComment = '';
       this.replyTo.set(null);
@@ -200,8 +203,8 @@ export class CommentDialogComponent implements OnInit {
         body: { content },
       });
       if (res.comment) {
-        this.comments.update(list =>
-          list.map(c => (c.commentId === comment.commentId ? res.comment! : c))
+        this.comments.update((list) =>
+          list.map((c) => (c.commentId === comment.commentId ? res.comment! : c))
         );
       }
       this.cancelEdit();
@@ -220,14 +223,16 @@ export class CommentDialogComponent implements OnInit {
       },
       action: async () => {
         await this.api.invoke(deleteComment, { commentId: comment.commentId! });
-        const hasReplies = this.comments().some(c => c.parentId === comment.commentId);
+        const hasReplies = this.comments().some((c) => c.parentId === comment.commentId);
         if (hasReplies) {
-          this.comments.update(list =>
-            list.map(c => (c.commentId === comment.commentId ? { ...c, isDeleted: true, content: '' } : c))
+          this.comments.update((list) =>
+            list.map((c) =>
+              c.commentId === comment.commentId ? { ...c, isDeleted: true, content: '' } : c
+            )
           );
         } else {
-          this.comments.update(list => list.filter(c => c.commentId !== comment.commentId));
-          this.totalCount.update(n => Math.max(0, n - 1));
+          this.comments.update((list) => list.filter((c) => c.commentId !== comment.commentId));
+          this.totalCount.update((n) => Math.max(0, n - 1));
           this.snippetStoreService.bumpCommentCount(this.data.snippetId, -1);
         }
       },

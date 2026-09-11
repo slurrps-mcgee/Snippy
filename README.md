@@ -14,6 +14,7 @@ Snippy is an open-source [CodePen](https://codepen.io/)-style app for writing, p
 - [Auth0 setup](#auth0-setup)
 - [Environment variables](#environment-variables)
 - [Local development (testing)](#local-development-testing)
+- [Before a merge request](#before-a-merge-request)
 - [Production deployment (Docker Hub)](#production-deployment-docker-hub)
 - [Nginx Proxy Manager setup](#nginx-proxy-manager-setup)
 - [Updating production images](#updating-production-images)
@@ -79,6 +80,7 @@ Coming soon (UI may show placeholders):
 ## Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) with Compose v2 (`docker compose`)
+- [Node.js](https://nodejs.org/) 22+ and npm 10+ (for root scripts: format, generate OpenAPI, `check:all`)
 - A terminal and basic familiarity with Docker
 - An [Auth0](https://auth0.com/) free account (required for login)
 - For production behind a domain: something that terminates TLS (this repo documents [Nginx Proxy Manager](#nginx-proxy-manager-setup) + Portainer, which is optional but recommended)
@@ -178,6 +180,7 @@ DB_PASS=change-me-app-password
 # DB_PORT=3306
 # DB_NAME=snippy
 # DB_USER=snippy_api
+# DB_SSL=true  # TLS to a remote MySQL only — leave unset for Docker MySQL on the compose network
 
 # ── Auth0 (required for login) ───────────────────────────────────
 AUTH0_DOMAIN=your-tenant.us.auth0.com
@@ -221,12 +224,13 @@ ENABLE_MINIO=false
 | `DB_PORT` | No | `3306` (host publish in prod compose uses `${DB_PORT:-3306}`) |
 | `DB_NAME` | No | `snippy` |
 | `DB_USER` | No | `snippy_api` |
+| `DB_SSL` | No | unset / `false` — set `true` only for a remote MySQL that requires TLS (not Docker MySQL on the compose network) |
 | `AUTH0_DOMAIN` | Yes (login) | Auth0 tenant domain |
 | `AUTH0_CLIENT_ID` | Yes (login) | SPA Client ID (written into frontend `env.js`) |
 | `AUTH0_AUDIENCE` | No | `http://localhost:3000` — must match Auth0 API Identifier |
 | `FRONTEND_URL` | Strongly recommended | `http://localhost:4200` — **must** match the browser origin or CORS will block the API |
 | `API_PORT` | No | Host port mapped to API `3000` |
-| `FRONTEND_PORT` | No (prod) | Host port mapped to frontend nginx `80` (prod example default `4200:80`) |
+| `FRONTEND_PORT` | No (prod) | Host port mapped to frontend nginx `8080` (prod example default `4200:8080`) |
 | `ENABLE_MINIO` | No | `false` — set `true` only when MinIO is running and reachable as `minio:9000` |
 | `MINIO_*` | When MinIO enabled | Root/app credentials, bucket name/policy, endpoint |
 
@@ -312,6 +316,8 @@ docker compose down
 docker compose down -v
 ```
 
+Root npm scripts for format, OpenAPI, and CI parity: [Before a merge request](#before-a-merge-request).
+
 ### Optional: enable MinIO locally
 
 1. Uncomment the `minio` and `minio-init` services (and `minio_data` volume) in `docker-compose.yml`.
@@ -335,6 +341,55 @@ Prefer [Production deployment](#production-deployment-docker-hub) with published
 
 ---
 
+## Before a merge request
+
+The root [`package.json`](./package.json) wraps backend and frontend scripts so you can format, regenerate the OpenAPI client, and run the same checks as [`.github/workflows/ci.yml`](.github/workflows/ci.yml) before you open a PR.
+
+Install package dependencies once (CI does `npm ci` in each folder):
+
+```bash
+npm ci --prefix snippy/backend
+npm ci --prefix snippy/frontend
+```
+
+**Prepare** (writes files — commit what you intend to land):
+
+```bash
+npm run format:all      # Prettier on backend + frontend
+npm run generate:api    # Dump OpenAPI spec + regenerate SPA client
+```
+
+Run `generate:api` when routes, DTOs, or `openapi-definition.ts` changed. Commit both `openapi.json` files and `snippy/frontend/src/app/api/generated/`.
+
+**Verify** (must pass before you open the PR — this is what CI runs):
+
+```bash
+npm run check:all
+```
+
+`check:all` stops on the first failure. It runs, in CI order:
+
+| Step | Script | What it does |
+|---|---|---|
+| Audit | `check:audit` | `npm audit --audit-level=high` in backend and frontend |
+| Format | `check:format` | Prettier check (does not write) |
+| Types | `check:types` | `tsc --noEmit` (backend) and `tsc -p tsconfig.app.json` (frontend) |
+| OpenAPI | `check:openapi` | Regenerates spec + client, then `git diff --exit-code` |
+| Build | `check:build` | Backend `tsc` build and frontend production `ng build` |
+| Tests | `check:test` | Backend Vitest (`npm test`) |
+
+Other root scripts:
+
+| Script | Purpose |
+|---|---|
+| `npm run dev:backend` / `dev:frontend` | Run API or Angular outside Docker |
+| `npm run build:backend` / `build:frontend` | Build one package |
+| `npm run test:all` | Backend Vitest **and** frontend Karma (not in CI; Karma may need a browser) |
+| `npm run docker:compose:up` | `docker compose build && up` |
+| `npm run docker:compose:clear` | Wipe volumes, rebuild, and start |
+
+---
+
 ## Production deployment (Docker Hub)
 
 Production uses **pre-built images** published to Docker Hub as `kennyl777/snippy-*`. Images are built by the manual GitHub Actions workflow [`.github/workflows/docker-image.yml`](.github/workflows/docker-image.yml) (`workflow_dispatch`), which pushes both version tags (from `package.json`) and `:latest`.
@@ -354,7 +409,7 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
 - Expects env file name **`stack.env`**
 - Attaches services to an **external** Docker network named **`NPM`**
 - Includes MinIO + `minio-init`
-- Maps frontend host port `${FRONTEND_PORT:-4200}` → container `80`
+- Maps frontend host port `${FRONTEND_PORT:-4200}` → container `8080`
 
 ### Important production requirements
 
@@ -376,6 +431,7 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
    ```ini
    MYSQL_ROOT_PASSWORD=change-me-root-password
    DB_PASS=change-me-app-password
+   # DB_SSL=true  # only for a remote TLS MySQL, not Docker MySQL on this network
 
    AUTH0_DOMAIN=your-tenant.us.auth0.com
    AUTH0_CLIENT_ID=your-spa-client-id
@@ -408,7 +464,7 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
    docker compose -f docker-compose.prod.yml --env-file stack.env up -d
    ```
 
-5. **Put TLS in front of the frontend** (recommended): point Nginx Proxy Manager (or another reverse proxy) at the `snippy-frontend` container on port `80` (or whatever host port you published). See [Nginx Proxy Manager setup](#nginx-proxy-manager-setup).
+5. **Put TLS in front of the frontend** (recommended): point Nginx Proxy Manager (or another reverse proxy) at the `snippy-frontend` container on port `8080` (or whatever host port you published). See [Nginx Proxy Manager setup](#nginx-proxy-manager-setup).
 
 6. **Verify**
 
@@ -434,13 +490,13 @@ Use [`docker-compose.prod.example.yml`](docker-compose.prod.example.yml) as your
    - place a `stack.env` on the host path Portainer uses for that stack, or
    - adjust the compose `env_file` entries to match how you inject env in Portainer.
 5. Deploy the stack.
-6. Configure Nginx Proxy Manager to proxy your domain to `snippy-frontend:80` on the `NPM` network (container-to-container), or to the published host port if you prefer.
+6. Configure Nginx Proxy Manager to proxy your domain to `snippy-frontend:8080` on the `NPM` network (container-to-container), or to the published host port if you prefer.
 
 ### Production port map (defaults from the example file)
 
 | Service | Container port | Default host publish |
 |---|---|---|
-| frontend | `80` | `4200` (`FRONTEND_PORT`) |
+| frontend | `8080` | `4200` (`FRONTEND_PORT`) |
 | api | `3000` | `3000` (`API_PORT`) |
 | db | `3306` | `3306` (`DB_PORT`) |
 | minio API | `9000` | `32570` |
@@ -503,7 +559,7 @@ networks:
    - **Scheme:** `http`
    - **Forward hostname:** `snippy-frontend` (container name)  
      or the Docker host IP if forwarding to a published port
-   - **Forward port:** `80` (container) or your published `FRONTEND_PORT`
+   - **Forward port:** `8080` (container) or your published `FRONTEND_PORT`
 3. Enable **SSL** (Let’s Encrypt or custom/self-signed).
 4. Confirm Auth0 Application URIs and `FRONTEND_URL` use `https://snippy.example.com`.
 
@@ -552,9 +608,10 @@ Current version sources:
 
 ```text
 Snippy/
+├── package.json                       # Root scripts: format:all, generate:api, check:all
 ├── docker-compose.yml                 # Local development only
 ├── docker-compose.prod.example.yml    # Production pull-from-Hub example
-├── .github/workflows/ci.yml           # tsc, vitest, npm audit
+├── .github/workflows/ci.yml           # format, tsc, OpenAPI drift, build, vitest, npm audit
 ├── .github/workflows/docker-image.yml # Build & push Hub images
 ├── LICENSE                            # MIT
 ├── README.md
@@ -579,7 +636,7 @@ Snippy/
 | [documentation/frontend.md](./documentation/frontend.md) | Angular architecture, editor preferences, themes how-to, embed player |
 | [documentation/backend.md](./documentation/backend.md) | API layers, auth, `PUT /users` + `editorPreferences` |
 | [documentation/db.md](./documentation/db.md) | Schema (including `users.editor_preferences`) |
-| [documentation/openapi.json](./documentation/openapi.json) | Exported OpenAPI snapshot (`npm run openapi:export` in `snippy/backend`; also copied to `snippy/frontend/src/app/api/openapi.json`). SPA client: `npm run openapi:generate` |
+| [documentation/openapi.json](./documentation/openapi.json) | Exported OpenAPI snapshot. From the repo root: `npm run generate:api` (dumps spec + generates the SPA client) |
 | [documentation/frontend-test-plan.md](./documentation/frontend-test-plan.md) | Manual QA checklist |
 
 In-app legal pages (when the frontend is running):

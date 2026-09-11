@@ -1,25 +1,28 @@
 import express from 'express';
-import { 
-    createSnippet, 
-    deleteSnippet, 
-    forkSnippet,
-    getCurrentUserSnippets,
-    getPublicSnippets,
-    getSnippetByShortId,
-    getUserPublicSnippets,
-    searchSnippets,
-    updateSnippet, 
-    updateSnippetViewCount,
-    getFeedSnippets,
-    getSnippetEmbed,
-    uploadSnippetSnapshot,
-    getSnippetByShareToken,
-    createSnippetShareLink,
-    revokeSnippetShareLink,
-    getSnippetForks,
+import {
+  createSnippet,
+  deleteSnippet,
+  forkSnippet,
+  getCurrentUserSnippets,
+  getPublicSnippets,
+  getSnippetByShortId,
+  getUserPublicSnippets,
+  searchSnippets,
+  updateSnippet,
+  updateSnippetViewCount,
+  getFeedSnippets,
+  getSnippetEmbed,
+  uploadSnippetSnapshot,
+  getSnippetByShareToken,
+  createSnippetShareLink,
+  revokeSnippetShareLink,
+  getSnippetForks,
 } from './snippet.controller';
-import { publicReadLimiter, searchLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
-
+import {
+  publicReadLimiter,
+  searchLimiter,
+  writeLimiter,
+} from '../../common/middleware/rate-limit.service';
 
 const snippetRouter = express.Router();
 
@@ -27,7 +30,7 @@ const snippetRouter = express.Router();
 snippetRouter.get('/search', searchLimiter, searchSnippets);
 
 // Public read operations - higher limit
-snippetRouter.get('/public', publicReadLimiter, getPublicSnippets);  
+snippetRouter.get('/public', publicReadLimiter, getPublicSnippets);
 snippetRouter.get('/feed', publicReadLimiter, getFeedSnippets);
 snippetRouter.get('/me', publicReadLimiter, getCurrentUserSnippets);
 snippetRouter.get('/user/:userName', publicReadLimiter, getUserPublicSnippets);

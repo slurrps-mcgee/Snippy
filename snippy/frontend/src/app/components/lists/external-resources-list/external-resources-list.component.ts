@@ -2,10 +2,22 @@ import { MatListModule } from '@angular/material/list';
 import { MatIconModule } from '@angular/material/icon';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import {
+  MatAutocompleteModule,
+  MatAutocompleteSelectedEvent,
+} from '@angular/material/autocomplete';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { DragDropModule, CdkDragDrop, moveItemInArray } from '@angular/cdk/drag-drop';
-import { Component, DestroyRef, EventEmitter, Input, Output, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+  OnInit,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { FormControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -14,14 +26,7 @@ import { CdnLibraryHit } from '@app/interfaces/cdnLibrary.interface';
 import { MatButtonModule } from '@angular/material/button';
 import { CdnApiService } from '@app/services/api/cdn.api.service';
 import { SnackbarService } from '@app/services/ui/snackbar.service';
-import {
-  catchError,
-  debounceTime,
-  distinctUntilChanged,
-  of,
-  switchMap,
-  tap,
-} from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, of, switchMap, tap } from 'rxjs';
 
 @Component({
   selector: 'app-external-resources-list',
@@ -36,8 +41,8 @@ import {
     MatAutocompleteModule,
     MatProgressSpinnerModule,
     MatButtonModule,
-    DragDropModule
-],
+    DragDropModule,
+  ],
   templateUrl: './external-resources-list.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './external-resources-list.component.scss',
@@ -65,7 +70,7 @@ export class ExternalResourcesListComponent implements OnInit {
       .pipe(
         debounceTime(300),
         distinctUntilChanged(),
-        tap(value => {
+        tap((value) => {
           const query = typeof value === 'string' ? value.trim() : '';
           if (!query) {
             this.searchResults = [];
@@ -74,7 +79,7 @@ export class ExternalResourcesListComponent implements OnInit {
             this.searching = true;
           }
         }),
-        switchMap(value => {
+        switchMap((value) => {
           const query = typeof value === 'string' ? value.trim() : '';
           if (!query) {
             return of([] as CdnLibraryHit[]);
@@ -88,7 +93,7 @@ export class ExternalResourcesListComponent implements OnInit {
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(results => {
+      .subscribe((results) => {
         this.searchResults = results;
         this.searching = false;
       });
@@ -110,15 +115,13 @@ export class ExternalResourcesListComponent implements OnInit {
 
     this.resolving = true;
     this.cdnApi.resolveLibraryUrl(hit, this.resourceType).subscribe({
-      next: url => {
+      next: (url) => {
         this.resolving = false;
         this.searchControl.setValue('', { emitEvent: false });
         this.searchResults = [];
 
         if (!url) {
-          this.snackbar.warning(
-            `No ${this.resourceType.toUpperCase()} file found for ${hit.name}`
-          );
+          this.snackbar.warning(`No ${this.resourceType.toUpperCase()} file found for ${hit.name}`);
           return;
         }
 
@@ -134,7 +137,7 @@ export class ExternalResourcesListComponent implements OnInit {
   }
 
   private applyUrl(url: string) {
-    const emptyIndex = this.resources.findIndex(r => !r.url || !r.url.trim());
+    const emptyIndex = this.resources.findIndex((r) => !r.url || !r.url.trim());
     if (emptyIndex >= 0) {
       this.resources[emptyIndex] = { ...this.resources[emptyIndex], url };
     } else {
@@ -144,7 +147,7 @@ export class ExternalResourcesListComponent implements OnInit {
   }
 
   addResource() {
-    if (!this.resources.some(r => !r.url || !r.url.trim())) {
+    if (!this.resources.some((r) => !r.url || !r.url.trim())) {
       this.resources.push({ resourceType: this.resourceType, url: '' });
       this.resourcesChange.emit(this.resources);
     }

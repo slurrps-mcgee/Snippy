@@ -28,11 +28,11 @@ import { SnackbarService } from '@app/services/ui/snackbar.service';
     MatButtonModule,
     MatIconModule,
     UserIdentityHeaderComponent,
-    AsyncStateComponent
-],
+    AsyncStateComponent,
+  ],
   templateUrl: './user-home-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './user-home-page.component.scss'
+  styleUrl: './user-home-page.component.scss',
 })
 export class UserHomePageComponent implements OnInit {
   private authStoreService = inject(AuthStoreService);
@@ -46,22 +46,48 @@ export class UserHomePageComponent implements OnInit {
   collectionState = new ListPageState(() => this.loadCollections());
   favoritesState = new ListPageState(() => this.loadFavorites());
 
-  get user() { return this.authStoreService.user; }
+  get user() {
+    return this.authStoreService.user;
+  }
 
-  get snippets() { return this.snippetStoreService.snippetList()?.snippets ?? []; }
-  get total() { return this.snippetStoreService.snippetList()?.totalCount ?? 0; }
-  get isLoading() { return this.snippetStoreService.loading(); }
-  get listError() { return this.snippetStoreService.error(); }
+  get snippets() {
+    return this.snippetStoreService.snippetList()?.snippets ?? [];
+  }
+  get total() {
+    return this.snippetStoreService.snippetList()?.totalCount ?? 0;
+  }
+  get isLoading() {
+    return this.snippetStoreService.loading();
+  }
+  get listError() {
+    return this.snippetStoreService.error();
+  }
 
-  get collections() { return this.collectionStore.collections(); }
-  get collectionsTotal() { return this.collectionStore.totalCount(); }
-  get collectionsLoading() { return this.collectionStore.loading(); }
-  get collectionsError() { return this.collectionStore.error(); }
+  get collections() {
+    return this.collectionStore.collections();
+  }
+  get collectionsTotal() {
+    return this.collectionStore.totalCount();
+  }
+  get collectionsLoading() {
+    return this.collectionStore.loading();
+  }
+  get collectionsError() {
+    return this.collectionStore.error();
+  }
 
-  get favorites() { return this.snippetStoreService.favoritesList()?.snippets ?? []; }
-  get favoritesTotal() { return this.snippetStoreService.favoritesList()?.totalCount ?? 0; }
-  get favoritesLoading() { return this.snippetStoreService.favoritesLoading(); }
-  get favoritesError() { return this.snippetStoreService.error(); }
+  get favorites() {
+    return this.snippetStoreService.favoritesList()?.snippets ?? [];
+  }
+  get favoritesTotal() {
+    return this.snippetStoreService.favoritesList()?.totalCount ?? 0;
+  }
+  get favoritesLoading() {
+    return this.snippetStoreService.favoritesLoading();
+  }
+  get favoritesError() {
+    return this.snippetStoreService.error();
+  }
 
   ngOnInit() {
     void this.loadUserSnippets();

@@ -8,9 +8,8 @@ describe('SnippetWebViewComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [SnippetWebViewComponent]
-    })
-    .compileComponents();
+      imports: [SnippetWebViewComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(SnippetWebViewComponent);
     component = fixture.componentInstance;

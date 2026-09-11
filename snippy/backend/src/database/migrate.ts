@@ -18,7 +18,9 @@ export async function runMigrations(sequelize: Sequelize): Promise<void> {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
   `);
 
-  const [executedRows] = await sequelize.query(`SELECT name FROM \`${META_TABLE}\` ORDER BY name ASC`) as [Array<{ name: string }>, unknown];
+  const [executedRows] = (await sequelize.query(
+    `SELECT name FROM \`${META_TABLE}\` ORDER BY name ASC`
+  )) as [Array<{ name: string }>, unknown];
   const executed = new Set(executedRows.map((row) => row.name));
 
   const migrationsDir = path.join(__dirname, 'migrations');

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isOptionalJwtGet } from './optional-jwt';
+import { isOptionalJwtGet } from '../../common/middleware/optional-jwt';
 
 describe('isOptionalJwtGet', () => {
   it.each([

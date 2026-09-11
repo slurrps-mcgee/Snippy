@@ -8,9 +8,8 @@ describe('AlertDialogComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [AlertDialogComponent]
-    })
-    .compileComponents();
+      imports: [AlertDialogComponent],
+    }).compileComponents();
 
     fixture = TestBed.createComponent(AlertDialogComponent);
     component = fixture.componentInstance;

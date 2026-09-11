@@ -87,8 +87,8 @@ export class CollectionStoreService {
         ...res.collection,
         snippetCount: res.collection.snippetCount ?? 0,
       };
-      this.collections.update(list => [created, ...list]);
-      this.totalCount.update(n => n + 1);
+      this.collections.update((list) => [created, ...list]);
+      this.totalCount.update((n) => n + 1);
       return created;
     }
     return res.collection;
@@ -96,8 +96,8 @@ export class CollectionStoreService {
 
   async delete(collectionId: string) {
     await this.api.invoke(deleteCollection, { collectionId });
-    this.collections.update(list => list.filter(c => c.collectionId !== collectionId));
-    this.totalCount.update(n => Math.max(0, n - 1));
+    this.collections.update((list) => list.filter((c) => c.collectionId !== collectionId));
+    this.totalCount.update((n) => Math.max(0, n - 1));
     if (this.activeCollection()?.collectionId === collectionId) {
       this.activeCollection.set(null);
     }
@@ -110,8 +110,8 @@ export class CollectionStoreService {
     });
     const updated = res.collection;
 
-    this.collections.update(list =>
-      list.map(c => {
+    this.collections.update((list) =>
+      list.map((c) => {
         if (c.collectionId !== collectionId) return c;
         return {
           ...c,
@@ -121,7 +121,7 @@ export class CollectionStoreService {
       })
     );
 
-    this.activeCollection.update(active => {
+    this.activeCollection.update((active) => {
       if (!active || active.collectionId !== collectionId) return active;
       if (updated) {
         return {
@@ -142,8 +142,8 @@ export class CollectionStoreService {
   async removeSnippet(collectionId: string, snippetId: string) {
     await this.api.invoke(removeSnippetFromCollection, { collectionId, snippetId });
 
-    this.collections.update(list =>
-      list.map(c => {
+    this.collections.update((list) =>
+      list.map((c) => {
         if (c.collectionId !== collectionId) return c;
         return {
           ...c,
@@ -153,9 +153,9 @@ export class CollectionStoreService {
       })
     );
 
-    this.activeCollection.update(active => {
+    this.activeCollection.update((active) => {
       if (!active || active.collectionId !== collectionId) return active;
-      const snippets = (active.snippets ?? []).filter(s => s.snippetId !== snippetId);
+      const snippets = (active.snippets ?? []).filter((s) => s.snippetId !== snippetId);
       return {
         ...active,
         snippets,

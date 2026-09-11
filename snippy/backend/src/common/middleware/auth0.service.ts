@@ -9,5 +9,5 @@ import { config } from '../../config';
 export const auth0Check = auth({
   audience: config.auth.audience,
   issuerBaseURL: `https://${config.auth.domain}/`,
-  tokenSigningAlg: 'RS256'
+  tokenSigningAlg: 'RS256',
 });

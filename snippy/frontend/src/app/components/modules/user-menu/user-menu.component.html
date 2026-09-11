@@ -1,9 +1,17 @@
-<button [matMenuTriggerFor]="beforeMenu"
-  class="rounded-full border border-white/25 bg-white/10 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition hover:border-white/40 hover:bg-white/15">
+<button
+  [matMenuTriggerFor]="beforeMenu"
+  class="rounded-full border border-white/25 bg-white/10 p-0.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.25)] backdrop-blur-md transition hover:border-white/40 hover:bg-white/15"
+>
   @if (user()) {
-  <img [src]="user()?.pictureUrl" alt="Menu" width="40" height="40" class="rounded-full object-cover" />
+    <img
+      [src]="user()?.pictureUrl"
+      alt="Menu"
+      width="40"
+      height="40"
+      class="rounded-full object-cover"
+    />
   } @else {
-  <span class="px-3 py-2 text-sm text-slate-200">Menu</span>
+    <span class="px-3 py-2 text-sm text-slate-200">Menu</span>
   }
 </button>
 <mat-menu #beforeMenu="matMenu" xPosition="before">

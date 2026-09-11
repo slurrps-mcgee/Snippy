@@ -1,7 +1,19 @@
 import express from 'express';
-import { getUserProfile, checkUsername, ensureUser, updateUser, getCurrentUserProfile, deleteUser, updateProfilePicture } from './user.controller';
+import {
+  getUserProfile,
+  checkUsername,
+  ensureUser,
+  updateUser,
+  getCurrentUserProfile,
+  deleteUser,
+  updateProfilePicture,
+} from './user.controller';
 import { followUser, unfollowUser, getFollowers, getFollowing } from '../follow/follow.controller';
-import { authLimiter, publicReadLimiter, writeLimiter } from '../../common/middleware/rate-limit.service';
+import {
+  authLimiter,
+  publicReadLimiter,
+  writeLimiter,
+} from '../../common/middleware/rate-limit.service';
 
 const userRouter = express.Router();
 

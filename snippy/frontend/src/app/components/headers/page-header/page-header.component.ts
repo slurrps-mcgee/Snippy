@@ -40,8 +40,8 @@ import { DraftAutosaveService } from '@app/services/ui/draft-autosave.service';
     MatTooltipModule,
     UserMenuComponent,
     ForkAttributionComponent,
-    SnippetStatBarComponent
-],
+    SnippetStatBarComponent,
+  ],
   templateUrl: './page-header.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './page-header.component.scss',
@@ -146,7 +146,7 @@ export class PageHeaderComponent implements OnInit {
     dialogRef
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(result => {
+      .subscribe((result) => {
         if (!result) return;
         this.snippetStore.updateSnippetSettings(result);
         if (!guest) {

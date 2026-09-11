@@ -26,7 +26,7 @@ export class PreviewConsoleService {
   private nextId = 1;
 
   toggle() {
-    this.open.update(v => !v);
+    this.open.update((v) => !v);
   }
 
   setOpen(open: boolean) {
@@ -48,16 +48,18 @@ export class PreviewConsoleService {
   }
 
   append(level: ConsoleLevel, args: unknown[]) {
-    const text = args.map(a => this.stringify(a)).join(' ');
-    this.messages.update(list => [
-      ...list,
-      {
-        id: this.nextId++,
-        level,
-        text,
-        timestamp: Date.now(),
-      },
-    ].slice(-200));
+    const text = args.map((a) => this.stringify(a)).join(' ');
+    this.messages.update((list) =>
+      [
+        ...list,
+        {
+          id: this.nextId++,
+          level,
+          text,
+          timestamp: Date.now(),
+        },
+      ].slice(-200)
+    );
   }
 
   private readStoredHeight(): number {
