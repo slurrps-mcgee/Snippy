@@ -75,7 +75,7 @@ services:
     env_file:
       - stack.env
     ports:
-      - "${FRONTEND_PORT:-4200}:80"
+      - "${FRONTEND_PORT:-4200}:8080"
     depends_on:
       - api
     restart: unless-stopped

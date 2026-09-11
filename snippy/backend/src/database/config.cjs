@@ -8,6 +8,9 @@ const shared = {
   port: Number(process.env.DB_PORT) || 3306,
   dialect: 'mysql',
   logging: false,
+  ...(process.env.DB_SSL === 'true'
+    ? { dialectOptions: { ssl: { rejectUnauthorized: true } } }
+    : {}),
 };
 
 module.exports = {

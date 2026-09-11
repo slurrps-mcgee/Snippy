@@ -22,6 +22,7 @@ export const sequelize = new Sequelize({
   host: config.database.host,
   port: config.database.port,
   dialect: config.database.dialect,
+  dialectOptions: config.database.ssl ? { ssl: { rejectUnauthorized: true } } : {},
   logging: false,
   pool: {
     max: 10,
