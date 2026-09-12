@@ -34,7 +34,7 @@ Snippy is a multi-service Docker Compose app:
 | `db` | MySQL 8 database (schema bootstrap via `init.sh`) | `snippy/db` |
 | `api` | Node/TypeScript Express API | `snippy/backend` |
 | `frontend` | Angular SPA | `snippy/frontend` |
-| `minio` / `minio-init` | Optional object storage for asset uploads | official MinIO + `snippy/minio` |
+| `minio` / `minio-init` | Optional object storage for asset uploads | Chainguard MinIO + `snippy/minio` |
 
 Compose loads environment variables from a root env file and wires the services together.
 
@@ -599,7 +599,8 @@ Current version sources:
 | API crashes on boot | Missing `DB_PASS` or `AUTH0_DOMAIN` | Required by API config validation — set them and recreate the API container |
 | DB init / auth failures | Wrong `MYSQL_ROOT_PASSWORD` / `DB_PASS`, or volume from older credentials | Align env with existing volume, or `down -v` for a clean DB (destructive) |
 | `network NPM declared as external, but could not be found` | Network not created | `docker network create NPM` |
-| MinIO / assets unavailable | `ENABLE_MINIO` false, MinIO not running, or MinIO process exited | Give the `minio` service `restart: unless-stopped` (Portainer). Prefer a healthcheck that does not require `curl` (official images often lack it). After a connection failure the API latches MinIO off until **API restart**; the SPA probes `GET /api/v1/health` and latches Assets / Profile Image / snapshot-on-save until you restart the stack and reload |
+| MinIO / assets unavailable | `ENABLE_MINIO` false, MinIO not running, or MinIO process exited | Give the `minio` service `restart: unless-stopped` (Portainer). Healthcheck looks for port 9000 in `/proc/net/tcp` (works without curl/bash/wget). After a connection failure the API latches MinIO off until **API restart**; the SPA probes `GET /api/v1/health` and latches Assets / Profile Image / snapshot-on-save until you restart the stack and reload |
+| `minio/mc:latest` / `minio/minio:latest` pull denied | MinIO removed community images from Docker Hub | Use `cgr.dev/chainguard/minio` and `cgr.dev/chainguard/minio-client` (already wired in compose + `snippy/minio/Dockerfile`) |
 | Env changes ignored in browser | Stale `env.js` | Restart frontend container and hard-refresh the browser |
 
 ---

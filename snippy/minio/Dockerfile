@@ -1,15 +1,10 @@
-FROM minio/mc:latest
+# minio/mc:latest is gone from Docker Hub (MinIO stopped publishing
+# community images). Chainguard builds a public mc client from source.
+FROM cgr.dev/chainguard/minio-client:latest
 
-# Copy init script
-COPY minio-init.sh /minio-init.sh
-
-# Ensure correct permissions & line endings
-RUN chmod +x /minio-init.sh \
-    && chown 1000:1000 /minio-init.sh
+COPY --chmod=755 minio-init.sh /minio-init.sh
 
 # mc writes client config under $HOME
 ENV HOME=/tmp
-
-USER 1000
 
 ENTRYPOINT ["/minio-init.sh"]
