@@ -21,4 +21,18 @@ describe('MinIO container images', () => {
     expect(compose).toMatch(/image:\s*cgr\.dev\/chainguard\/minio/);
     expect(prodCompose).toMatch(/image:\s*cgr\.dev\/chainguard\/minio/);
   });
+
+  it('uses a Chainguard-compatible MinIO healthcheck and root for named volumes', () => {
+    const compose = readRepo('docker-compose.yml');
+    const prodCompose = readRepo('docker-compose.prod.example.yml');
+    const initScript = readRepo('snippy/minio/minio-init.sh');
+
+    for (const yaml of [compose, prodCompose]) {
+      expect(yaml).toMatch(/user:\s*"0"/);
+      expect(yaml).not.toMatch(/grep -q ':2328'/);
+      expect(yaml).toMatch(/test:\s*\["CMD", "\/usr\/bin\/timeout", "3s", "\/usr\/bin\/bash"/);
+    }
+
+    expect(initScript.startsWith('#!/usr/bin/bash\n')).toBe(true);
+  });
 });

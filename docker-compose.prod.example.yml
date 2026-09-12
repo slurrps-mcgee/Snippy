@@ -18,11 +18,13 @@ services:
       - minio_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "grep -q ':2328' /proc/net/tcp /proc/net/tcp6"]
-      interval: 30s
+      # Chainguard minio has bash+timeout+mc, not grep/curl/wget.
+      # CMD exec form avoids relying on /bin/sh for the probe.
+      test: ["CMD", "/usr/bin/timeout", "3s", "/usr/bin/bash", "-c", ":> /dev/tcp/127.0.0.1/9000"]
+      interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 20s
     networks:
       - NPM
 

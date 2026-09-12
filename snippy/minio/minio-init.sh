@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/bash
 set -e
 
 echo "⏳ Waiting for MinIO to be available..."
