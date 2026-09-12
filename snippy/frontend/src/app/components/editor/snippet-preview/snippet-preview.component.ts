@@ -17,6 +17,23 @@ import { fromEvent } from 'rxjs';
 import { toJpeg } from 'html-to-image';
 import { MinioStatusService } from '@app/services/ui/minio-status.service';
 
+/** Convert a data URL without fetch(), which CSP connect-src may block for data:. */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const comma = dataUrl.indexOf(',');
+  if (comma < 0) {
+    throw new Error('Invalid data URL');
+  }
+  const header = dataUrl.slice(0, comma);
+  const data = dataUrl.slice(comma + 1);
+  const mime = /data:([^;]+)/.exec(header)?.[1] ?? 'application/octet-stream';
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
+
 @Component({
   selector: 'app-snippet-preview',
   imports: [],
@@ -195,8 +212,7 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
           backgroundColor,
         },
       });
-      const res = await fetch(dataUrl);
-      return res.blob();
+      return dataUrlToBlob(dataUrl);
     } catch {
       return null;
     }
