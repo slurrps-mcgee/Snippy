@@ -13,6 +13,7 @@ export default defineConfig({
         'src/common/utilities/searchCondition.ts',
         'src/common/utilities/editor-preferences.ts',
         'src/common/utilities/error.ts',
+        'src/common/utilities/embed-headers.ts',
         'src/common/middleware/optional-jwt.ts',
       ],
       exclude: [

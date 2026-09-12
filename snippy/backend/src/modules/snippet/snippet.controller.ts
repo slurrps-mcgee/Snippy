@@ -22,6 +22,7 @@ import { validateCreateSnippet, validateUpdateSnippet } from './snippet.validato
 import multer from 'multer';
 import { ALLOWED_ASSET_MIME_TYPES, MAX_ASSET_SIZE_BYTES } from '../asset/dto/asset.dto';
 import { CustomError } from '../../common/exceptions/custom-error';
+import { applyPublicEmbedHeaders } from '../../common/utilities/embed-headers';
 
 /**
  * @swagger
@@ -361,8 +362,7 @@ export async function getSnippetEmbed(
 ): Promise<void> {
   try {
     const html = await getSnippetEmbedHtmlHandler(req);
-    res.removeHeader('X-Frame-Options');
-    res.setHeader('Content-Security-Policy', 'frame-ancestors *');
+    applyPublicEmbedHeaders(res);
     res.type('html').status(200).send(html);
   } catch (error) {
     next(error);

@@ -155,9 +155,11 @@ Auth0 redirect after login: `window.location.origin + '/home'`.
 | Context | `/api` | `/content` |
 |---------|--------|------------|
 | Dev (`proxy.conf.json` + `ng serve`) | → `api:3000` | → `minio:9000` |
-| Prod (`nginx.nominio.conf` / `nginx.minio.conf`) | → `api:3000` | → `minio:9000` when MinIO is healthy |
+| Prod (`nginx.nominio.conf` / `nginx.minio.conf`) | → `api:3000` (`client_max_body_size 6m`) | → `minio:9000` when MinIO is healthy |
 
 Public traffic should hit the **frontend** origin only. The browser uses same-origin `api_base`; nginx (or the Angular proxy in dev) forwards to the API.
+
+Production HTML is served with a shared CSP (`nginx-csp.inc`): `default-src 'self'`, plus `https:` on `script-src` / `style-src` so snippet CDN libraries load inside `srcdoc` previews, `img-src 'self' data: blob: https:` for MinIO `/content/` assets, and `connect-src` that includes `blob:` / `data:` for snapshot capture. `/embed/` uses the same policy with `frame-ancestors *`; the rest of the app uses `frame-ancestors 'self'` and `X-Frame-Options: SAMEORIGIN`. Dev `ng serve` does not send this header.
 
 ---
 

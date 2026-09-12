@@ -24,7 +24,15 @@ setupSwaggerDocs(app);
 
 app.use(requestIdMiddleware);
 app.use(cookie());
-app.use(helmet());
+app.use(
+  helmet({
+    // SPA CSP is set by nginx. Helmet's default policy would also send
+    // upgrade-insecure-requests on JSON and conflict with the embed HTML route.
+    contentSecurityPolicy: false,
+    // CORS is the access gate; same-origin CORP would block a split SPA/API host.
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 app.use(
   cors({
     origin: config.frontend.url,

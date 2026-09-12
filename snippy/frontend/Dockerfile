@@ -23,6 +23,9 @@ COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./nginx.minio.conf /etc/nginx/nginx.minio.conf
 COPY ./nginx.nominio.conf /etc/nginx/nginx.nominio.conf
 COPY ./nginx-security-headers.inc /etc/nginx/nginx-security-headers.inc
+COPY ./nginx-csp.inc /etc/nginx/nginx-csp.inc
+COPY ./nginx-app-headers.inc /etc/nginx/nginx-app-headers.inc
+COPY ./nginx-embed-headers.inc /etc/nginx/nginx-embed-headers.inc
 
 COPY --from=build /app/dist/snippy-frontend/browser /usr/share/nginx/html
 

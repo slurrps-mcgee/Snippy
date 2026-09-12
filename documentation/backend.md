@@ -58,7 +58,7 @@ The Snippy backend is a Node.js / Express REST API that powers a CodePen-like pr
 | Validation | Joi + DOMPurify sanitization |
 | Object storage | MinIO (optional, feature-flagged) |
 | Uploads | Multer (memory storage) |
-| Security | Helmet, CORS, express-rate-limit |
+| Security | Helmet (CSP off — nginx owns the SPA policy), CORS, express-rate-limit |
 | Logging | Winston-based custom logger |
 | API docs (dev) | Swagger UI at `/api-docs` (non-production) |
 
@@ -710,7 +710,7 @@ Empty query returns `{ success: true, snippets: [], totalCount: 0 }`.
 
 #### `GET /snippets/:shortId/embed`
 
-**No JWT.** Returns `text/html` for a **public** pen (private → 404). Sets `Content-Security-Policy: frame-ancestors *` so the document can load in iframes. Inlines HTML/CSS/JS files and `cdnResources` link/script tags.
+**No JWT.** Returns `text/html` for a **public** pen (private → 404). `applyPublicEmbedHeaders` sets `Content-Security-Policy: frame-ancestors *` and removes Helmet `X-Frame-Options` / `Cross-Origin-Resource-Policy` / `Cross-Origin-Opener-Policy` so third-party sites can iframe it. Inlines HTML/CSS/JS files and `cdnResources` link/script tags. Helmet CSP is off on the JSON API; the SPA policy is on nginx.
 
 #### `POST /snippets/:snippetId/view`
 
