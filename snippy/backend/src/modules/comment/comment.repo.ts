@@ -25,8 +25,8 @@ export async function updateComment(
 }
 
 // Delete Comment
-export async function deleteComment(commentId: string, transaction?: Transaction): Promise<void> {
-  await Comments.destroy({ where: { commentId }, transaction });
+export async function deleteComment(commentId: string, transaction?: Transaction): Promise<number> {
+  return await Comments.destroy({ where: { commentId }, transaction });
 }
 // #endregion
 
