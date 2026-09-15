@@ -18,8 +18,8 @@ export async function deleteFavorite(
   auth0Id: string,
   snippetId: string,
   transaction?: Transaction
-): Promise<void> {
-  await Favorites.destroy({ where: { auth0Id, snippetId }, transaction });
+): Promise<number> {
+  return await Favorites.destroy({ where: { auth0Id, snippetId }, transaction });
 }
 // #endregion
 
