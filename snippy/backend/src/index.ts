@@ -18,7 +18,23 @@ import { connectMinioWithRetry, minioClient } from './database/minio';
 validateConfig();
 
 const app = express();
-app.set('trust proxy', 1);
+
+// Configure proxy trust based on TRUSTED_PROXIES environment variable.
+// When empty (default), no proxies are trusted and req.ip reflects the direct socket,
+// preventing X-Forwarded-For spoofing. When set, only the specified IPs/CIDRs are trusted.
+if (config.proxy.trustedProxies) {
+  const proxies = config.proxy.trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+  if (proxies.length > 0) {
+    app.set('trust proxy', proxies);
+    logger.info(`Trusting proxies: ${proxies.join(', ')}`);
+  } else {
+    app.set('trust proxy', false);
+    logger.info('No proxies trusted (TRUSTED_PROXIES is empty)');
+  }
+} else {
+  app.set('trust proxy', false);
+  logger.info('No proxies trusted (TRUSTED_PROXIES not set)');
+}
 
 setupSwaggerDocs(app);
 
