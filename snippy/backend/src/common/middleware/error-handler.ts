@@ -10,15 +10,22 @@ export const errorHandler = (
 ) => {
   // inside errorHandler, before `const statusCode = ...`
   if (!(err instanceof CustomError)) {
-    // map common JWT/auth errors to 401
+    const oauthStatus =
+      (err as { statusCode?: number; status?: number }).statusCode ??
+      (err as { status?: number }).status;
     if (
       err.name === 'UnauthorizedError' ||
+      err.name === 'InvalidRequestError' ||
+      err.name === 'InvalidTokenError' ||
+      err.name === 'InsufficientScopeError' ||
+      err.name === 'InvalidProofError' ||
       err.name === 'JwtAuthenticationError' ||
       err.name === 'JsonWebTokenError' ||
       err.name === 'TokenExpiredError' ||
-      (err as any).status === 401
+      oauthStatus === 401
     ) {
-      err = new CustomError('Invalid or expired token', 401);
+      const status = err.name === 'InsufficientScopeError' ? 403 : 401;
+      err = new CustomError(err.message || 'Invalid or expired token', status);
     }
   }
 
