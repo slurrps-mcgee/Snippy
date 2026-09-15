@@ -10,7 +10,8 @@ export const errorHandler = (
 ) => {
   // inside errorHandler, before `const statusCode = ...`
   if (!(err instanceof CustomError)) {
-    const oauthStatus = (err as { statusCode?: number; status?: number }).statusCode ??
+    const oauthStatus =
+      (err as { statusCode?: number; status?: number }).statusCode ??
       (err as { status?: number }).status;
     if (
       err.name === 'UnauthorizedError' ||
