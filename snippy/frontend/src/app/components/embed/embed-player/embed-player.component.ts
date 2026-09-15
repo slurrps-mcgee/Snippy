@@ -80,6 +80,8 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
     return `/snippet`;
   });
 
+  private refreshTimeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
   constructor() {
     this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       const shortId = params.get('shortId');
@@ -108,10 +110,19 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   ngAfterViewInit() {
-    this.refreshPreview();
+    // Only start refreshPreview if the result pane is enabled
+    if (this.showResult()) {
+      this.refreshPreview();
+    }
   }
 
-  ngOnDestroy() {}
+  ngOnDestroy() {
+    // Cancel any pending refresh timeout to prevent memory leaks
+    if (this.refreshTimeoutHandle !== null) {
+      clearTimeout(this.refreshTimeoutHandle);
+      this.refreshTimeoutHandle = null;
+    }
+  }
 
   selectCodeTab(tab: 'html' | 'css' | 'js') {
     this.activeCodeTab.set(tab);
@@ -160,8 +171,19 @@ export class EmbedPlayerComponent implements AfterViewInit, OnDestroy {
   }
 
   private refreshPreview(type: 'full' | 'partial' = 'full') {
+    // Clear any existing timeout
+    if (this.refreshTimeoutHandle !== null) {
+      clearTimeout(this.refreshTimeoutHandle);
+      this.refreshTimeoutHandle = null;
+    }
+
+    // Guard: do not schedule refresh if result pane is not shown
+    if (!this.showResult()) {
+      return;
+    }
+
     if (!this.preview) {
-      setTimeout(() => this.refreshPreview(type), 50);
+      this.refreshTimeoutHandle = setTimeout(() => this.refreshPreview(type), 50);
       return;
     }
     this.preview.updatePreview(this.html(), this.css(), this.js(), type, this.resources());
