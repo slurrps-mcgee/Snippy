@@ -109,6 +109,14 @@ export const config = {
   logging: {
     level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
   },
+
+  // Proxy Configuration
+  proxy: {
+    // Comma-separated list of trusted proxy IPs or CIDR ranges
+    // Example: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16" for private networks
+    // Leave empty to disable proxy trust (secure default)
+    trustedProxies: process.env.TRUSTED_PROXIES || '',
+  },
 } as const;
 
 // Global state to track MinIO availability across the application
