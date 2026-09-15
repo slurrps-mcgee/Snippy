@@ -213,13 +213,15 @@ describe('deleteCommentHandler', () => {
     // This test verifies the fix for the concurrent deletion vulnerability
     // Scenario: Two concurrent DELETE requests for the same comment
     // First request deletes the row, second request gets 0 affected rows
-    vi.mocked(findCommentByCommentId).mockResolvedValue(publicComment({ auth0Id: 'user-1' }) as any);
+    vi.mocked(findCommentByCommentId).mockResolvedValue(
+      publicComment({ auth0Id: 'user-1' }) as any
+    );
     vi.mocked(findBySnippetId).mockResolvedValue(publicSnippet({ auth0Id: 'user-1' }) as any);
     vi.mocked(countReplies).mockResolvedValue(0);
     vi.mocked(deleteComment).mockResolvedValue(0); // Simulates second concurrent request
 
     const result = await deleteCommentHandler({ auth, params: { commentId: 'cmt-1' } });
-    
+
     // Verify the security property: counter is NOT decremented when no row was deleted
     expect(deleteComment).toHaveBeenCalledWith('cmt-1', undefined);
     expect(decrementSnippetCommentCount).not.toHaveBeenCalled();
@@ -228,13 +230,15 @@ describe('deleteCommentHandler', () => {
 
   it('only decrements counter when deleteComment returns positive count', async () => {
     // Verify that decrement is conditional on successful deletion
-    vi.mocked(findCommentByCommentId).mockResolvedValue(publicComment({ auth0Id: 'user-1' }) as any);
+    vi.mocked(findCommentByCommentId).mockResolvedValue(
+      publicComment({ auth0Id: 'user-1' }) as any
+    );
     vi.mocked(findBySnippetId).mockResolvedValue(publicSnippet({ auth0Id: 'user-1' }) as any);
     vi.mocked(countReplies).mockResolvedValue(0);
     vi.mocked(deleteComment).mockResolvedValue(1); // Successful deletion
 
     await deleteCommentHandler({ auth, params: { commentId: 'cmt-1' } });
-    
+
     // Verify the security property: counter IS decremented when a row was deleted
     expect(deleteComment).toHaveBeenCalledWith('cmt-1', undefined);
     expect(decrementSnippetCommentCount).toHaveBeenCalledWith('uuid-1', undefined);
@@ -243,13 +247,15 @@ describe('deleteCommentHandler', () => {
 
   it('handles race condition where comment is deleted between authorization and deletion', async () => {
     // Simulates: Request passes authorization check, but comment is deleted before deleteComment executes
-    vi.mocked(findCommentByCommentId).mockResolvedValue(publicComment({ auth0Id: 'user-1' }) as any);
+    vi.mocked(findCommentByCommentId).mockResolvedValue(
+      publicComment({ auth0Id: 'user-1' }) as any
+    );
     vi.mocked(findBySnippetId).mockResolvedValue(publicSnippet({ auth0Id: 'user-1' }) as any);
     vi.mocked(countReplies).mockResolvedValue(0);
     vi.mocked(deleteComment).mockResolvedValue(0); // Comment already deleted by concurrent request
 
     const result = await deleteCommentHandler({ auth, params: { commentId: 'cmt-1' } });
-    
+
     // Verify idempotency: operation succeeds without corrupting counter
     expect(decrementSnippetCommentCount).not.toHaveBeenCalled();
     expect(result.message).toBe('Comment deleted successfully');
@@ -260,7 +266,7 @@ describe('deleteCommentHandler', () => {
     // Both are authorized, but only one should decrement the counter
     const commentAuthor = authAs('comment-author');
     const snippetOwner = authAs('snippet-owner');
-    
+
     // First deletion (by comment author) - succeeds
     vi.mocked(findCommentByCommentId).mockResolvedValue(
       publicComment({ auth0Id: 'comment-author' }) as any
@@ -276,19 +282,21 @@ describe('deleteCommentHandler', () => {
 
     // Second deletion (by snippet owner) - returns 0 affected rows
     vi.mocked(deleteComment).mockResolvedValueOnce(0); // Second call returns 0
-    
+
     await deleteCommentHandler({ auth: snippetOwner, params: { commentId: 'cmt-1' } });
-    
+
     // Verify: counter was only decremented once, not twice
     expect(decrementSnippetCommentCount).toHaveBeenCalledTimes(1);
   });
 
   it('ensures deleteComment return value is checked before decrementing', async () => {
     // Explicit test that the return value from deleteComment is used
-    vi.mocked(findCommentByCommentId).mockResolvedValue(publicComment({ auth0Id: 'user-1' }) as any);
+    vi.mocked(findCommentByCommentId).mockResolvedValue(
+      publicComment({ auth0Id: 'user-1' }) as any
+    );
     vi.mocked(findBySnippetId).mockResolvedValue(publicSnippet({ auth0Id: 'user-1' }) as any);
     vi.mocked(countReplies).mockResolvedValue(0);
-    
+
     // Test with various return values
     const testCases = [
       { deletedCount: 0, shouldDecrement: false },
@@ -298,7 +306,9 @@ describe('deleteCommentHandler', () => {
 
     for (const testCase of testCases) {
       vi.clearAllMocks();
-      vi.mocked(findCommentByCommentId).mockResolvedValue(publicComment({ auth0Id: 'user-1' }) as any);
+      vi.mocked(findCommentByCommentId).mockResolvedValue(
+        publicComment({ auth0Id: 'user-1' }) as any
+      );
       vi.mocked(findBySnippetId).mockResolvedValue(publicSnippet({ auth0Id: 'user-1' }) as any);
       vi.mocked(countReplies).mockResolvedValue(0);
       vi.mocked(deleteComment).mockResolvedValue(testCase.deletedCount);

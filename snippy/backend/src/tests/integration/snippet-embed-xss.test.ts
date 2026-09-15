@@ -84,7 +84,7 @@ describe('Snippet Embed XSS Mitigation - Integration Tests', () => {
       const html = await getSnippetEmbedHtmlHandler({ params: { shortId: 'xss123' } });
 
       // Verify the malicious JavaScript is included (as intended for snippet functionality)
-      expect(html).toContain('fetch(\'/api/user/me\'');
+      expect(html).toContain("fetch('/api/user/me'");
       expect(html).toContain('localStorage.getItem');
 
       // Pentest Step 3: Verify CSP sandbox is applied to prevent exploitation
@@ -146,7 +146,7 @@ describe('Snippet Embed XSS Mitigation - Integration Tests', () => {
 
       const csp = headers['Content-Security-Policy'];
 
-      // Pentest finding: "access to same-origin resources exposed to JavaScript, 
+      // Pentest finding: "access to same-origin resources exposed to JavaScript,
       // including readable web storage and non-HttpOnly data"
       // Mitigation: Opaque origin means document.cookie returns empty string
       // for the application's cookies (they belong to a different origin)
@@ -251,7 +251,7 @@ describe('Snippet Embed XSS Mitigation - Integration Tests', () => {
 
       const csp = headers['Content-Security-Policy'];
 
-      // Pentest finding: "access same-origin resources exposed to JavaScript, 
+      // Pentest finding: "access same-origin resources exposed to JavaScript,
       // including readable web storage"
       // Mitigation: Opaque origin has its own separate storage,
       // cannot access the application's localStorage/sessionStorage
@@ -267,7 +267,10 @@ describe('Snippet Embed XSS Mitigation - Integration Tests', () => {
         name: 'Interactive Demo',
         isPrivate: false,
         snippetFiles: [
-          { fileType: 'html', content: '<button id="btn">Click me</button><div id="output"></div>' },
+          {
+            fileType: 'html',
+            content: '<button id="btn">Click me</button><div id="output"></div>',
+          },
           { fileType: 'css', content: 'button { padding: 10px; }' },
           {
             fileType: 'js',
@@ -351,7 +354,7 @@ describe('Snippet Embed XSS Mitigation - Integration Tests', () => {
       expect(csp).toContain('allow-forms');
       expect(csp).toContain('allow-modals');
       expect(csp).toContain('allow-popups');
-      
+
       // But still isolated
       expect(csp).not.toContain('allow-same-origin');
     });

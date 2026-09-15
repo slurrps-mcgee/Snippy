@@ -428,7 +428,11 @@ describe('snippet count visibility filtering (pentest mitigation)', () => {
     });
 
     // Assert: countSnippetsForCollections was called once with both collection IDs
-    expect(countSnippetsForCollections).toHaveBeenCalledWith(['col-1', 'col-2'], undefined, undefined);
+    expect(countSnippetsForCollections).toHaveBeenCalledWith(
+      ['col-1', 'col-2'],
+      undefined,
+      undefined
+    );
     // Assert: Each collection has the correct filtered count
     expect(result.collections?.[0].snippetCount).toBe(2);
     expect(result.collections?.[1].snippetCount).toBe(1);

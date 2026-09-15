@@ -21,16 +21,14 @@ describe('sanitizeUrlForLogging', () => {
   });
 
   it('removes query strings from non-sensitive paths', () => {
-    expect(sanitizeUrlForLogging('/api/v1/snippets/public?page=2')).toBe(
-      '/api/v1/snippets/public'
-    );
+    expect(sanitizeUrlForLogging('/api/v1/snippets/public?page=2')).toBe('/api/v1/snippets/public');
   });
 
   it('handles multiple share token patterns in the same URL', () => {
     // Edge case: if somehow multiple patterns exist
-    expect(
-      sanitizeUrlForLogging('/api/v1/snippets/shared/token1/snippets/shared/token2')
-    ).toBe('/api/v1/snippets/shared/[REDACTED]/snippets/shared/[REDACTED]');
+    expect(sanitizeUrlForLogging('/api/v1/snippets/shared/token1/snippets/shared/token2')).toBe(
+      '/api/v1/snippets/shared/[REDACTED]/snippets/shared/[REDACTED]'
+    );
   });
 
   it('handles trailing slashes', () => {
@@ -51,7 +49,7 @@ describe('sanitizeUrlForLogging', () => {
       const token = 'V1StGXR8_Z5jdHi6B-myT'; // 21 character nanoid
       const url = `/api/v1/snippets/shared/${token}`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       // Assert token is NOT present in sanitized output
       expect(sanitized).not.toContain(token);
       expect(sanitized).toBe('/api/v1/snippets/shared/[REDACTED]');
@@ -62,7 +60,7 @@ describe('sanitizeUrlForLogging', () => {
       const token = 'abc123xyz789token456';
       const url = `/api/v1/snippets/shared/${token}?format=json&include=metadata`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       expect(sanitized).not.toContain(token);
       expect(sanitized).toBe('/api/v1/snippets/shared/[REDACTED]');
     });
@@ -72,7 +70,7 @@ describe('sanitizeUrlForLogging', () => {
       const token = 'sensitive_bearer_token_xyz';
       const url = `/api/v1/snippets/shared/${token}`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       expect(sanitized).not.toContain(token);
       expect(sanitized).toBe('/api/v1/snippets/shared/[REDACTED]');
     });
@@ -81,7 +79,7 @@ describe('sanitizeUrlForLogging', () => {
       const token = 'V1StGXR8_Z5jdHi6B-myT';
       const url = `/api/v1/snippets/shared/${token}`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       // Verify no part of the token is present
       for (let i = 0; i < token.length - 2; i++) {
         const substring = token.substring(i, i + 3);
@@ -92,14 +90,14 @@ describe('sanitizeUrlForLogging', () => {
     it('redacts tokens with special characters and URL encoding', () => {
       // Test with various token formats that might appear
       const tokens = [
-        'V1StGXR8_Z5jdHi6B-myT',  // nanoid with special chars
-        'abc123def456ghi789jkl',   // alphanumeric
-        'token-with-dashes-here',  // dashes
-        'token_with_underscores',  // underscores
-        'MixedCase123Token456',    // mixed case
+        'V1StGXR8_Z5jdHi6B-myT', // nanoid with special chars
+        'abc123def456ghi789jkl', // alphanumeric
+        'token-with-dashes-here', // dashes
+        'token_with_underscores', // underscores
+        'MixedCase123Token456', // mixed case
       ];
 
-      tokens.forEach(token => {
+      tokens.forEach((token) => {
         const url = `/api/v1/snippets/shared/${token}`;
         const sanitized = sanitizeUrlForLogging(url);
         expect(sanitized).not.toContain(token);
@@ -111,9 +109,9 @@ describe('sanitizeUrlForLogging', () => {
       // Simulates the security scenario: attacker with log access should not get reusable tokens
       const reusableToken = 'V1StGXR8_Z5jdHi6B-myT';
       const successfulRequestUrl = `/api/v1/snippets/shared/${reusableToken}`;
-      
+
       const sanitized = sanitizeUrlForLogging(successfulRequestUrl);
-      
+
       // Critical: token must be completely redacted to prevent replay
       expect(sanitized).toBe('/api/v1/snippets/shared/[REDACTED]');
       expect(sanitized).not.toContain(reusableToken);
@@ -124,7 +122,7 @@ describe('sanitizeUrlForLogging', () => {
       const token = 'mytoken123';
       const url = `/api/v1/snippets/shared/${token}/extra/path`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       expect(sanitized).not.toContain(token);
       expect(sanitized).toContain('[REDACTED]');
       expect(sanitized).toContain('/extra/path');
@@ -135,7 +133,7 @@ describe('sanitizeUrlForLogging', () => {
       const longToken = 'a'.repeat(100);
       const url = `/api/v1/snippets/shared/${longToken}`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       expect(sanitized).not.toContain(longToken);
       expect(sanitized).toBe('/api/v1/snippets/shared/[REDACTED]');
     });
@@ -145,7 +143,7 @@ describe('sanitizeUrlForLogging', () => {
       const shortToken = 'x';
       const url = `/api/v1/snippets/shared/${shortToken}`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       expect(sanitized).not.toContain(shortToken);
       expect(sanitized).toBe('/api/v1/snippets/shared/[REDACTED]');
     });
@@ -157,7 +155,7 @@ describe('sanitizeUrlForLogging', () => {
       const token = 'V1StGXR8_Z5jdHi6B-myT';
       const url = `/api/v1/snippets/shared/${token}`;
       const sanitized = sanitizeUrlForLogging(url);
-      
+
       // Should be safe to log anywhere
       expect(sanitized).toMatch(/^\/api\/v1\/snippets\/shared\/\[REDACTED\]$/);
       expect(sanitized).not.toMatch(/[A-Za-z0-9_-]{21}/); // No nanoid pattern
@@ -166,10 +164,10 @@ describe('sanitizeUrlForLogging', () => {
     it('maintains consistent redaction format across all requests', () => {
       // All tokens should be redacted to the same placeholder
       const tokens = ['token1', 'token2', 'differentToken', 'V1StGXR8_Z5jdHi6B-myT'];
-      const sanitizedResults = tokens.map(token => 
+      const sanitizedResults = tokens.map((token) =>
         sanitizeUrlForLogging(`/api/v1/snippets/shared/${token}`)
       );
-      
+
       // All should produce identical output
       const uniqueResults = new Set(sanitizedResults);
       expect(uniqueResults.size).toBe(1);

@@ -104,7 +104,7 @@ describe('applyPublicEmbedHeaders', () => {
       const csp = headers['Content-Security-Policy'];
       const sandboxIndex = csp.indexOf('sandbox');
       const frameAncestorsIndex = csp.indexOf('frame-ancestors');
-      
+
       // sandbox directive must come before frame-ancestors
       expect(sandboxIndex).toBeGreaterThan(-1);
       expect(frameAncestorsIndex).toBeGreaterThan(-1);
@@ -123,14 +123,14 @@ describe('applyPublicEmbedHeaders', () => {
       applyPublicEmbedHeaders(res as any);
 
       const csp = headers['Content-Security-Policy'];
-      
+
       // Required for snippet functionality
       expect(csp).toContain('allow-scripts');
       expect(csp).toContain('allow-forms');
       expect(csp).toContain('allow-modals');
       expect(csp).toContain('allow-popups');
       expect(csp).toContain('allow-popups-to-escape-sandbox');
-      
+
       // Security-critical: these must NOT be present
       expect(csp).not.toContain('allow-same-origin');
       expect(csp).not.toContain('allow-top-navigation');
@@ -172,11 +172,11 @@ describe('applyPublicEmbedHeaders', () => {
       applyPublicEmbedHeaders(res as any);
 
       const csp = headers['Content-Security-Policy'];
-      
+
       // Pentest finding: "The attacker's script can access same-origin resources"
       // Mitigation: sandbox without allow-same-origin creates opaque origin
       expect(csp).toMatch(/sandbox(?!.*allow-same-origin)/);
-      
+
       // Pentest finding: "can issue or read same-origin requests in the victim's browser session"
       // Mitigation: opaque origin prevents same-origin fetch/XHR
       const sandboxMatch = csp.match(/sandbox\s+([^;]+)/);
@@ -197,10 +197,10 @@ describe('applyPublicEmbedHeaders', () => {
       applyPublicEmbedHeaders(res as any);
 
       const csp = headers['Content-Security-Policy'];
-      
+
       // Pentest requirement: "third-party sites may iframe"
       expect(csp).toContain('frame-ancestors *');
-      
+
       // Security requirement: scripts execute in isolated context
       expect(csp).toContain('sandbox');
       expect(csp).toContain('allow-scripts');
@@ -219,14 +219,14 @@ describe('applyPublicEmbedHeaders', () => {
       applyPublicEmbedHeaders(res as any);
 
       const csp = headers['Content-Security-Policy'];
-      
-      // Pentest finding: "access same-origin resources exposed to JavaScript, 
+
+      // Pentest finding: "access same-origin resources exposed to JavaScript,
       // including readable web storage"
       // Mitigation: Without allow-same-origin, the embed has a unique opaque origin
       // and cannot access the application's localStorage/sessionStorage
       expect(csp).toContain('sandbox');
       expect(csp).not.toContain('allow-same-origin');
-      
+
       // Verify the CSP is properly formatted
       expect(csp).toMatch(/^sandbox\s+[^;]+;\s*frame-ancestors\s+\*/);
     });

@@ -23,7 +23,10 @@ const app = express();
 // When empty (default), no proxies are trusted and req.ip reflects the direct socket,
 // preventing X-Forwarded-For spoofing. When set, only the specified IPs/CIDRs are trusted.
 if (config.proxy.trustedProxies) {
-  const proxies = config.proxy.trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+  const proxies = config.proxy.trustedProxies
+    .split(',')
+    .map((p) => p.trim())
+    .filter(Boolean);
   if (proxies.length > 0) {
     app.set('trust proxy', proxies);
     logger.info(`Trusting proxies: ${proxies.join(', ')}`);

@@ -3,13 +3,13 @@ import express, { Express, Request, Response } from 'express';
 
 /**
  * Tests for proxy trust configuration and rate limiter IP spoofing mitigation.
- * 
+ *
  * This test suite verifies that the security issue identified in the pentest
  * has been mitigated:
  * - When TRUSTED_PROXIES is not set, X-Forwarded-For headers are ignored
  * - When TRUSTED_PROXIES is set, only specified proxies are trusted
  * - Rate limiters use req.ip which is now protected from spoofing
- * 
+ *
  * The vulnerability was that app.set('trust proxy', 1) allowed direct clients
  * to spoof X-Forwarded-For headers, defeating rate limiters. The fix changes
  * to app.set('trust proxy', false) by default, or an explicit allowlist when
@@ -35,11 +35,14 @@ describe('Proxy trust configuration', () => {
     it('should configure trust proxy as false', () => {
       delete process.env.TRUSTED_PROXIES;
       const app = express();
-      
+
       // Simulate the production configuration from index.ts
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
       if (trustedProxies) {
-        const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+        const proxies = trustedProxies
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
         if (proxies.length > 0) {
           app.set('trust proxy', proxies);
         } else {
@@ -84,8 +87,11 @@ describe('Proxy trust configuration', () => {
     it('should result in empty proxy list', () => {
       delete process.env.TRUSTED_PROXIES;
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual([]);
       expect(proxies.length).toBe(0);
     });
@@ -95,10 +101,13 @@ describe('Proxy trust configuration', () => {
     it('should configure trust proxy as false', () => {
       process.env.TRUSTED_PROXIES = '';
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
       if (trustedProxies) {
-        const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+        const proxies = trustedProxies
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
         if (proxies.length > 0) {
           app.set('trust proxy', proxies);
         } else {
@@ -114,8 +123,11 @@ describe('Proxy trust configuration', () => {
     it('should result in empty proxy list after filtering', () => {
       process.env.TRUSTED_PROXIES = '';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual([]);
     });
   });
@@ -124,8 +136,11 @@ describe('Proxy trust configuration', () => {
     it('should parse trusted proxy list correctly', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.1,172.16.0.1';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual(['10.0.0.1', '172.16.0.1']);
       expect(proxies.length).toBe(2);
     });
@@ -133,9 +148,12 @@ describe('Proxy trust configuration', () => {
     it('should configure trust proxy with parsed list', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.1,172.16.0.1';
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
       if (proxies.length > 0) {
         app.set('trust proxy', proxies);
       }
@@ -149,8 +167,11 @@ describe('Proxy trust configuration', () => {
     it('should handle whitespace in proxy list', () => {
       process.env.TRUSTED_PROXIES = ' 10.0.0.1 , 172.16.0.1 , 192.168.1.1 ';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual(['10.0.0.1', '172.16.0.1', '192.168.1.1']);
     });
   });
@@ -159,8 +180,11 @@ describe('Proxy trust configuration', () => {
     it('should parse CIDR ranges correctly', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual(['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']);
       expect(proxies.length).toBe(3);
     });
@@ -168,17 +192,23 @@ describe('Proxy trust configuration', () => {
     it('should handle mixed IPs and CIDR ranges', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.1,172.16.0.0/12,192.168.1.1';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual(['10.0.0.1', '172.16.0.0/12', '192.168.1.1']);
     });
 
     it('should configure trust proxy with CIDR ranges', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.0/8,172.16.0.0/12';
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
       if (proxies.length > 0) {
         app.set('trust proxy', proxies);
       }
@@ -193,8 +223,11 @@ describe('Proxy trust configuration', () => {
     it('should handle empty proxy list after filtering whitespace', () => {
       process.env.TRUSTED_PROXIES = '  ,  ,  ';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual([]);
       expect(proxies.length).toBe(0);
     });
@@ -202,8 +235,11 @@ describe('Proxy trust configuration', () => {
     it('should filter out empty strings from proxy list', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.1,,172.16.0.1,';
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       expect(proxies).toEqual(['10.0.0.1', '172.16.0.1']);
       expect(proxies.length).toBe(2);
     });
@@ -211,9 +247,12 @@ describe('Proxy trust configuration', () => {
     it('should set trust proxy to false when filtered list is empty', () => {
       process.env.TRUSTED_PROXIES = '  ,  ,  ';
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
       if (proxies.length > 0) {
         app.set('trust proxy', proxies);
       } else {
@@ -228,7 +267,7 @@ describe('Proxy trust configuration', () => {
     it('should default to secure configuration (no proxy trust)', () => {
       delete process.env.TRUSTED_PROXIES;
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      
+
       expect(trustedProxies).toBe('');
     });
 
@@ -236,17 +275,20 @@ describe('Proxy trust configuration', () => {
       delete process.env.TRUSTED_PROXIES;
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
       const shouldTrustProxy = trustedProxies.length > 0;
-      
+
       expect(shouldTrustProxy).toBe(false);
     });
 
     it('should not trust numeric hop count by default', () => {
       delete process.env.TRUSTED_PROXIES;
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
       if (trustedProxies) {
-        const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+        const proxies = trustedProxies
+          .split(',')
+          .map((p) => p.trim())
+          .filter(Boolean);
         if (proxies.length > 0) {
           app.set('trust proxy', proxies);
         } else {
@@ -255,7 +297,7 @@ describe('Proxy trust configuration', () => {
       } else {
         app.set('trust proxy', false);
       }
-      
+
       // Verify trust proxy is not set to a number (the vulnerable configuration)
       const trustProxySetting = app.get('trust proxy');
       expect(typeof trustProxySetting).not.toBe('number');
@@ -266,12 +308,15 @@ describe('Proxy trust configuration', () => {
       // The vulnerable configuration was: app.set('trust proxy', 1)
       // This allowed direct clients to spoof X-Forwarded-For
       const vulnerableConfig = 1;
-      
+
       // Verify our configuration never uses a numeric hop count
       delete process.env.TRUSTED_PROXIES;
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
-      
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
+
       let configuredValue: any;
       if (proxies.length > 0) {
         configuredValue = proxies;
@@ -298,14 +343,17 @@ describe('Proxy trust configuration', () => {
     it('should only trust explicitly configured proxies', () => {
       process.env.TRUSTED_PROXIES = '10.0.0.1,10.0.0.2';
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
       app.set('trust proxy', proxies);
 
       const trustProxySetting = app.get('trust proxy');
       expect(trustProxySetting).toEqual(['10.0.0.1', '10.0.0.2']);
-      
+
       // Verify it's an allowlist, not a hop count
       expect(Array.isArray(trustProxySetting)).toBe(true);
     });
@@ -314,13 +362,16 @@ describe('Proxy trust configuration', () => {
       // The fix changes from hop count (trust proxy: 1) to allowlist
       process.env.TRUSTED_PROXIES = '192.168.1.1';
       const app = express();
-      
+
       const trustedProxies = process.env.TRUSTED_PROXIES || '';
-      const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+      const proxies = trustedProxies
+        .split(',')
+        .map((p) => p.trim())
+        .filter(Boolean);
       app.set('trust proxy', proxies);
 
       const trustProxySetting = app.get('trust proxy');
-      
+
       // Verify it's an array (allowlist), not a number (hop count)
       expect(Array.isArray(trustProxySetting)).toBe(true);
       expect(typeof trustProxySetting).not.toBe('number');
@@ -357,17 +408,17 @@ describe('Rate limiter configuration', () => {
   it('should prevent separate rate limit buckets via IP spoofing', () => {
     // The vulnerability allowed attackers to rotate X-Forwarded-For values
     // to obtain separate rate limiter buckets, bypassing limits
-    
+
     // With trust proxy false, all requests from the same socket share one bucket
     const app = express();
     app.set('trust proxy', false);
 
     // Verify the mitigation is in place
     expect(app.get('trust proxy')).toBe(false);
-    
+
     // This means X-Forwarded-For headers like these would be ignored:
     const spoofedHeaders = ['1.1.1.1', '2.2.2.2', '3.3.3.3'];
-    
+
     // All would map to the same req.ip (the real socket address)
     // preventing the bucket rotation attack
     expect(spoofedHeaders.length).toBeGreaterThan(1);
@@ -377,7 +428,7 @@ describe('Rate limiter configuration', () => {
 describe('Integration with config module', () => {
   it('should read TRUSTED_PROXIES from environment', () => {
     process.env.TRUSTED_PROXIES = '10.0.0.1,10.0.0.2';
-    
+
     // Simulate config module behavior
     const proxyConfig = {
       trustedProxies: process.env.TRUSTED_PROXIES || '',
@@ -388,7 +439,7 @@ describe('Integration with config module', () => {
 
   it('should default to empty string when TRUSTED_PROXIES not set', () => {
     delete process.env.TRUSTED_PROXIES;
-    
+
     const proxyConfig = {
       trustedProxies: process.env.TRUSTED_PROXIES || '',
     };
@@ -399,9 +450,12 @@ describe('Integration with config module', () => {
   it('should support the documented configuration format', () => {
     // Documentation example: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
     process.env.TRUSTED_PROXIES = '10.0.0.0/8,172.16.0.0/12,192.168.0.0/16';
-    
+
     const trustedProxies = process.env.TRUSTED_PROXIES || '';
-    const proxies = trustedProxies.split(',').map((p) => p.trim()).filter(Boolean);
+    const proxies = trustedProxies
+      .split(',')
+      .map((p) => p.trim())
+      .filter(Boolean);
 
     expect(proxies).toEqual(['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']);
   });

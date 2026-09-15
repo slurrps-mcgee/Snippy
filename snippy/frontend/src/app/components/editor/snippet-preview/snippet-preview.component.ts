@@ -181,7 +181,7 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
   private onConsoleMessage(event: MessageEvent) {
     // Validate that the message comes from our preview iframe
     if (event.source !== this.previewIframe?.nativeElement?.contentWindow) return;
-    
+
     const data = event.data;
     if (!data || data.source !== 'snippy-console') return;
     const level = (data.level as ConsoleLevel) || 'log';
