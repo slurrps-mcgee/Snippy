@@ -1,4 +1,4 @@
-import { Transaction } from 'sequelize';
+import { Transaction, Op } from 'sequelize';
 import { Follows } from '../../entities/follow.entity';
 import { Users } from '../../entities/user.entity';
 
@@ -62,7 +62,8 @@ export async function findFollowers(
   followingAuth0Id: string,
   offset: number,
   limit: number,
-  transaction?: Transaction
+  transaction?: Transaction,
+  requestingAuth0Id?: string
 ): Promise<{ rows: Users[]; count: number }> {
   const { rows, count } = await Follows.findAndCountAll({
     where: { followingAuth0Id },
@@ -70,7 +71,15 @@ export async function findFollowers(
       {
         model: Users,
         as: 'follower',
-        attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl'],
+        attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl', 'isPrivate'],
+        where: requestingAuth0Id
+          ? {
+              [Op.or]: [
+                { isPrivate: false },
+                { auth0Id: requestingAuth0Id }
+              ]
+            }
+          : { isPrivate: false },
       },
     ],
     order: [['created_at', 'DESC']],
@@ -89,7 +98,8 @@ export async function findFollowing(
   followerAuth0Id: string,
   offset: number,
   limit: number,
-  transaction?: Transaction
+  transaction?: Transaction,
+  requestingAuth0Id?: string
 ): Promise<{ rows: Users[]; count: number }> {
   const { rows, count } = await Follows.findAndCountAll({
     where: { followerAuth0Id },
@@ -97,7 +107,15 @@ export async function findFollowing(
       {
         model: Users,
         as: 'following',
-        attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl'],
+        attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl', 'isPrivate'],
+        where: requestingAuth0Id
+          ? {
+              [Op.or]: [
+                { isPrivate: false },
+                { auth0Id: requestingAuth0Id }
+              ]
+            }
+          : { isPrivate: false },
       },
     ],
     order: [['created_at', 'DESC']],
