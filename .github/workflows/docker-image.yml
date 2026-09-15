@@ -25,14 +25,39 @@ jobs:
       id: version
       shell: bash
       run: |
+        # Validate version string to prevent injection attacks
+        # Only allow semver-compatible characters: digits, dots, hyphens, plus signs, alphanumerics
+        # Reject any control characters including newlines, carriage returns, tabs, etc.
+        validate_version() {
+          local version="$1"
+          local name="$2"
+          
+          # Check for control characters (ASCII 0-31 and 127)
+          if [[ "$version" =~ [[:cntrl:]] ]]; then
+            echo "ERROR: $name contains control characters (possible injection attack)" >&2
+            exit 1
+          fi
+          
+          # Validate semver format: digits, dots, hyphens, plus signs, and alphanumerics only
+          # Allows: 1.2.3, 1.2.3-alpha, 1.2.3-alpha.1, 1.2.3+build.123, latest
+          if [[ ! "$version" =~ ^[0-9a-zA-Z.\+\-]+$ ]]; then
+            echo "ERROR: $name contains invalid characters: $version" >&2
+            exit 1
+          fi
+          
+          echo "Validated $name: $version"
+        }
+
         # Get API version
         API_VERSION=$(node -p "require('./snippy/backend/package.json').version")
+        validate_version "$API_VERSION" "API_VERSION"
         echo "API_VERSION=$API_VERSION" >> $GITHUB_ENV
         echo "Using API version: $API_VERSION"
 
         # Get DB version if package.json exists, else default to latest
         if [ -f "./snippy/db/package.json" ]; then
           DB_VERSION=$(node -p "require('./snippy/db/package.json').version")
+          validate_version "$DB_VERSION" "DB_VERSION"
         else
           DB_VERSION="latest"
         fi
@@ -41,6 +66,7 @@ jobs:
 
         # Get FrontEnd version
         FE_VERSION=$(node -p "require('./snippy/frontend/package.json').version")
+        validate_version "$FE_VERSION" "FE_VERSION"
         echo "FE_VERSION=$FE_VERSION" >> $GITHUB_ENV
         echo "Using FE version: $FE_VERSION"
 
