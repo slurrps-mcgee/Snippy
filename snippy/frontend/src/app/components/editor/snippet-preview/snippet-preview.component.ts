@@ -72,7 +72,11 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
     if (!this.previewIframe) return;
 
     if (previewUpdateType?.toLocaleLowerCase() === 'partial') {
-      this.updateCssOnly(css);
+      // Attempt CSS-only update; if it fails (e.g., due to sandbox), fall back to full reload
+      const updated = this.updateCssOnly(css);
+      if (!updated) {
+        this.fullReload(html, css, js, cdnResources);
+      }
     } else {
       this.fullReload(html, css, js, cdnResources);
     }
@@ -154,13 +158,13 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
     `;
   }
 
-  private updateCssOnly(css: string) {
-    if (!this.previewIframe) return;
+  private updateCssOnly(css: string): boolean {
+    if (!this.previewIframe) return false;
 
     const iframe = this.previewIframe.nativeElement;
     const doc = iframe.contentDocument;
 
-    if (!doc) return;
+    if (!doc) return false;
 
     let styleEl = doc.getElementById('snippet-style') as HTMLStyleElement | null;
 
@@ -171,9 +175,13 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
     }
 
     styleEl.textContent = css;
+    return true;
   }
 
   private onConsoleMessage(event: MessageEvent) {
+    // Validate that the message comes from our preview iframe
+    if (event.source !== this.previewIframe?.nativeElement?.contentWindow) return;
+    
     const data = event.data;
     if (!data || data.source !== 'snippy-console') return;
     const level = (data.level as ConsoleLevel) || 'log';
