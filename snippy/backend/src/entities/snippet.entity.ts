@@ -8,67 +8,67 @@ import {
   ForeignKey,
   BelongsTo,
   BeforeCreate,
-} from "sequelize-typescript";
-import { SnippetFiles } from "./snippetFile.entity";
-import { Users } from "./user.entity";
-import { Favorites } from "./favorite.entity";
-import { Comments } from "./comment.entity";
-import { createUniqueShortName } from "../common/utilities/helper";
+} from 'sequelize-typescript';
+import { SnippetFiles } from './snippetFile.entity';
+import { Users } from './user.entity';
+import { Favorites } from './favorite.entity';
+import { Comments } from './comment.entity';
+import { createUniqueShortName } from '../common/utilities/helper';
 
 @Table({
-  tableName: "snippets",
+  tableName: 'snippets',
   timestamps: true,
   createdAt: 'created_at',
   updatedAt: 'updated_at',
   indexes: [
     {
       name: 'idx_snippets_auth0',
-      fields: ['auth0_id']
+      fields: ['auth0_id'],
     },
     {
       name: 'idx_snippets_short_id',
-      fields: ['short_id']
+      fields: ['short_id'],
     },
     {
       name: 'idx_snippets_parent',
-      fields: ['parent_snippet_short_id']
+      fields: ['parent_snippet_short_id'],
     },
     {
       name: 'idx_snippets_view_count',
-      fields: ['view_count']
+      fields: ['view_count'],
     },
     {
       name: 'idx_snippets_fork_count',
-      fields: ['fork_count']
+      fields: ['fork_count'],
     },
     {
       name: 'idx_snippets_favorite_count',
-      fields: ['favorite_count']
+      fields: ['favorite_count'],
     },
     {
       name: 'idx_snippets_auth0_private',
-      fields: ['auth0_id', 'is_private']
+      fields: ['auth0_id', 'is_private'],
     },
     {
       name: 'idx_snippets_private_created',
-      fields: ['is_private', 'created_at']
+      fields: ['is_private', 'created_at'],
     },
     {
       name: 'idx_snippets_name_search',
-      fields: ['name']
+      fields: ['name'],
     },
     {
       name: 'idx_snippets_description_search',
-      fields: ['description']
-    }
-  ]
+      fields: ['description'],
+    },
+  ],
 })
 export class Snippets extends Model<Snippets> {
   @PrimaryKey
-  @Column({ 
+  @Column({
     field: 'snippet_id',
     type: DataType.UUID,
-    defaultValue: DataType.UUIDV4
+    defaultValue: DataType.UUIDV4,
   })
   snippetId!: string;
 
@@ -84,7 +84,7 @@ export class Snippets extends Model<Snippets> {
     type: DataType.STRING(16),
     allowNull: false,
     unique: true,
-    field: 'short_id'
+    field: 'short_id',
   })
   shortId!: string;
 
@@ -146,7 +146,7 @@ export class Snippets extends Model<Snippets> {
     field: 'view_count',
     type: DataType.INTEGER,
     allowNull: false,
-    defaultValue: 0
+    defaultValue: 0,
   })
   viewCount!: number;
 

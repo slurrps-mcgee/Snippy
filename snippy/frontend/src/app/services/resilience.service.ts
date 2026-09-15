@@ -11,10 +11,7 @@ import {
 function isRetriableError(err: unknown): boolean {
   const anyErr = err as any;
   const status: number | undefined =
-    anyErr?.status ??
-    anyErr?.statusCode ??
-    anyErr?.response?.status ??
-    anyErr?.error?.status;
+    anyErr?.status ?? anyErr?.statusCode ?? anyErr?.response?.status ?? anyErr?.error?.status;
 
   if (typeof status === 'number') {
     return status >= 500 && status < 600;
@@ -31,10 +28,7 @@ function isRetriableError(err: unknown): boolean {
 function isMinioRetriableError(err: unknown): boolean {
   const anyErr = err as any;
   const status: number | undefined =
-    anyErr?.status ??
-    anyErr?.statusCode ??
-    anyErr?.response?.status ??
-    anyErr?.error?.status;
+    anyErr?.status ?? anyErr?.statusCode ?? anyErr?.response?.status ?? anyErr?.error?.status;
   // 503 means MinIO is latched off — retrying only delays save / upload.
   if (status === 503) return false;
   return isRetriableError(err);

@@ -26,9 +26,7 @@ export class CdnApiService {
       .set('limit', '12');
 
     return this.http.get<CdnjsSearchResponse>(CDNJS_API, { params }).pipe(
-      map(res =>
-        (res.results ?? []).map(lib => this.toHit(lib, resourceType))
-      ),
+      map((res) => (res.results ?? []).map((lib) => this.toHit(lib, resourceType))),
       catchError(() => of([]))
     );
   }
@@ -46,7 +44,7 @@ export class CdnApiService {
     return this.http
       .get<CdnjsLibraryDetail>(`${CDNJS_API}/${encodeURIComponent(hit.name)}`, { params })
       .pipe(
-        map(detail => this.pickUrlFromDetail(hit.name, detail, resourceType)),
+        map((detail) => this.pickUrlFromDetail(hit.name, detail, resourceType)),
         catchError(() => of(null))
       );
   }
@@ -81,8 +79,7 @@ export class CdnApiService {
     const version = detail.version;
     if (!version) return null;
 
-    const asset =
-      detail.assets?.find(a => a.version === version) ?? detail.assets?.[0];
+    const asset = detail.assets?.find((a) => a.version === version) ?? detail.assets?.[0];
     const file = asset ? this.pickFile(asset.files, resourceType, name) : null;
     return file ? `${CDNJS_BASE}/${name}/${version}/${file}` : null;
   }
@@ -94,17 +91,20 @@ export class CdnApiService {
   ): string | null {
     const ext = `.${resourceType}`;
     const candidates = files.filter(
-      f => f.endsWith(ext) && !f.endsWith('.map') && !f.includes('.map.')
+      (f) => f.endsWith(ext) && !f.endsWith('.map') && !f.includes('.map.')
     );
     if (!candidates.length) return null;
 
-    const minFiles = candidates.filter(f => /\.min\./.test(f));
+    const minFiles = candidates.filter((f) => /\.min\./.test(f));
     const pool = minFiles.length ? minFiles : candidates;
 
-    const scored = pool.map(f => {
+    const scored = pool.map((f) => {
       const base = f.split('/').pop() ?? f;
       let score = 0;
-      if (base === `${libraryName}.min.${resourceType}` || base === `${libraryName}.${resourceType}`) {
+      if (
+        base === `${libraryName}.min.${resourceType}` ||
+        base === `${libraryName}.${resourceType}`
+      ) {
         score += 30;
       }
       if (base.startsWith(libraryName)) score += 10;

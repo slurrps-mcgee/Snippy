@@ -14,11 +14,23 @@ export const minioClient = new Client({
 export function isMinioConnectionError(err: unknown): boolean {
   const e = err as { code?: string; message?: string; name?: string };
   const code = e?.code ?? '';
-  if (['ECONNREFUSED', 'ENOTFOUND', 'ETIMEDOUT', 'ECONNRESET', 'EAI_AGAIN', 'EPIPE', 'EHOSTUNREACH'].includes(code)) {
+  if (
+    [
+      'ECONNREFUSED',
+      'ENOTFOUND',
+      'ETIMEDOUT',
+      'ECONNRESET',
+      'EAI_AGAIN',
+      'EPIPE',
+      'EHOSTUNREACH',
+    ].includes(code)
+  ) {
     return true;
   }
   const message = String(e?.message ?? '');
-  return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|connect ECONNREFUSED|getaddrinfo|socket hang up|not reachable/i.test(message);
+  return /ECONNREFUSED|ENOTFOUND|ETIMEDOUT|connect ECONNREFUSED|getaddrinfo|socket hang up|not reachable/i.test(
+    message
+  );
 }
 
 /** Latch MinIO off until this API process restarts. */

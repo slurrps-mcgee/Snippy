@@ -1,4 +1,16 @@
-import { Component, ViewChild, effect, AfterViewInit, OnInit, OnDestroy, inject, DestroyRef, HostListener, ChangeDetectionStrategy, computed } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  effect,
+  AfterViewInit,
+  OnInit,
+  OnDestroy,
+  inject,
+  DestroyRef,
+  HostListener,
+  ChangeDetectionStrategy,
+  computed,
+} from '@angular/core';
 import { NgTemplateOutlet } from '@angular/common';
 import { AngularSplitModule } from 'angular-split';
 import { combineLatest } from 'rxjs';
@@ -22,12 +34,7 @@ import { getSplitGutterColors } from '@app/editor/themes';
 
 @Component({
   selector: 'app-snippet-web-view',
-  imports: [
-    NgTemplateOutlet,
-    AngularSplitModule,
-    SnippetEditorComponent,
-    SnippetPreviewComponent
-],
+  imports: [NgTemplateOutlet, AngularSplitModule, SnippetEditorComponent, SnippetPreviewComponent],
   templateUrl: './snippet-web-view.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './snippet-web-view.component.scss',
@@ -43,7 +50,9 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   snippetSaveUIService = inject(SnippetSaveUIService);
   editorUi = inject(EditorUiService);
   private editorPrefs = inject(EditorPreferencesService);
-  readonly gutterColors = computed(() => getSplitGutterColors(this.editorPrefs.preferences().theme));
+  readonly gutterColors = computed(() =>
+    getSplitGutterColors(this.editorPrefs.preferences().theme)
+  );
 
   private route = inject(ActivatedRoute);
   private router = inject(Router);
@@ -53,11 +62,19 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   private dialogs = inject(DialogService);
   private destroyRef = inject(DestroyRef);
 
-  get user() { return this.authStoreService.user; }
-  get selectedLayout() { return this.editorUi.layout(); }
-  get isGuest() { return this.editorUi.guestMode(); }
+  get user() {
+    return this.authStoreService.user;
+  }
+  get selectedLayout() {
+    return this.editorUi.layout();
+  }
+  get isGuest() {
+    return this.editorUi.guestMode();
+  }
   get editorsDirection() {
-    return this.selectedLayout === 'left' || this.selectedLayout === 'right' ? 'vertical' : 'horizontal';
+    return this.selectedLayout === 'left' || this.selectedLayout === 'right'
+      ? 'vertical'
+      : 'horizontal';
   }
 
   snippetId: string | null = null;
@@ -84,9 +101,9 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
 
       if (!previewUpdateType || !snippet?.snippetFiles) return;
 
-      const html = snippet.snippetFiles.find(f => f.fileType === 'html')?.content || '';
-      const css = snippet.snippetFiles.find(f => f.fileType === 'css')?.content || '';
-      const js = snippet.snippetFiles.find(f => f.fileType === 'js')?.content || '';
+      const html = snippet.snippetFiles.find((f) => f.fileType === 'html')?.content || '';
+      const css = snippet.snippetFiles.find((f) => f.fileType === 'css')?.content || '';
+      const js = snippet.snippetFiles.find((f) => f.fileType === 'js')?.content || '';
       const cdn = snippet.cdnResources || [];
 
       if (previewUpdateType === 'partial') {
@@ -188,32 +205,35 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
   }
 
   private initBlankSnippet(guest: boolean, templateId?: string | null) {
-    const tpl = templateById(guest ? (templateId || 'hello') : templateId);
+    const tpl = templateById(guest ? templateId || 'hello' : templateId);
     this.applyTemplate(tpl, guest);
   }
 
   private applyTemplate(tpl: SnippetTemplate, guest: boolean) {
     this.snippetStoreService.clearSnippet();
-    this.snippetStoreService.setSnippet({
-      shortId: '',
-      name: guest ? 'Try Snippy' : (tpl.id === 'blank' ? 'Untitled' : tpl.name),
-      description: '',
-      tags: [],
-      isPrivate: false,
-      forkCount: 0,
-      viewCount: 0,
-      commentCount: 0,
-      favoriteCount: 0,
-      parentShortId: '',
-      isOwner: true,
-      displayName: guest ? 'Guest' : (this.user()?.displayName || ''),
-      snippetFiles: [
-        { fileType: 'html', content: tpl.html },
-        { fileType: 'css', content: tpl.css },
-        { fileType: 'js', content: tpl.js },
-      ],
-      cdnResources: [],
-    }, false);
+    this.snippetStoreService.setSnippet(
+      {
+        shortId: '',
+        name: guest ? 'Try Snippy' : tpl.id === 'blank' ? 'Untitled' : tpl.name,
+        description: '',
+        tags: [],
+        isPrivate: false,
+        forkCount: 0,
+        viewCount: 0,
+        commentCount: 0,
+        favoriteCount: 0,
+        parentShortId: '',
+        isOwner: true,
+        displayName: guest ? 'Guest' : this.user()?.displayName || '',
+        snippetFiles: [
+          { fileType: 'html', content: tpl.html },
+          { fileType: 'css', content: tpl.css },
+          { fileType: 'js', content: tpl.js },
+        ],
+        cdnResources: [],
+      },
+      false
+    );
     this.snippetStoreService.previewUpdateType.set('full');
     this.snippetStoreService.loading.set(false);
   }
@@ -223,12 +243,15 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
       TemplatePickerDialogComponent,
       'md'
     );
-    ref.afterClosed().pipe(takeUntilDestroyed(this.destroyRef)).subscribe(tpl => {
-      if (tpl) {
-        this.applyTemplate(tpl, false);
-        this.drafts.remove(this.drafts.keyFor({ guest: false }));
-      }
-    });
+    ref
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((tpl) => {
+        if (tpl) {
+          this.applyTemplate(tpl, false);
+          this.drafts.remove(this.drafts.keyFor({ guest: false }));
+        }
+      });
   }
 
   private canPersistDraft(snippet = this.snippetStoreService.snippet()): boolean {
@@ -244,10 +267,7 @@ export class SnippetWebViewComponent implements OnInit, AfterViewInit, OnDestroy
     if (snippet.snippetId && !snippet.shortId) return;
     const shortId = snippet.shortId?.trim() || null;
     if (snippet.snippetId && !shortId) return;
-    this.drafts.persistFromSnippet(
-      this.drafts.keyFor({ guest: this.isGuest, shortId }),
-      snippet
-    );
+    this.drafts.persistFromSnippet(this.drafts.keyFor({ guest: this.isGuest, shortId }), snippet);
   }
 
   private restoreDraft() {

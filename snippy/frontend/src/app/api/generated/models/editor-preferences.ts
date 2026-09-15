@@ -8,9 +8,9 @@ export interface EditorPreferences {
   fontSize?: number;
   indentWidth?: number;
   indentWith?: 'spaces' | 'tabs';
+  keymap?: string;
   lineNumbers?: boolean;
   lineWrapping?: boolean;
   matchBrackets?: boolean;
   theme?: string;
-  keymap?: string;
 }

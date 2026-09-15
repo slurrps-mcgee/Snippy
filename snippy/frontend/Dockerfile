@@ -13,22 +13,38 @@ COPY . .
 
 RUN npm run build -- --configuration=production
 
-# Step 2 Use nginx to serve the application
+# Step 2 Use nginx to serve the application (non-root, listen 8080)
 FROM nginx:1.27-alpine
 
 # Install curl for health checks
 RUN apk add --no-cache curl
 
+COPY ./nginx.conf /etc/nginx/nginx.conf
 COPY ./nginx.minio.conf /etc/nginx/nginx.minio.conf
 COPY ./nginx.nominio.conf /etc/nginx/nginx.nominio.conf
+COPY ./nginx-security-headers.inc /etc/nginx/nginx-security-headers.inc
+COPY ./nginx-csp.inc /etc/nginx/nginx-csp.inc
+COPY ./nginx-app-headers.inc /etc/nginx/nginx-app-headers.inc
+COPY ./nginx-embed-headers.inc /etc/nginx/nginx-embed-headers.inc
 
 COPY --from=build /app/dist/snippy-frontend/browser /usr/share/nginx/html
 
 # Step 3 copy entrypoint script that writes runtime env.js
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
-EXPOSE 80
+RUN mkdir -p /tmp/nginx /var/cache/nginx \
+    && chmod +x /entrypoint.sh \
+    && chown -R nginx:nginx \
+        /usr/share/nginx/html \
+        /etc/nginx \
+        /var/cache/nginx \
+        /var/log/nginx \
+        /tmp/nginx \
+        /entrypoint.sh
+
+USER nginx
+
+EXPOSE 8080
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]

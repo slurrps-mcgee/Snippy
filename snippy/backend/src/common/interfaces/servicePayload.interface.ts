@@ -6,13 +6,13 @@
  * @template TQuery - Type of query parameters
  */
 export interface ServicePayload<TBody = unknown, TParams = unknown, TQuery = unknown> {
-    auth?: { payload?: { sub: string } };
-    body?: TBody;
-    params?: Partial<TParams>;
-    query?: Partial<TQuery>;
-    file?: {
-        originalname?: string;
-        buffer?: Buffer<ArrayBufferLike>;
-        mimetype?: string;
-    };
+  auth?: { payload?: { sub: string } };
+  body?: TBody;
+  params?: Partial<TParams>;
+  query?: Partial<TQuery>;
+  file?: {
+    originalname?: string;
+    buffer?: Buffer<ArrayBufferLike>;
+    mimetype?: string;
+  };
 }

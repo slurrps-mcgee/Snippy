@@ -1,15 +1,38 @@
-import { Component, ViewChild, ElementRef, OnDestroy, AfterViewInit, inject, DestroyRef, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  ViewChild,
+  ElementRef,
+  OnDestroy,
+  AfterViewInit,
+  inject,
+  DestroyRef,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 
 import { CdnResource } from '@app/api/generated/models/cdn-resource';
-import {
-  ConsoleLevel,
-  PreviewConsoleService,
-} from '@app/services/ui/preview-console.service';
+import { ConsoleLevel, PreviewConsoleService } from '@app/services/ui/preview-console.service';
 import { PreviewSnapshotService } from '@app/services/ui/preview-snapshot.service';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { fromEvent } from 'rxjs';
 import { toJpeg } from 'html-to-image';
 import { MinioStatusService } from '@app/services/ui/minio-status.service';
+
+/** Convert a data URL without fetch(), which CSP connect-src may block for data:. */
+export function dataUrlToBlob(dataUrl: string): Blob {
+  const comma = dataUrl.indexOf(',');
+  if (comma < 0) {
+    throw new Error('Invalid data URL');
+  }
+  const header = dataUrl.slice(0, comma);
+  const data = dataUrl.slice(comma + 1);
+  const mime = /data:([^;]+)/.exec(header)?.[1] ?? 'application/octet-stream';
+  const binary = atob(data);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return new Blob([bytes], { type: mime });
+}
 
 @Component({
   selector: 'app-snippet-preview',
@@ -30,7 +53,7 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
   constructor() {
     fromEvent<MessageEvent>(window, 'message')
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(event => this.onConsoleMessage(event));
+      .subscribe((event) => this.onConsoleMessage(event));
     this.messageListenerAttached = true;
   }
 
@@ -55,12 +78,7 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
     }
   }
 
-  private fullReload(
-    html: string,
-    css: string,
-    js: string,
-    cdnResources: CdnResource[] = []
-  ) {
+  private fullReload(html: string, css: string, js: string, cdnResources: CdnResource[] = []) {
     if (!this.previewIframe) return;
 
     this.previewConsole.clear();
@@ -68,13 +86,13 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
     const iframe = this.previewIframe.nativeElement;
 
     const stylesheets = cdnResources
-      .filter(res => res.resourceType === 'css')
-      .map(res => `<link rel="stylesheet" href="${res.url}">`)
+      .filter((res) => res.resourceType === 'css')
+      .map((res) => `<link rel="stylesheet" href="${res.url}">`)
       .join('\n');
 
     const scripts = cdnResources
-      .filter(res => res.resourceType === 'js')
-      .map(res => `<script src="${res.url}"><\/script>`)
+      .filter((res) => res.resourceType === 'js')
+      .map((res) => `<script src="${res.url}"><\/script>`)
       .join('\n');
 
     const consoleBridge = `
@@ -194,8 +212,7 @@ export class SnippetPreviewComponent implements AfterViewInit, OnDestroy {
           backgroundColor,
         },
       });
-      const res = await fetch(dataUrl);
-      return res.blob();
+      return dataUrlToBlob(dataUrl);
     } catch {
       return null;
     }

@@ -6,28 +6,28 @@ import { AuthorizationService } from '../../common/services/authorization.servic
  * Mapper for transforming Comment entities to DTOs
  */
 export class CommentMapper {
-    /**
-     * Map comment entity to DTO
-     */
-    static toDTO(comment: Comments, currentUserId?: string): CommentDTO {
-        return {
-            commentId: comment.commentId,
-            content: comment.isDeleted ? '' : comment.content,
-            userName: (comment as any).user?.userName,
-            displayName: (comment as any).user?.displayName,
-            isOwner: AuthorizationService.isOwner(comment.auth0Id, currentUserId || ''),
-            parentId: comment.parentCommentId ?? null,
-            mentions: comment.mentions ?? [],
-            isDeleted: !!comment.isDeleted,
-            createdAt: comment.createdAt,
-            updatedAt: comment.updatedAt,
-        };
-    }
+  /**
+   * Map comment entity to DTO
+   */
+  static toDTO(comment: Comments, currentUserId?: string): CommentDTO {
+    return {
+      commentId: comment.commentId,
+      content: comment.isDeleted ? '' : comment.content,
+      userName: (comment as any).user?.userName,
+      displayName: (comment as any).user?.displayName,
+      isOwner: AuthorizationService.isOwner(comment.auth0Id, currentUserId || ''),
+      parentId: comment.parentCommentId ?? null,
+      mentions: comment.mentions ?? [],
+      isDeleted: !!comment.isDeleted,
+      createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+    };
+  }
 
-    /**
-     * Map array of comments to DTOs
-     */
-    static toDTOs(comments: Comments[], currentUserId?: string): CommentDTO[] {
-        return comments.map(comment => this.toDTO(comment, currentUserId));
-    }
+  /**
+   * Map array of comments to DTOs
+   */
+  static toDTOs(comments: Comments[], currentUserId?: string): CommentDTO[] {
+    return comments.map((comment) => this.toDTO(comment, currentUserId));
+  }
 }

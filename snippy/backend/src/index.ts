@@ -1,5 +1,5 @@
 import express from 'express';
-import cors from "cors";
+import cors from 'cors';
 import { setupSwaggerDocs } from './common/utilities/swaggerDocs';
 import router from './routes/routes';
 import helmet from 'helmet';
@@ -24,13 +24,23 @@ setupSwaggerDocs(app);
 
 app.use(requestIdMiddleware);
 app.use(cookie());
-app.use(helmet());
-app.use(cors({
-  origin: config.frontend.url,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
-  exposedHeaders: ['X-Request-Id'],
-  credentials: true
-}));
+app.use(
+  helmet({
+    // SPA CSP is set by nginx. Helmet's default policy would also send
+    // upgrade-insecure-requests on JSON and conflict with the embed HTML route.
+    contentSecurityPolicy: false,
+    // CORS is the access gate; same-origin CORP would block a split SPA/API host.
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
+app.use(
+  cors({
+    origin: config.frontend.url,
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Request-Id'],
+    exposedHeaders: ['X-Request-Id'],
+    credentials: true,
+  })
+);
 app.use(globalLimiter);
 app.use(express.json({ limit: '2mb' }));
 app.use(requestLogMiddleware);
@@ -59,16 +69,13 @@ async function sendReady(_req: express.Request, res: express.Response) {
     });
   } catch (error) {
     logger.error('Readiness check failed', error);
-    res.status(503).json({ status: 'not_ready', database: false, minio: featureFlags.isMinioAvailable });
+    res
+      .status(503)
+      .json({ status: 'not_ready', database: false, minio: featureFlags.isMinioAvailable });
   }
 }
 
-const publicProbePaths = new Set([
-  '/health',
-  '/api/v1/health',
-  '/ready',
-  '/api/v1/ready',
-]);
+const publicProbePaths = new Set(['/health', '/api/v1/health', '/ready', '/api/v1/ready']);
 
 app.get('/health', sendHealth);
 app.get('/api/v1/health', sendHealth);
@@ -102,9 +109,11 @@ const startServer = async () => {
         .then(() => {
           featureFlags.isMinioAvailable = true;
         })
-        .catch(error => {
+        .catch((error) => {
           logger.error('MinIO connection failed', error);
-          logger.error('MinIO integration is enabled but connection failed - server will start without MinIO functionality');
+          logger.error(
+            'MinIO integration is enabled but connection failed - server will start without MinIO functionality'
+          );
           featureFlags.isMinioAvailable = false;
         });
     } else {

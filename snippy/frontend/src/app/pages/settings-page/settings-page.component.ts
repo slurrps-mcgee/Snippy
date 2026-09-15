@@ -53,10 +53,7 @@ import {
   mergeEditorPreferences,
 } from '@app/editor/editor-preferences';
 import { EDITOR_THEMES } from '@app/editor/themes';
-import {
-  baseEditorExtensions,
-  buildPreferenceExtensions,
-} from '@app/editor/codemirror-extensions';
+import { baseEditorExtensions, buildPreferenceExtensions } from '@app/editor/codemirror-extensions';
 
 type UsernameStatus = 'idle' | 'checking' | 'available' | 'taken' | 'invalid' | 'current';
 type PreviewLang = 'html' | 'css' | 'js';
@@ -149,8 +146,8 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
   readonly fontKeys = EDITOR_FONT_KEYS;
   readonly fontLabels = FONT_FAMILY_LABELS;
   readonly themes = EDITOR_THEMES;
-  readonly darkThemes = EDITOR_THEMES.filter(t => t.group === 'dark');
-  readonly lightThemes = EDITOR_THEMES.filter(t => t.group === 'light');
+  readonly darkThemes = EDITOR_THEMES.filter((t) => t.group === 'dark');
+  readonly lightThemes = EDITOR_THEMES.filter((t) => t.group === 'light');
   readonly keymapKeys = EDITOR_KEYMAP_KEYS;
   /** Profile=0, Editor=1, Account=2 */
   readonly editorTabIndex = 1;
@@ -206,7 +203,11 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
 
   canSaveUsername(): boolean {
     const status = this.usernameStatus();
-    return this.isUsernameDirty() && (status === 'available' || status === 'current') && !this.usernameSaving();
+    return (
+      this.isUsernameDirty() &&
+      (status === 'available' || status === 'current') &&
+      !this.usernameSaving()
+    );
   }
 
   usernameStatusLabel(): string {
@@ -233,7 +234,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
       .pipe(
         debounceTime(400),
         distinctUntilChanged(),
-        switchMap(name => {
+        switchMap((name) => {
           const trimmed = name.trim();
           const current = this.user()?.userName ?? '';
           if (!trimmed || trimmed.length < 2) {
@@ -254,7 +255,7 @@ export class SettingsPageComponent implements OnInit, AfterViewInit, OnDestroy {
         }),
         takeUntilDestroyed(this.destroyRef)
       )
-      .subscribe(res => {
+      .subscribe((res) => {
         if (!res) return;
         this.usernameStatus.set(res.available ? 'available' : 'taken');
       });

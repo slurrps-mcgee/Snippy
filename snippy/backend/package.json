@@ -10,10 +10,13 @@
     "docker-start": "npm run build && npm run start",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "format": "prettier --write \"src/**/*.{ts,js,json}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\"",
     "lint": "prettier --check \"src/**/*.{ts,js,json}\"",
-    "openapi:export": "ts-node --transpile-only src/scripts/export-openapi.ts",
+    "typecheck": "tsc --noEmit",
+    "dump:openapi": "ts-node --transpile-only src/scripts/export-openapi.ts",
+    "openapi:export": "npm run dump:openapi",
     "db:migrate": "sequelize-cli db:migrate",
     "db:migrate:undo": "sequelize-cli db:migrate:undo",
     "db:migrate:status": "sequelize-cli db:migrate:status",
@@ -41,15 +44,15 @@
     "isomorphic-dompurify": "^2.34.0",
     "joi": "^18.0.0",
     "minio": "^8.0.6",
-    "multer": "^2.0.2",
-    "mysql2": "^3.14.4",
+    "multer": "^2.3.0",
+    "mysql2": "^3.24.4",
     "nanoid": "^5.1.6",
     "sequelize": "^6.37.8",
     "sequelize-cli": "^6.6.3",
     "sequelize-typescript": "^2.1.6",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
-    "uuid": "^11.1.0",
+    "uuid": "^11.1.1",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
   },
@@ -62,10 +65,18 @@
     "@types/swagger-jsdoc": "^6.0.4",
     "@types/swagger-ui-express": "^4.1.4",
     "@types/uuid": "^10.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "prettier": "^3.6.2",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^6.0.3",
-    "vitest": "^3.2.4"
+    "vite": "^7.3.6",
+    "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "uuid": "$uuid",
+    "js-yaml": "^4.3.2",
+    "qs": "^6.16.0",
+    "decode-uri-component": "^0.5.0"
   }
 }

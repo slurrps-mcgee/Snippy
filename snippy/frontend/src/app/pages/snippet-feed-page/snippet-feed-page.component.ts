@@ -61,7 +61,7 @@ export class SnippetFeedPageComponent implements OnInit {
 
   ngOnInit() {
     this.feed = (this.route.snapshot.data['feed'] as SnippetFeed) ?? 'public';
-    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(params => {
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
       this.tag = params.get('tag') ?? '';
       void this.load();
     });

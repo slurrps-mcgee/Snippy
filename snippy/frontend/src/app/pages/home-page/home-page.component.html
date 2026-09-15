@@ -8,16 +8,30 @@
           Build and share snippets that look as good as they run.
         </h1>
         <p class="mt-5 max-w-xl text-lg text-slate-300">
-          Write HTML, CSS, and JavaScript in a live editor, preview instantly, and publish with privacy controls, favorites, and community feedback.
+          Write HTML, CSS, and JavaScript in a live editor, preview instantly, and publish with
+          privacy controls, favorites, and community feedback.
         </p>
         <div class="mt-8 flex flex-wrap items-center gap-3">
-          <button mat-raised-button color="primary" (click)="login()" class="!px-6 !py-2 text-sm font-semibold">
+          <button
+            mat-raised-button
+            color="primary"
+            (click)="login()"
+            class="!px-6 !py-2 text-sm font-semibold"
+          >
             Get Started for Free
           </button>
-          <a mat-stroked-button routerLink="/try" class="!px-6 !py-2 text-sm font-semibold no-underline">
+          <a
+            mat-stroked-button
+            routerLink="/try"
+            class="!px-6 !py-2 text-sm font-semibold no-underline"
+          >
             Try the editor
           </a>
-          <a mat-stroked-button routerLink="/public" class="!px-6 !py-2 text-sm font-semibold no-underline">
+          <a
+            mat-stroked-button
+            routerLink="/public"
+            class="!px-6 !py-2 text-sm font-semibold no-underline"
+          >
             View snippets
           </a>
           <a mat-button href="#features" class="!px-6 !py-2 text-sm font-semibold no-underline">
@@ -29,13 +43,31 @@
       <aside class="glass-card">
         <h2 class="text-lg font-semibold text-white">Product Snapshot</h2>
         <ul class="mt-4 space-y-3 text-sm text-slate-300">
-          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"></span>Live WYSIWYG editor with split layouts</li>
-          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-300"></span>Public feeds, follows, and favorites</li>
-          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"></span>Collections, comments, and forking</li>
-          <li class="flex gap-2"><span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-300"></span>Asset uploads and ZIP export</li>
+          <li class="flex gap-2">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"></span>Live WYSIWYG
+            editor with split layouts
+          </li>
+          <li class="flex gap-2">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-300"></span>Public
+            feeds, follows, and favorites
+          </li>
+          <li class="flex gap-2">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-cyan-300"></span>Collections,
+            comments, and forking
+          </li>
+          <li class="flex gap-2">
+            <span class="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-violet-300"></span>Asset
+            uploads and ZIP export
+          </li>
         </ul>
-        <div class="mt-5 overflow-hidden rounded-lg border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]">
-          <img src="/images/example-snippet.png" alt="Snippet Preview" class="h-auto w-full object-cover" />
+        <div
+          class="mt-5 overflow-hidden rounded-lg border border-white/20 shadow-[inset_0_1px_0_rgba(255,255,255,0.2)]"
+        >
+          <img
+            src="/images/example-snippet.png"
+            alt="Snippet Preview"
+            class="h-auto w-full object-cover"
+          />
         </div>
       </aside>
     </section>
@@ -44,38 +76,52 @@
     <section id="features" class="mt-16 md:mt-20">
       <p class="text-xs font-medium uppercase tracking-[0.2em] text-violet-300">Capabilities</p>
       <h2 class="section-title mt-3">Powerful features for everyday shipping</h2>
-      <p class="section-subtitle mt-3 max-w-2xl">Everything you need to draft, polish, and share front-end experiments.</p>
+      <p class="section-subtitle mt-3 max-w-2xl">
+        Everything you need to draft, polish, and share front-end experiments.
+      </p>
 
       <div class="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <article class="glass-card text-center">
           <mat-icon class="mb-3 text-4xl text-cyan-400">code</mat-icon>
           <h3 class="text-xl font-semibold text-white">Live Editor</h3>
-          <p class="mt-2 text-sm text-slate-300">Write HTML, CSS, and JavaScript with instant preview and flexible split layouts.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Write HTML, CSS, and JavaScript with instant preview and flexible split layouts.
+          </p>
         </article>
         <article class="glass-card text-center">
           <mat-icon class="mb-3 text-4xl text-violet-300">share</mat-icon>
           <h3 class="text-xl font-semibold text-white">Share &amp; Privacy</h3>
-          <p class="mt-2 text-sm text-slate-300">Publish with a link or keep snippets private. You control who can see your work.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Publish with a link or keep snippets private. You control who can see your work.
+          </p>
         </article>
         <article class="glass-card text-center">
           <mat-icon class="mb-3 text-4xl text-cyan-400">favorite</mat-icon>
           <h3 class="text-xl font-semibold text-white">Favorites &amp; Comments</h3>
-          <p class="mt-2 text-sm text-slate-300">Favorite snippets you love and leave feedback for creators.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Favorite snippets you love and leave feedback for creators.
+          </p>
         </article>
         <article class="glass-card text-center">
           <mat-icon class="mb-3 text-4xl text-violet-300">people</mat-icon>
           <h3 class="text-xl font-semibold text-white">Follow Creators</h3>
-          <p class="mt-2 text-sm text-slate-300">Follow developers and catch their latest work in your following feed.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Follow developers and catch their latest work in your following feed.
+          </p>
         </article>
         <article class="glass-card text-center">
           <mat-icon class="mb-3 text-4xl text-cyan-400">folder_copy</mat-icon>
           <h3 class="text-xl font-semibold text-white">Collections &amp; Forks</h3>
-          <p class="mt-2 text-sm text-slate-300">Organize snippets into collections and fork public work into your own editor.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Organize snippets into collections and fork public work into your own editor.
+          </p>
         </article>
         <article class="glass-card text-center">
           <mat-icon class="mb-3 text-4xl text-violet-300">upload_file</mat-icon>
           <h3 class="text-xl font-semibold text-white">Upload Assets</h3>
-          <p class="mt-2 text-sm text-slate-300">Add images from your library and drop them into HTML or CSS when MinIO is enabled.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Add images from your library and drop them into HTML or CSS when MinIO is enabled.
+          </p>
         </article>
       </div>
     </section>
@@ -88,22 +134,30 @@
         <article class="glass-card">
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">01 Create</p>
           <h3 class="mt-2 text-xl font-semibold text-white">Open the editor</h3>
-          <p class="mt-2 text-sm text-slate-300">Start a new snippet and write HTML, CSS, and JS side by side.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Start a new snippet and write HTML, CSS, and JS side by side.
+          </p>
         </article>
         <article class="glass-card">
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">02 Preview</p>
           <h3 class="mt-2 text-xl font-semibold text-white">See it live</h3>
-          <p class="mt-2 text-sm text-slate-300">Instant preview updates as you type — flip layouts to match your workflow.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Instant preview updates as you type — flip layouts to match your workflow.
+          </p>
         </article>
         <article class="glass-card">
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">03 Share</p>
           <h3 class="mt-2 text-xl font-semibold text-white">Publish your way</h3>
-          <p class="mt-2 text-sm text-slate-300">Go public, keep it private, or organize work into collections.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Go public, keep it private, or organize work into collections.
+          </p>
         </article>
         <article class="glass-card">
           <p class="text-xs font-medium uppercase tracking-[0.16em] text-violet-300">04 Grow</p>
           <h3 class="mt-2 text-xl font-semibold text-white">Engage</h3>
-          <p class="mt-2 text-sm text-slate-300">Follow creators, favorite work, comment, and fork ideas into your own.</p>
+          <p class="mt-2 text-sm text-slate-300">
+            Follow creators, favorite work, comment, and fork ideas into your own.
+          </p>
         </article>
       </div>
     </section>
@@ -111,11 +165,22 @@
     <!-- CTA -->
     <section class="glass mt-16 mb-8 rounded-2xl px-6 py-12 text-center md:mt-20">
       <h2 class="text-3xl font-semibold text-white md:text-4xl">Ready to start coding?</h2>
-      <p class="mx-auto mt-3 max-w-xl text-slate-300">Join developers sharing and learning together on Snippy.</p>
-      <button mat-raised-button color="primary" (click)="login()" class="mt-6 !px-6 !py-2 text-sm font-semibold">
+      <p class="mx-auto mt-3 max-w-xl text-slate-300">
+        Join developers sharing and learning together on Snippy.
+      </p>
+      <button
+        mat-raised-button
+        color="primary"
+        (click)="login()"
+        class="mt-6 !px-6 !py-2 text-sm font-semibold"
+      >
         Create Your First Snippet
       </button>
-      <a mat-stroked-button routerLink="/try" class="mt-6 ml-3 !px-6 !py-2 text-sm font-semibold no-underline">
+      <a
+        mat-stroked-button
+        routerLink="/try"
+        class="mt-6 ml-3 !px-6 !py-2 text-sm font-semibold no-underline"
+      >
         Try without signing in
       </a>
     </section>

@@ -1,14 +1,15 @@
 <div
   class="relative flex h-screen flex-col overflow-hidden bg-slate-900 text-slate-100"
-  [class.embed-shell]="isEmbedShell">
+  [class.embed-shell]="isEmbedShell"
+>
   @if (!isEmbedShell) {
-  <div class="atmosphere" aria-hidden="true">
-    <div class="orb orb-cyan"></div>
-    <div class="orb orb-violet"></div>
-    <div class="grid-mask"></div>
-  </div>
+    <div class="atmosphere" aria-hidden="true">
+      <div class="orb orb-cyan"></div>
+      <div class="orb orb-violet"></div>
+      <div class="grid-mask"></div>
+    </div>
 
-  <app-page-header class="relative z-20 shrink-0"></app-page-header>
+    <app-page-header class="relative z-20 shrink-0"></app-page-header>
   }
 
   <main class="relative z-10 min-h-0 flex-1 overflow-hidden" [class.bg-transparent]="isEmbedShell">
@@ -16,7 +17,7 @@
   </main>
 
   @if (!isEmbedShell) {
-  <app-preview-console-panel class="relative z-20 shrink-0"></app-preview-console-panel>
-  <app-footer class="relative z-20 shrink-0"></app-footer>
+    <app-preview-console-panel class="relative z-20 shrink-0"></app-preview-console-panel>
+    <app-footer class="relative z-20 shrink-0"></app-footer>
   }
 </div>

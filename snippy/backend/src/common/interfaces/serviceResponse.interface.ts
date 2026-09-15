@@ -1,40 +1,40 @@
 export interface ServiceResponse<T> {
-    // Snippet responses
-    snippet?: T;
-    snippets?: T[];
-    
-    // User responses
-    user?: T;
-    users?: T[];
-    created?: boolean;
-    available?: boolean;
-    isFollowing?: boolean;
-    followerCount?: number;
-    followingCount?: number;
-    
-    // Comment responses
-    comment?: T;
-    comments?: T[];
-    commentCount?: number;
+  // Snippet responses
+  snippet?: T;
+  snippets?: T[];
 
-    //Favorite responses
-    favoriteCount?: number;
-    isFavorited?: boolean;
-    
-    // Common responses
-    totalCount?: number;
-    viewCount?: number;
-    counted?: boolean;
-    message?: string;
-    shareToken?: string;
+  // User responses
+  user?: T;
+  users?: T[];
+  created?: boolean;
+  available?: boolean;
+  isFollowing?: boolean;
+  followerCount?: number;
+  followingCount?: number;
 
-    //File upload / asset responses
-    url?: string;
-    objectName?: string;
-    asset?: T;
-    assets?: T[];
+  // Comment responses
+  comment?: T;
+  comments?: T[];
+  commentCount?: number;
 
-    // Collection responses
-    collection?: T;
-    collections?: T[];
+  //Favorite responses
+  favoriteCount?: number;
+  isFavorited?: boolean;
+
+  // Common responses
+  totalCount?: number;
+  viewCount?: number;
+  counted?: boolean;
+  message?: string;
+  shareToken?: string;
+
+  //File upload / asset responses
+  url?: string;
+  objectName?: string;
+  asset?: T;
+  assets?: T[];
+
+  // Collection responses
+  collection?: T;
+  collections?: T[];
 }

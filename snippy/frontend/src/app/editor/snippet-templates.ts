@@ -43,5 +43,5 @@ export const SNIPPET_TEMPLATES: SnippetTemplate[] = [
 ];
 
 export function templateById(id: string | null | undefined): SnippetTemplate {
-  return SNIPPET_TEMPLATES.find(t => t.id === id) ?? SNIPPET_TEMPLATES[0];
+  return SNIPPET_TEMPLATES.find((t) => t.id === id) ?? SNIPPET_TEMPLATES[0];
 }

@@ -1,4 +1,12 @@
-import { Component, DestroyRef, OnInit, inject, signal, computed, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  OnInit,
+  inject,
+  signal,
+  computed,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 
 import { ActivatedRoute } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -31,8 +39,8 @@ import { ListPageState } from '@app/utils/list-page-state';
     SnippetListComponent,
     CollectionListComponent,
     UserIdentityHeaderComponent,
-    AsyncStateComponent
-],
+    AsyncStateComponent,
+  ],
   templateUrl: './profile-page.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './profile-page.component.scss',
@@ -88,15 +96,13 @@ export class ProfilePageComponent implements OnInit {
   }
 
   ngOnInit(): void {
-    this.route.paramMap
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(params => {
-        const username = params.get('username');
-        if (!username) return;
-        this.penState.reset();
-        this.collectionState.reset();
-        this.loadProfile(username);
-      });
+    this.route.paramMap.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const username = params.get('username');
+      if (!username) return;
+      this.penState.reset();
+      this.collectionState.reset();
+      this.loadProfile(username);
+    });
   }
 
   async loadProfile(username: string) {
@@ -150,11 +156,15 @@ export class ProfilePageComponent implements OnInit {
       const nowFollowing = await this.followUi.toggle(user.userName, !!user.isFollowing);
       if (nowFollowing === null) return;
 
-      this.profileUser.update(u => u ? {
-        ...u,
-        isFollowing: nowFollowing,
-        followerCount: Math.max(0, (u.followerCount ?? 0) + (nowFollowing ? 1 : -1)),
-      } : u);
+      this.profileUser.update((u) =>
+        u
+          ? {
+              ...u,
+              isFollowing: nowFollowing,
+              followerCount: Math.max(0, (u.followerCount ?? 0) + (nowFollowing ? 1 : -1)),
+            }
+          : u
+      );
     } finally {
       this.followLoading.set(false);
     }

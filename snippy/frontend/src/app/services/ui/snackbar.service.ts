@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { MatSnackBar, MatSnackBarConfig } from '@angular/material/snack-bar';
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SnackbarService {
   private snackBar = inject(MatSnackBar);
@@ -28,7 +28,7 @@ export class SnackbarService {
       duration,
       horizontalPosition: 'end',
       verticalPosition: 'bottom',
-      panelClass: [panelClass]
+      panelClass: [panelClass],
     };
 
     this.snackBar.open(message, 'Close', config);

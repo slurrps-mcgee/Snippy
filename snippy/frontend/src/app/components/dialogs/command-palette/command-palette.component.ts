@@ -36,19 +36,23 @@ interface PaletteCommand {
         placeholder="Search commands…"
         [(ngModel)]="query"
         (ngModelChange)="filter()"
-        autofocus />
+        autofocus
+      />
       <ul class="mt-3 space-y-1">
         @for (cmd of visible(); track cmd.id) {
-        <li>
-          <button type="button" class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-white/5"
-            (click)="run(cmd)">
-            <mat-icon>{{ cmd.icon }}</mat-icon>
-            <span class="flex-1">{{ cmd.label }}</span>
-            @if (cmd.hint) {
-            <span class="text-xs text-slate-400">{{ cmd.hint }}</span>
-            }
-          </button>
-        </li>
+          <li>
+            <button
+              type="button"
+              class="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left hover:bg-white/5"
+              (click)="run(cmd)"
+            >
+              <mat-icon>{{ cmd.icon }}</mat-icon>
+              <span class="flex-1">{{ cmd.label }}</span>
+              @if (cmd.hint) {
+                <span class="text-xs text-slate-400">{{ cmd.hint }}</span>
+              }
+            </button>
+          </li>
         }
       </ul>
     </mat-dialog-content>
@@ -76,9 +80,7 @@ export class CommandPaletteComponent {
 
   filter() {
     const q = this.query.trim().toLowerCase();
-    this.visible.set(
-      q ? this.all.filter((c) => c.label.toLowerCase().includes(q)) : this.all
-    );
+    this.visible.set(q ? this.all.filter((c) => c.label.toLowerCase().includes(q)) : this.all);
   }
 
   run(cmd: PaletteCommand) {
@@ -156,9 +158,10 @@ export class CommandPaletteComponent {
         id: 'assets',
         label: 'Assets',
         icon: 'perm_media',
-        run: () => this.dialogs.open(AssetsDialogComponent, 'lg', {
-          data: this.snippetStore.snippet() ? { insertTarget: 'html' } : {},
-        }),
+        run: () =>
+          this.dialogs.open(AssetsDialogComponent, 'lg', {
+            data: this.snippetStore.snippet() ? { insertTarget: 'html' } : {},
+          }),
       });
     }
 

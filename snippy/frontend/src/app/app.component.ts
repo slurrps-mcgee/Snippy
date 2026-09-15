@@ -1,4 +1,11 @@
-import { Component, DestroyRef, HostListener, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  DestroyRef,
+  HostListener,
+  OnInit,
+  inject,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { filter } from 'rxjs/operators';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -11,18 +18,12 @@ import { HeaderMode } from '@app/interfaces/header-mode';
 import { CommandPaletteComponent } from '@app/components/dialogs/command-palette/command-palette.component';
 import { DialogService } from '@app/services/ui/dialog.service';
 
-
 @Component({
   selector: 'app-root',
-  imports: [
-    RouterOutlet,
-    FooterComponent,
-    PageHeaderComponent,
-    PreviewConsolePanelComponent
-],
+  imports: [RouterOutlet, FooterComponent, PageHeaderComponent, PreviewConsolePanelComponent],
   templateUrl: './app.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent implements OnInit {
   title = 'Snippy';
@@ -69,7 +70,13 @@ export class AppComponent implements OnInit {
     const url = this.router.url.split('?')[0];
     if (url.startsWith('/embed/')) this.headerMode = 'embed';
     else if (url === '/' || url === '') this.headerMode = 'landing';
-    else if (url === '/try' || url === '/snippet' || /\/snippet\//.test(url) || url.startsWith('/s/')) this.headerMode = 'editor';
+    else if (
+      url === '/try' ||
+      url === '/snippet' ||
+      /\/snippet\//.test(url) ||
+      url.startsWith('/s/')
+    )
+      this.headerMode = 'editor';
     else if (/\/fullpage\//.test(url)) this.headerMode = 'minimal';
     else this.headerMode = 'feed';
   }

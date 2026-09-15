@@ -1,4 +1,12 @@
-import { Component, ElementRef, OnInit, ViewChild, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnInit,
+  ViewChild,
+  inject,
+  signal,
+  ChangeDetectionStrategy,
+} from '@angular/core';
 
 import { MatDialogModule, MatDialogRef, MAT_DIALOG_DATA } from '@angular/material/dialog';
 import { MatButtonModule } from '@angular/material/button';
@@ -27,8 +35,8 @@ export interface AssetsDialogData {
     MatIconModule,
     MatProgressSpinnerModule,
     MatTooltipModule,
-    MatDividerModule
-],
+    MatDividerModule,
+  ],
   templateUrl: './assets-dialog.component.html',
   changeDetection: ChangeDetectionStrategy.Eager,
   styleUrl: './assets-dialog.component.scss',
@@ -84,7 +92,10 @@ export class AssetsDialogComponent implements OnInit {
     try {
       const res = await this.api.invoke(uploadAsset, { body: { file, subFolder: 'general' } });
       if (res.asset) {
-        this.assets.update(list => [res.asset!, ...list.filter(a => a.assetId !== res.asset!.assetId)]);
+        this.assets.update((list) => [
+          res.asset!,
+          ...list.filter((a) => a.assetId !== res.asset!.assetId),
+        ]);
       }
       this.snackbarService.success('File uploaded successfully');
     } catch {
@@ -97,9 +108,8 @@ export class AssetsDialogComponent implements OnInit {
 
   deleteAsset(asset: Asset) {
     const used = asset.usedInCount ?? 0;
-    const usageNote = used > 0
-      ? ` It is referenced in ${used} snippet file${used === 1 ? '' : 's'}.`
-      : '';
+    const usageNote =
+      used > 0 ? ` It is referenced in ${used} snippet file${used === 1 ? '' : 's'}.` : '';
     return this.dialogService.confirmAndRun({
       confirm: {
         title: 'Delete Asset',
@@ -112,7 +122,7 @@ export class AssetsDialogComponent implements OnInit {
         try {
           if (!asset.assetId) throw new Error('Missing asset id');
           await this.api.invoke(deleteAsset, { assetId: asset.assetId });
-          this.assets.update(list => list.filter(a => a.assetId !== asset.assetId));
+          this.assets.update((list) => list.filter((a) => a.assetId !== asset.assetId));
         } finally {
           this.deletingId.set(null);
         }
@@ -149,7 +159,7 @@ export class AssetsDialogComponent implements OnInit {
     const inserted = this.editorInsert.insertAtCursor(pane, text);
     if (!inserted) {
       const files = this.snippetStore.snippet()?.snippetFiles ?? [];
-      const file = files.find(f => f.fileType === pane);
+      const file = files.find((f) => f.fileType === pane);
       const next = `${file?.content ?? ''}${file?.content ? '\n' : ''}${text}`;
       this.snippetStore.updateSnippetFile(pane, next);
     }

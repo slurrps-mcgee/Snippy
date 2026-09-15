@@ -380,6 +380,8 @@ export const openapiDefinition = {
         operationId: 'getSnippetByShortId',
         tags: ['Snippet'],
         security: [],
+        parameters: [{ name: 'shortId', in: 'path', required: true, schema: { type: 'string' } }],
+        responses: { '200': { description: 'Snippet', ...json(ref('SnippetResponse')) }, ...err },
       },
     },
     '/snippets/{snippetId}': {
@@ -488,7 +490,10 @@ export const openapiDefinition = {
         tags: ['Snippet'],
         security: [],
         parameters: sortQuery,
-        responses: { '200': { description: 'Search', ...json(ref('SnippetListResponse')) }, ...err },
+        responses: {
+          '200': { description: 'Search', ...json(ref('SnippetListResponse')) },
+          ...err,
+        },
       },
     },
     '/snippets/user/{userName}': {
@@ -500,7 +505,10 @@ export const openapiDefinition = {
           { name: 'userName', in: 'path', required: true, schema: { type: 'string' } },
           ...pageQuery,
         ],
-        responses: { '200': { description: 'User pens', ...json(ref('SnippetListResponse')) }, ...err },
+        responses: {
+          '200': { description: 'User pens', ...json(ref('SnippetListResponse')) },
+          ...err,
+        },
       },
     },
     '/snippets/{snippetId}/view': {
@@ -655,7 +663,10 @@ export const openapiDefinition = {
           { name: 'userName', in: 'path', required: true, schema: { type: 'string' } },
           ...pageQuery,
         ],
-        responses: { '200': { description: 'Followers', ...json(ref('UserListResponse')) }, ...err },
+        responses: {
+          '200': { description: 'Followers', ...json(ref('UserListResponse')) },
+          ...err,
+        },
       },
     },
     '/users/{userName}/following': {
@@ -667,7 +678,10 @@ export const openapiDefinition = {
           { name: 'userName', in: 'path', required: true, schema: { type: 'string' } },
           ...pageQuery,
         ],
-        responses: { '200': { description: 'Following', ...json(ref('UserListResponse')) }, ...err },
+        responses: {
+          '200': { description: 'Following', ...json(ref('UserListResponse')) },
+          ...err,
+        },
       },
     },
     '/favorites/{snippetId}': {
@@ -716,7 +730,10 @@ export const openapiDefinition = {
         parameters: [{ name: 'snippetId', in: 'path', required: true, schema: { type: 'string' } }],
         requestBody: {
           required: true,
-          ...json({ type: 'object', properties: { content: { type: 'string' }, parentId: { type: 'string' } } }),
+          ...json({
+            type: 'object',
+            properties: { content: { type: 'string' }, parentId: { type: 'string' } },
+          }),
         },
         responses: { '201': { description: 'Created', ...json(ref('CommentResponse')) }, ...err },
       },
@@ -757,7 +774,10 @@ export const openapiDefinition = {
             },
           }),
         },
-        responses: { '201': { description: 'Created', ...json(ref('CollectionResponse')) }, ...err },
+        responses: {
+          '201': { description: 'Created', ...json(ref('CollectionResponse')) },
+          ...err,
+        },
       },
     },
     '/collections/me': {
@@ -765,10 +785,7 @@ export const openapiDefinition = {
         operationId: 'getMyCollections',
         tags: ['Collection'],
         security: bearer,
-        parameters: [
-          ...pageQuery,
-          { name: 'snippetId', in: 'query', schema: { type: 'string' } },
-        ],
+        parameters: [...pageQuery, { name: 'snippetId', in: 'query', schema: { type: 'string' } }],
         responses: {
           '200': { description: 'Mine', ...json(ref('CollectionListResponse')) },
           ...err,
@@ -821,7 +838,10 @@ export const openapiDefinition = {
             },
           }),
         },
-        responses: { '200': { description: 'Updated', ...json(ref('CollectionResponse')) }, ...err },
+        responses: {
+          '200': { description: 'Updated', ...json(ref('CollectionResponse')) },
+          ...err,
+        },
       },
       delete: {
         operationId: 'deleteCollection',
@@ -875,7 +895,10 @@ export const openapiDefinition = {
             properties: { snippetIds: { type: 'array', items: { type: 'string' } } },
           }),
         },
-        responses: { '200': { description: 'Reordered', ...json(ref('CollectionResponse')) }, ...err },
+        responses: {
+          '200': { description: 'Reordered', ...json(ref('CollectionResponse')) },
+          ...err,
+        },
       },
     },
     '/assets': {

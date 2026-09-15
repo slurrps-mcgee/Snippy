@@ -18,7 +18,7 @@ export class ListPageState<S extends string = string> {
     options: { pageSize?: number; sort?: S } = {}
   ) {
     this.pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE;
-    this.sort = (options.sort ?? ('newest' as S));
+    this.sort = options.sort ?? ('newest' as S);
   }
 
   /** 1-based page number expected by the API. */

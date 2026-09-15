@@ -1,0 +1,24 @@
+{
+  "name": "snippy",
+  "version": "0.9.4",
+  "private": true,
+  "description": "Snippy monorepo - Angular frontend and Express backend.",
+  "scripts": {
+    "generate:api": "npm run dump:openapi --prefix snippy/backend && npm run generate:api --prefix snippy/frontend",
+    "format:all": "npm run format --prefix snippy/backend && npm run format --prefix snippy/frontend",
+    "check:format": "npm run format:check --prefix snippy/backend && npm run format:check --prefix snippy/frontend",
+    "check:openapi": "npm run generate:api && git diff --exit-code -- documentation/openapi.json snippy/frontend/src/app/api/openapi.json snippy/frontend/src/app/api/generated/",
+    "check:types": "npm run typecheck --prefix snippy/backend && npm run typecheck --prefix snippy/frontend",
+    "check:audit": "npm audit --audit-level=high --prefix snippy/backend && npm audit --audit-level=high --prefix snippy/frontend",
+    "check:build": "npm run build --prefix snippy/backend && npm run build --prefix snippy/frontend -- --configuration production",
+    "check:test": "npm run test --prefix snippy/backend",
+    "check:all": "npm run check:audit && npm run check:format && npm run check:types && npm run check:openapi && npm run check:build && npm run check:test",
+    "test:all": "npm run test --prefix snippy/backend && npm run test --prefix snippy/frontend",
+    "dev:backend": "npm run dev --prefix snippy/backend",
+    "dev:frontend": "npm run start --prefix snippy/frontend",
+    "build:backend": "npm run build --prefix snippy/backend",
+    "build:frontend": "npm run build --prefix snippy/frontend",
+    "docker:compose:clear": "docker compose down -v && docker compose build && docker compose up",
+    "docker:compose:up": "docker compose build && docker compose up"
+  }
+}
