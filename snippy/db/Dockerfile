@@ -10,5 +10,8 @@ COPY init.sh /docker-entrypoint-initdb.d
 # Expose MySQL default port
 EXPOSE 3306
 
-# No need to switch user; the official MySQL image handles permissions internally
+# Create non-root user and set ownership
+RUN useradd -U -u 1000 appuser && chown -R 1000:1000 /usr/src/app
+USER 1000
+
 # The entrypoint will automatically execute /docker-entrypoint-initdb.d/init.sh
