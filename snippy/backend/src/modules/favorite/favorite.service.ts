@@ -50,9 +50,12 @@ export async function favoriteHandler(
       // find or create favorite
       const existingFavorite = await findFavoriteSnippetByUserAndSnippet(auth0Id, snippetId, t);
       if (existingFavorite) {
-        await deleteFavorite(auth0Id, snippetId, t);
+        const deletedCount = await deleteFavorite(auth0Id, snippetId, t);
         isFavorited = false;
-        await decrementSnippetFavoriteCount(snippetId, t);
+        // Only decrement the counter if a row was actually deleted
+        if (deletedCount > 0) {
+          await decrementSnippetFavoriteCount(snippetId, t);
+        }
       } else {
         await createFavorite(
           {

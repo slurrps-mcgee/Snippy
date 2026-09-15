@@ -64,6 +64,7 @@ describe('favoriteHandler', () => {
       .mockResolvedValueOnce(publicSnippet({ favoriteCount: 1 }) as any)
       .mockResolvedValueOnce(publicSnippet({ favoriteCount: 0 }) as any);
     vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
+    vi.mocked(deleteFavorite).mockResolvedValue(1); // 1 row deleted
 
     const result = await favoriteHandler({ auth, params: { snippetId: 'uuid-1' } });
     expect(deleteFavorite).toHaveBeenCalled();
@@ -110,6 +111,89 @@ describe('favoriteHandler', () => {
     await expect(favoriteHandler({ auth, params: { snippetId: 'uuid-1' } })).rejects.toMatchObject({
       statusCode: 404,
     });
+  });
+
+  // Security tests for concurrent un-favorite race condition mitigation
+  it('does not decrement counter when delete affects zero rows (race condition scenario)', async () => {
+    vi.mocked(findBySnippetId)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 1 }) as any)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 1 }) as any); // Counter should remain unchanged
+    vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
+    vi.mocked(deleteFavorite).mockResolvedValue(0); // 0 rows deleted (already deleted by concurrent request)
+
+    const result = await favoriteHandler({ auth, params: { snippetId: 'uuid-1' } });
+    
+    // Verify deleteFavorite was called
+    expect(deleteFavorite).toHaveBeenCalledWith('user-1', 'uuid-1', undefined);
+    
+    // Critical security assertion: counter should NOT be decremented when no rows were deleted
+    expect(decrementSnippetFavoriteCount).not.toHaveBeenCalled();
+    
+    // The operation should still complete successfully
+    expect(result.isFavorited).toBe(false);
+    expect(result.favoriteCount).toBe(1); // Counter unchanged
+  });
+
+  it('decrements counter only when delete successfully removes a row', async () => {
+    vi.mocked(findBySnippetId)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 5 }) as any)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 4 }) as any);
+    vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
+    vi.mocked(deleteFavorite).mockResolvedValue(1); // 1 row successfully deleted
+
+    const result = await favoriteHandler({ auth, params: { snippetId: 'uuid-1' } });
+    
+    // Verify the delete operation
+    expect(deleteFavorite).toHaveBeenCalledWith('user-1', 'uuid-1', undefined);
+    
+    // Counter should be decremented when a row was actually deleted
+    expect(decrementSnippetFavoriteCount).toHaveBeenCalledWith('uuid-1', undefined);
+    
+    expect(result.isFavorited).toBe(false);
+    expect(result.favoriteCount).toBe(4);
+  });
+
+  it('maintains counter integrity when multiple concurrent deletes occur', async () => {
+    // Simulate the second of two concurrent requests that both observed the same favorite
+    vi.mocked(findBySnippetId)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 3 }) as any)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 3 }) as any);
+    vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
+    vi.mocked(deleteFavorite).mockResolvedValue(0); // Second request finds nothing to delete
+
+    const result = await favoriteHandler({ auth, params: { snippetId: 'uuid-1' } });
+    
+    // The key security property: no decrement when deletedCount is 0
+    expect(decrementSnippetFavoriteCount).not.toHaveBeenCalled();
+    
+    // Verify the counter remains at 3 (not decremented to 2)
+    expect(result.favoriteCount).toBe(3);
+  });
+
+  it('verifies deleteFavorite return value is checked before decrementing', async () => {
+    vi.mocked(findBySnippetId)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 10 }) as any)
+      .mockResolvedValueOnce(publicSnippet({ favoriteCount: 10 }) as any);
+    vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
+    
+    // Test with various affected row counts
+    for (const deletedCount of [0, 1, 2]) {
+      vi.clearAllMocks();
+      vi.mocked(deleteFavorite).mockResolvedValue(deletedCount);
+      vi.mocked(findBySnippetId)
+        .mockResolvedValueOnce(publicSnippet({ favoriteCount: 10 }) as any)
+        .mockResolvedValueOnce(publicSnippet({ favoriteCount: 10 - (deletedCount > 0 ? 1 : 0) }) as any);
+      vi.mocked(findFavoriteSnippetByUserAndSnippet).mockResolvedValue({ favoriteId: 'f1' } as any);
+
+      await favoriteHandler({ auth, params: { snippetId: 'uuid-1' } });
+      
+      // Counter should only be decremented when deletedCount > 0
+      if (deletedCount > 0) {
+        expect(decrementSnippetFavoriteCount).toHaveBeenCalled();
+      } else {
+        expect(decrementSnippetFavoriteCount).not.toHaveBeenCalled();
+      }
+    }
   });
 });
 
