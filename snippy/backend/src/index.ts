@@ -55,24 +55,33 @@ function sendHealth(_req: express.Request, res: express.Response) {
 async function sendReady(_req: express.Request, res: express.Response) {
   try {
     await sequelize.authenticate();
-    if (config.minio.enableMinIO) {
-      await minioClient.listBuckets();
-      if (!featureFlags.isMinioAvailable) {
-        res.status(503).json({ status: 'not_ready', database: true, minio: false });
-        return;
-      }
-    }
-    res.status(200).json({
-      status: 'ready',
-      database: true,
-      minio: featureFlags.isMinioAvailable,
-    });
   } catch (error) {
     logger.error('Readiness check failed', error);
     res
       .status(503)
       .json({ status: 'not_ready', database: false, minio: featureFlags.isMinioAvailable });
+    return;
   }
+
+  if (config.minio.enableMinIO) {
+    if (!featureFlags.isMinioAvailable) {
+      res.status(503).json({ status: 'not_ready', database: true, minio: false });
+      return;
+    }
+    try {
+      await minioClient.listBuckets();
+    } catch (error) {
+      logger.error('Readiness check failed', error);
+      res.status(503).json({ status: 'not_ready', database: true, minio: false });
+      return;
+    }
+  }
+
+  res.status(200).json({
+    status: 'ready',
+    database: true,
+    minio: featureFlags.isMinioAvailable,
+  });
 }
 
 const publicProbePaths = new Set(['/health', '/api/v1/health', '/ready', '/api/v1/ready']);
@@ -102,32 +111,32 @@ const startServer = async () => {
   try {
     await connectDBWithRetry();
     logger.info('Database connection established.');
-
-    if (config.minio.enableMinIO) {
-      logger.info('MinIO integration enabled - attempting connection...');
-      await connectMinioWithRetry()
-        .then(() => {
-          featureFlags.isMinioAvailable = true;
-        })
-        .catch((error) => {
-          logger.error('MinIO connection failed', error);
-          logger.error(
-            'MinIO integration is enabled but connection failed - server will start without MinIO functionality'
-          );
-          featureFlags.isMinioAvailable = false;
-        });
-    } else {
-      logger.info('MinIO integration disabled - skipping connection');
-      featureFlags.isMinioAvailable = false;
-    }
-
-    app.listen(config.server.port, () => {
-      logger.info(`Snippy API v${version} started on port ${config.server.port}`);
-    });
   } catch (error) {
     logger.error('Failed to start server', error);
     logger.error('Database connection required - server will not start');
     process.exit(1);
+  }
+
+  app.listen(config.server.port, () => {
+    logger.info(`Snippy API v${version} started on port ${config.server.port}`);
+  });
+
+  if (!config.minio.enableMinIO) {
+    logger.info('MinIO integration disabled - skipping connection');
+    featureFlags.isMinioAvailable = false;
+    return;
+  }
+
+  logger.info('MinIO integration enabled - attempting connection...');
+  try {
+    await connectMinioWithRetry();
+    featureFlags.isMinioAvailable = true;
+  } catch (error) {
+    logger.error('MinIO connection failed', error);
+    logger.error(
+      'MinIO integration is enabled but connection failed - server will start without MinIO functionality'
+    );
+    featureFlags.isMinioAvailable = false;
   }
 };
 
