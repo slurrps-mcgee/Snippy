@@ -245,7 +245,12 @@ export async function updateSnippetHandler(
             };
             await createSnippetFiles([newFile as any], t);
           } else {
-            await updateSnippetFiles(snippetFile.snippetFileID, snippetFile as any, t, snippet?.snippetId);
+            await updateSnippetFiles(
+              snippetFile.snippetFileID,
+              snippetFile as any,
+              t,
+              snippet?.snippetId
+            );
           }
         })
       );
