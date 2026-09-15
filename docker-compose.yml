@@ -3,23 +3,24 @@
 
 services:
   minio:
-    image: minio/minio:latest
+    image: cgr.dev/chainguard/minio:latest
     container_name: minio
+    user: "0"
     command: server /data --console-address ":9001"
     ports:
-      - "9000:9000"
-      - "9001:9001"
+      - "32570:9000"
+      - "32571:9001"
     env_file:
       - ./.env
     volumes:
       - minio_data:/data
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "timeout 3s bash -c ':> /dev/tcp/127.0.0.1/9000' || exit 1"]
-      interval: 30s
+      test: ["CMD", "/usr/bin/timeout", "3s", "/usr/bin/bash", "-c", ":> /dev/tcp/127.0.0.1/9000"]
+      interval: 10s
       timeout: 5s
-      retries: 3
-      start_period: 15s
+      retries: 5
+      start_period: 20s
 
   minio-init:
     build: ./snippy/minio
