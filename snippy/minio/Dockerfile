@@ -10,7 +10,8 @@ RUN apk add --no-cache ca-certificates \
 COPY --from=mc /usr/bin/mc /usr/local/bin/mc
 COPY minio-init.sh /minio-init.sh
 
-RUN chmod +x /usr/local/bin/mc /minio-init.sh
+RUN chmod +x /usr/local/bin/mc /minio-init.sh \
+    && chown 1000:1000 /usr/local/bin/mc /minio-init.sh
 
 USER 1000
 ENV HOME=/tmp
