@@ -300,3 +300,158 @@ describe('collection membership', () => {
     ).rejects.toMatchObject({ statusCode: 400 });
   });
 });
+
+describe('snippet count visibility filtering (pentest mitigation)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('excludes private snippets from count for unauthenticated viewers', async () => {
+    // Setup: User "owner" has a public collection with 2 public snippets and 1 private snippet
+    vi.mocked(findByUsername).mockResolvedValue(publicUser({ auth0Id: 'owner' }) as any);
+    vi.mocked(findUserPublicCollections).mockResolvedValue({
+      rows: [publicCollection({ collectionId: 'col-1', auth0Id: 'owner' }) as any],
+      count: 1,
+    });
+
+    // Mock countSnippetsForCollections to return only public snippets (2) when no viewer is provided
+    vi.mocked(countSnippetsForCollections).mockResolvedValue(new Map([['col-1', 2]]));
+
+    // Act: Unauthenticated viewer requests public collections
+    const result = await getUserCollectionsHandler({
+      auth: undefined,
+      params: { userName: 'owner' },
+    });
+
+    // Assert: countSnippetsForCollections was called with undefined viewerAuth0Id
+    expect(countSnippetsForCollections).toHaveBeenCalledWith(['col-1'], undefined, undefined);
+    // Assert: The returned count should only include public snippets
+    expect(result.collections?.[0].snippetCount).toBe(2);
+  });
+
+  it('includes viewer-owned private snippets in count for authenticated viewers', async () => {
+    // Setup: User "owner" has a public collection with 2 public snippets and 1 private snippet owned by "viewer"
+    vi.mocked(findByUsername).mockResolvedValue(publicUser({ auth0Id: 'owner' }) as any);
+    vi.mocked(findUserPublicCollections).mockResolvedValue({
+      rows: [publicCollection({ collectionId: 'col-1', auth0Id: 'owner' }) as any],
+      count: 1,
+    });
+
+    // Mock countSnippetsForCollections to return 3 snippets (2 public + 1 viewer-owned private)
+    vi.mocked(countSnippetsForCollections).mockResolvedValue(new Map([['col-1', 3]]));
+
+    // Act: Authenticated viewer requests public collections
+    const result = await getUserCollectionsHandler({
+      auth: viewer,
+      params: { userName: 'owner' },
+    });
+
+    // Assert: countSnippetsForCollections was called with viewer's auth0Id
+    expect(countSnippetsForCollections).toHaveBeenCalledWith(['col-1'], undefined, 'viewer');
+    // Assert: The returned count includes viewer-owned private snippets
+    expect(result.collections?.[0].snippetCount).toBe(3);
+  });
+
+  it('includes all private snippets in count for collection owner', async () => {
+    // Setup: User "owner" has a public collection with 2 public snippets and 2 private snippets
+    vi.mocked(findByUsername).mockResolvedValue(publicUser({ auth0Id: 'owner' }) as any);
+    vi.mocked(findMyCollections).mockResolvedValue({
+      rows: [publicCollection({ collectionId: 'col-1', auth0Id: 'owner' }) as any],
+      count: 1,
+    });
+
+    // Mock countSnippetsForCollections to return all 4 snippets for the owner
+    vi.mocked(countSnippetsForCollections).mockResolvedValue(new Map([['col-1', 4]]));
+
+    // Act: Collection owner requests their own collections
+    const result = await getUserCollectionsHandler({
+      auth,
+      params: { userName: 'owner' },
+    });
+
+    // Assert: countSnippetsForCollections was called with owner's auth0Id
+    expect(countSnippetsForCollections).toHaveBeenCalledWith(['col-1'], undefined, 'owner');
+    // Assert: The returned count includes all snippets (owner can see all)
+    expect(result.collections?.[0].snippetCount).toBe(4);
+  });
+
+  it('prevents count disclosure of other users private snippets to unrelated viewers', async () => {
+    // Setup: User "owner" has a public collection with 1 public snippet and 2 private snippets owned by "owner"
+    vi.mocked(findByUsername).mockResolvedValue(publicUser({ auth0Id: 'owner' }) as any);
+    vi.mocked(findUserPublicCollections).mockResolvedValue({
+      rows: [publicCollection({ collectionId: 'col-1', auth0Id: 'owner' }) as any],
+      count: 1,
+    });
+
+    // Mock countSnippetsForCollections to return only 1 public snippet for unrelated viewer
+    vi.mocked(countSnippetsForCollections).mockResolvedValue(new Map([['col-1', 1]]));
+
+    // Act: Unrelated viewer "viewer" requests owner's public collections
+    const result = await getUserCollectionsHandler({
+      auth: viewer,
+      params: { userName: 'owner' },
+    });
+
+    // Assert: countSnippetsForCollections was called with viewer's auth0Id
+    expect(countSnippetsForCollections).toHaveBeenCalledWith(['col-1'], undefined, 'viewer');
+    // Assert: The count should NOT include owner's private snippets
+    expect(result.collections?.[0].snippetCount).toBe(1);
+    // Assert: The count should be less than what the owner would see (preventing metadata leakage)
+    expect(result.collections?.[0].snippetCount).toBeLessThan(3);
+  });
+
+  it('applies visibility filtering to multiple collections in a single request', async () => {
+    // Setup: User "owner" has 2 public collections with different snippet compositions
+    vi.mocked(findByUsername).mockResolvedValue(publicUser({ auth0Id: 'owner' }) as any);
+    vi.mocked(findUserPublicCollections).mockResolvedValue({
+      rows: [
+        publicCollection({ collectionId: 'col-1', auth0Id: 'owner' }) as any,
+        publicCollection({ collectionId: 'col-2', auth0Id: 'owner' }) as any,
+      ],
+      count: 2,
+    });
+
+    // Mock countSnippetsForCollections to return filtered counts for both collections
+    // col-1: 2 public snippets (out of 3 total)
+    // col-2: 1 public snippet (out of 2 total)
+    vi.mocked(countSnippetsForCollections).mockResolvedValue(
+      new Map([
+        ['col-1', 2],
+        ['col-2', 1],
+      ])
+    );
+
+    // Act: Unauthenticated viewer requests public collections
+    const result = await getUserCollectionsHandler({
+      auth: undefined,
+      params: { userName: 'owner' },
+    });
+
+    // Assert: countSnippetsForCollections was called once with both collection IDs
+    expect(countSnippetsForCollections).toHaveBeenCalledWith(['col-1', 'col-2'], undefined, undefined);
+    // Assert: Each collection has the correct filtered count
+    expect(result.collections?.[0].snippetCount).toBe(2);
+    expect(result.collections?.[1].snippetCount).toBe(1);
+  });
+
+  it('returns zero count for collections with only private snippets when viewed by non-owner', async () => {
+    // Setup: User "owner" has a public collection with only private snippets
+    vi.mocked(findByUsername).mockResolvedValue(publicUser({ auth0Id: 'owner' }) as any);
+    vi.mocked(findUserPublicCollections).mockResolvedValue({
+      rows: [publicCollection({ collectionId: 'col-1', auth0Id: 'owner' }) as any],
+      count: 1,
+    });
+
+    // Mock countSnippetsForCollections to return 0 for unrelated viewer (all snippets are private)
+    vi.mocked(countSnippetsForCollections).mockResolvedValue(new Map([['col-1', 0]]));
+
+    // Act: Unrelated viewer requests public collections
+    const result = await getUserCollectionsHandler({
+      auth: viewer,
+      params: { userName: 'owner' },
+    });
+
+    // Assert: The count should be 0 (no visible snippets)
+    expect(result.collections?.[0].snippetCount).toBe(0);
+  });
+});
