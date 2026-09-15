@@ -138,20 +138,48 @@ export async function countCollectionSnippets(
 
 export async function countSnippetsForCollections(
   collectionIds: string[],
-  transaction?: Transaction
+  transaction?: Transaction,
+  viewerAuth0Id?: string
 ): Promise<Map<string, number>> {
   const counts = new Map<string, number>();
   if (collectionIds.length === 0) {
     return counts;
   }
 
+  // Join to Snippets and Collections to apply visibility rules:
+  // A snippet is visible if it's public OR the viewer owns the snippet OR the viewer owns the collection
+  const snippetVisibilityCondition = viewerAuth0Id
+    ? {
+        [Op.or]: [
+          { '$snippet.is_private$': false },
+          { '$snippet.auth0_id$': viewerAuth0Id },
+          { '$collection.auth0_id$': viewerAuth0Id },
+        ],
+      }
+    : { '$snippet.is_private$': false };
+
   const rows = (await CollectionSnippets.findAll({
     attributes: [
       'collectionId',
-      [Sequelize.fn('COUNT', Sequelize.col('collection_snippet_id')), 'snippetCount'],
+      [Sequelize.fn('COUNT', Sequelize.col('CollectionSnippets.collection_snippet_id')), 'snippetCount'],
     ],
-    where: { collectionId: collectionIds },
-    group: ['collectionId'],
+    where: {
+      collectionId: collectionIds,
+      ...snippetVisibilityCondition,
+    },
+    include: [
+      {
+        model: Snippets,
+        attributes: [],
+        required: true,
+      },
+      {
+        model: Collections,
+        attributes: [],
+        required: true,
+      },
+    ],
+    group: ['CollectionSnippets.collectionId'],
     transaction,
     raw: true,
   })) as unknown as Array<{ collectionId: string; snippetCount: number | string }>;

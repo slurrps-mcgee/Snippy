@@ -45,7 +45,7 @@ async function mapCollectionsWithExtras(
   t: Parameters<typeof countSnippetsForCollections>[1]
 ) {
   const ids = rows.map((c) => c.collectionId);
-  const counts = await countSnippetsForCollections(ids, t);
+  const counts = await countSnippetsForCollections(ids, t, auth0Id);
   const containing = snippetId ? await findCollectionIdsContainingSnippet(ids, snippetId, t) : null;
 
   const extrasById = new Map<string, { snippetCount?: number; containsSnippet?: boolean }>();
