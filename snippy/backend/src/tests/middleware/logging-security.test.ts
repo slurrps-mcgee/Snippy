@@ -52,11 +52,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       const token = 'V1StGXR8_Z5jdHi6B-myT';
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}`;
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
 
       // Trigger the finish event
       (mockResponse as any)._triggerFinish();
@@ -81,11 +77,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       const token = 'abc123xyz789token456';
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}?format=json`;
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
 
       (mockResponse as any)._triggerFinish();
 
@@ -104,11 +96,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
     it('does not redact non-sensitive paths', () => {
       mockRequest.originalUrl = '/api/v1/snippets/public';
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
 
       (mockResponse as any)._triggerFinish();
 
@@ -123,11 +111,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
     it('calls next() to continue middleware chain', () => {
       mockRequest.originalUrl = '/api/v1/snippets/shared/token123';
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(nextFunction).toHaveBeenCalledTimes(1);
     });
@@ -139,12 +123,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}`;
       const error = new Error('Test error');
 
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
 
       // Verify logger.error was called with redacted path
       expect(loggerErrorSpy).toHaveBeenCalledWith(
@@ -168,12 +147,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}?foo=bar&baz=qux`;
       const error = new Error('Not found');
 
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(loggerErrorSpy).toHaveBeenCalledWith(
         'request_error',
@@ -191,12 +165,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       mockRequest.originalUrl = '/api/v1/snippets/abc123';
       const error = new Error('Test error');
 
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
 
       expect(loggerErrorSpy).toHaveBeenCalledWith(
         'request_error',
@@ -214,29 +183,17 @@ describe('Logging Security - Bearer Token Redaction', () => {
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}`;
 
       // Success log
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
       (mockResponse as any)._triggerFinish();
 
       // Error log
       const error = new Error('Test error');
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
 
       // Verify token is not in any log call
-      const allLogCalls = [
-        ...loggerInfoSpy.mock.calls,
-        ...loggerErrorSpy.mock.calls,
-      ];
+      const allLogCalls = [...loggerInfoSpy.mock.calls, ...loggerErrorSpy.mock.calls];
 
-      allLogCalls.forEach(call => {
+      allLogCalls.forEach((call) => {
         const logData = JSON.stringify(call);
         expect(logData).not.toContain(token);
       });
@@ -247,21 +204,12 @@ describe('Logging Security - Bearer Token Redaction', () => {
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}`;
 
       // Success log
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
       (mockResponse as any)._triggerFinish();
 
       // Error log
       const error = new Error('Test error');
-      errorHandler(
-        error,
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      errorHandler(error, mockRequest as Request, mockResponse as Response, nextFunction);
 
       // Both should use the same redacted format
       const successPath = loggerInfoSpy.mock.calls[0][1].path;
@@ -276,11 +224,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       const token = 'V1StGXR8_Z5jdHi6B-myT';
       mockRequest.originalUrl = `/api/v1/snippets/shared/${token}`;
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
       (mockResponse as any)._triggerFinish();
 
       const loggedData = JSON.stringify(loggerInfoSpy.mock.calls[0][1]);
@@ -299,11 +243,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       const reusableToken = 'V1StGXR8_Z5jdHi6B-myT';
       mockRequest.originalUrl = `/api/v1/snippets/shared/${reusableToken}`;
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
       (mockResponse as any)._triggerFinish();
 
       const loggedPath = loggerInfoSpy.mock.calls[0][1].path;
@@ -321,11 +261,7 @@ describe('Logging Security - Bearer Token Redaction', () => {
       const nanoidToken = 'V1StGXR8_Z5jdHi6B-myT'; // 21 chars
       mockRequest.originalUrl = `/api/v1/snippets/shared/${nanoidToken}`;
 
-      requestLogMiddleware(
-        mockRequest as Request,
-        mockResponse as Response,
-        nextFunction
-      );
+      requestLogMiddleware(mockRequest as Request, mockResponse as Response, nextFunction);
       (mockResponse as any)._triggerFinish();
 
       const loggedPath = loggerInfoSpy.mock.calls[0][1].path;

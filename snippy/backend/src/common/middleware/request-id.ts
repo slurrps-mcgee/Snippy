@@ -19,12 +19,9 @@ const REQUEST_ID_HEADER = 'x-request-id';
 export function sanitizeUrlForLogging(url: string): string {
   // Remove query string first
   const pathOnly = url.split('?')[0];
-  
+
   // Redact share tokens: /snippets/shared/:token -> /snippets/shared/[REDACTED]
-  return pathOnly.replace(
-    /\/snippets\/shared\/[^/]+/g,
-    '/snippets/shared/[REDACTED]'
-  );
+  return pathOnly.replace(/\/snippets\/shared\/[^/]+/g, '/snippets/shared/[REDACTED]');
 }
 
 export function requestIdMiddleware(req: Request, res: Response, next: NextFunction): void {

@@ -161,7 +161,10 @@ export async function countSnippetsForCollections(
   const rows = (await CollectionSnippets.findAll({
     attributes: [
       'collectionId',
-      [Sequelize.fn('COUNT', Sequelize.col('CollectionSnippets.collection_snippet_id')), 'snippetCount'],
+      [
+        Sequelize.fn('COUNT', Sequelize.col('CollectionSnippets.collection_snippet_id')),
+        'snippetCount',
+      ],
     ],
     where: {
       collectionId: collectionIds,
