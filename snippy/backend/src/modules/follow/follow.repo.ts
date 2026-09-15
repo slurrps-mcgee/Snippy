@@ -74,10 +74,7 @@ export async function findFollowers(
         attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl', 'isPrivate'],
         where: requestingAuth0Id
           ? {
-              [Op.or]: [
-                { isPrivate: false },
-                { auth0Id: requestingAuth0Id }
-              ]
+              [Op.or]: [{ isPrivate: false }, { auth0Id: requestingAuth0Id }],
             }
           : { isPrivate: false },
       },
@@ -110,10 +107,7 @@ export async function findFollowing(
         attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl', 'isPrivate'],
         where: requestingAuth0Id
           ? {
-              [Op.or]: [
-                { isPrivate: false },
-                { auth0Id: requestingAuth0Id }
-              ]
+              [Op.or]: [{ isPrivate: false }, { auth0Id: requestingAuth0Id }],
             }
           : { isPrivate: false },
       },

@@ -60,9 +60,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
   describe('Security: Timer loop prevention with html-only configuration', () => {
     it('should not start refreshPreview when showResult is false (html-only tab)', fakeAsync(() => {
       // Simulate html-only configuration (the exploit scenario)
-      mockActivatedRoute.queryParamMap = of(
-        convertToParamMap({ 'default-tab': 'html' })
-      );
+      mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'html' }));
 
       // Recreate component with html-only configuration
       fixture = TestBed.createComponent(EmbedPlayerComponent);
@@ -223,9 +221,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
 
   describe('Security: Query parameter validation', () => {
     it('should correctly parse html-only tab configuration', fakeAsync(() => {
-      mockActivatedRoute.queryParamMap = of(
-        convertToParamMap({ 'default-tab': 'html' })
-      );
+      mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'html' }));
 
       fixture = TestBed.createComponent(EmbedPlayerComponent);
       component = fixture.componentInstance;
@@ -239,9 +235,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
     }));
 
     it('should correctly parse css-only tab configuration', fakeAsync(() => {
-      mockActivatedRoute.queryParamMap = of(
-        convertToParamMap({ 'default-tab': 'css' })
-      );
+      mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'css' }));
 
       fixture = TestBed.createComponent(EmbedPlayerComponent);
       component = fixture.componentInstance;
@@ -255,9 +249,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
     }));
 
     it('should correctly parse js-only tab configuration', fakeAsync(() => {
-      mockActivatedRoute.queryParamMap = of(
-        convertToParamMap({ 'default-tab': 'js' })
-      );
+      mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'js' }));
 
       fixture = TestBed.createComponent(EmbedPlayerComponent);
       component = fixture.componentInstance;
@@ -271,9 +263,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
     }));
 
     it('should correctly parse multiple tabs without result', fakeAsync(() => {
-      mockActivatedRoute.queryParamMap = of(
-        convertToParamMap({ 'default-tab': 'html,css,js' })
-      );
+      mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'html,css,js' }));
 
       fixture = TestBed.createComponent(EmbedPlayerComponent);
       component = fixture.componentInstance;
@@ -287,9 +277,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
     }));
 
     it('should include result pane when result tab is specified', fakeAsync(() => {
-      mockActivatedRoute.queryParamMap = of(
-        convertToParamMap({ 'default-tab': 'html,result' })
-      );
+      mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'html,result' }));
 
       fixture = TestBed.createComponent(EmbedPlayerComponent);
       component = fixture.componentInstance;
@@ -312,9 +300,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
 
       // Create multiple components with html-only configuration
       for (let i = 0; i < 5; i++) {
-        mockActivatedRoute.queryParamMap = of(
-          convertToParamMap({ 'default-tab': 'html' })
-        );
+        mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'html' }));
 
         const testFixture = TestBed.createComponent(EmbedPlayerComponent);
         const testComponent = testFixture.componentInstance;
@@ -342,9 +328,7 @@ describe('EmbedPlayerComponent - Timer Loop Security Tests', () => {
 
       // Create and destroy component multiple times
       for (let i = 0; i < 3; i++) {
-        mockActivatedRoute.queryParamMap = of(
-          convertToParamMap({ 'default-tab': 'html,result' })
-        );
+        mockActivatedRoute.queryParamMap = of(convertToParamMap({ 'default-tab': 'html,result' }));
 
         const testFixture = TestBed.createComponent(EmbedPlayerComponent);
         const testComponent = testFixture.componentInstance;

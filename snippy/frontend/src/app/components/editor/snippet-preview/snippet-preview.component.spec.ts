@@ -1,6 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import {
+  buildPreviewSrcdoc,
+  CAPTURE_IFRAME_SANDBOX,
   dataUrlToBlob,
   SnippetPreviewComponent,
 } from '@app/components/editor/snippet-preview/snippet-preview.component';
@@ -306,6 +308,55 @@ describe('SnippetPreviewComponent', () => {
       expect(iframe.getAttribute('sandbox')).not.toContain('allow-top-navigation');
     });
   });
+
+  describe('card snapshot capture', () => {
+    it('does not add allow-same-origin to the live preview iframe', async () => {
+      component.updatePreview(
+        '<div id="snap">Hi</div>',
+        'body { color: red; }',
+        'alert(1)',
+        null,
+        []
+      );
+      const live = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      expect(live.getAttribute('sandbox')).not.toContain('allow-same-origin');
+    });
+
+    it('captures from a scriptless same-origin iframe and removes it', async () => {
+      const sandboxes: string[] = [];
+      const nativeCreate = document.createElement.bind(document);
+      spyOn(document, 'createElement').and.callFake(
+        (tagName: string, options?: string | ElementCreationOptions) => {
+          const el = nativeCreate(tagName, options as ElementCreationOptions);
+          if (tagName.toLowerCase() === 'iframe') {
+            const iframe = el as HTMLIFrameElement;
+            const nativeSet = iframe.setAttribute.bind(iframe);
+            iframe.setAttribute = (name: string, value: string) => {
+              nativeSet(name, value);
+              if (name === 'sandbox') sandboxes.push(value);
+            };
+          }
+          return el;
+        }
+      );
+
+      component.updatePreview(
+        '<div id="snap">Hi</div>',
+        'body { color: red; }',
+        'alert(1)',
+        null,
+        []
+      );
+      await (component as unknown as { captureJpeg: () => Promise<Blob | null> }).captureJpeg();
+
+      expect(sandboxes).toContain(CAPTURE_IFRAME_SANDBOX);
+      expect(sandboxes.every((value) => !value.includes('allow-scripts'))).toBeTrue();
+      expect(document.querySelectorAll('iframe[aria-hidden="true"]').length).toBe(0);
+
+      const live = fixture.nativeElement.querySelector('iframe') as HTMLIFrameElement;
+      expect(live.getAttribute('sandbox')).not.toContain('allow-same-origin');
+    });
+  });
 });
 
 describe('dataUrlToBlob', () => {
@@ -319,5 +370,29 @@ describe('dataUrlToBlob', () => {
 
   it('rejects a string that is not a data URL', () => {
     expect(() => dataUrlToBlob('not-a-data-url')).toThrow('Invalid data URL');
+  });
+});
+
+describe('buildPreviewSrcdoc', () => {
+  it('includes runtime JS only when requested', () => {
+    const withRuntime = buildPreviewSrcdoc({
+      html: '<div id="box">Hi</div>',
+      css: 'body { color: red; }',
+      js: 'window.__snippy = 1',
+      includeRuntime: true,
+    });
+    const forCapture = buildPreviewSrcdoc({
+      html: '<div id="box">Hi</div>',
+      css: 'body { color: red; }',
+      js: 'window.__snippy = 1',
+      includeRuntime: false,
+    });
+
+    expect(withRuntime).toContain('window.__snippy = 1');
+    expect(withRuntime).toContain('snippy-console');
+    expect(forCapture).toContain('<div id="box">Hi</div>');
+    expect(forCapture).toContain('body { color: red; }');
+    expect(forCapture).not.toContain('window.__snippy = 1');
+    expect(forCapture).not.toContain('snippy-console');
   });
 });

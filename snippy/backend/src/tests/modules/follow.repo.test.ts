@@ -45,10 +45,7 @@ describe('Privacy bypass mitigation - findFollowers repository', () => {
           as: 'follower',
           attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl', 'isPrivate'],
           where: {
-            [Op.or]: [
-              { isPrivate: false },
-              { auth0Id: 'requesting-user' }
-            ]
+            [Op.or]: [{ isPrivate: false }, { auth0Id: 'requesting-user' }],
           },
         },
       ],
@@ -110,7 +107,7 @@ describe('Privacy bypass mitigation - findFollowers repository', () => {
 
     const callArgs = vi.mocked(Follows.findAndCountAll).mock.calls[0][0];
     const includeConfig = callArgs.include?.[0] as any;
-    
+
     // Verify isPrivate is included in attributes (needed for filtering)
     expect(includeConfig.attributes).toContain('isPrivate');
   });
@@ -142,10 +139,7 @@ describe('Privacy bypass mitigation - findFollowers repository', () => {
         include: [
           expect.objectContaining({
             where: {
-              [Op.or]: [
-                { isPrivate: false },
-                { auth0Id: 'requesting-user' }
-              ]
+              [Op.or]: [{ isPrivate: false }, { auth0Id: 'requesting-user' }],
             },
           }),
         ],
@@ -194,10 +188,7 @@ describe('Privacy bypass mitigation - findFollowing repository', () => {
           as: 'following',
           attributes: ['auth0Id', 'userName', 'displayName', 'bio', 'pictureUrl', 'isPrivate'],
           where: {
-            [Op.or]: [
-              { isPrivate: false },
-              { auth0Id: 'requesting-user' }
-            ]
+            [Op.or]: [{ isPrivate: false }, { auth0Id: 'requesting-user' }],
           },
         },
       ],
@@ -259,7 +250,7 @@ describe('Privacy bypass mitigation - findFollowing repository', () => {
 
     const callArgs = vi.mocked(Follows.findAndCountAll).mock.calls[0][0];
     const includeConfig = callArgs.include?.[0] as any;
-    
+
     // Verify isPrivate is included in attributes (needed for filtering)
     expect(includeConfig.attributes).toContain('isPrivate');
   });
@@ -291,10 +282,7 @@ describe('Privacy bypass mitigation - findFollowing repository', () => {
         include: [
           expect.objectContaining({
             where: {
-              [Op.or]: [
-                { isPrivate: false },
-                { auth0Id: 'requesting-user' }
-              ]
+              [Op.or]: [{ isPrivate: false }, { auth0Id: 'requesting-user' }],
             },
           }),
         ],
