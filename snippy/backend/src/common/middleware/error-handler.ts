@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { CustomError } from '../exceptions/custom-error';
 import logger from '../utilities/logger';
+import { sanitizeUrlForLogging } from './request-id';
 
 export const errorHandler = (
   err: Error | CustomError,
@@ -36,7 +37,7 @@ export const errorHandler = (
   logger.error('request_error', {
     requestId: req.requestId,
     method: req.method,
-    path: req.originalUrl,
+    path: sanitizeUrlForLogging(req.originalUrl),
     status: statusCode,
     message,
   });
