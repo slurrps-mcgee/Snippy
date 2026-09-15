@@ -108,7 +108,7 @@ export async function getFollowersHandler(
       }
 
       const result = await findFollowers(target.auth0Id, offset, limit, t, auth0Id);
-      
+
       return {
         users: UserMapper.toDTOs(result.rows),
         totalCount: result.count,
@@ -142,7 +142,7 @@ export async function getFollowingHandler(
       }
 
       const result = await findFollowing(target.auth0Id, offset, limit, t, auth0Id);
-      
+
       return {
         users: UserMapper.toDTOs(result.rows),
         totalCount: result.count,

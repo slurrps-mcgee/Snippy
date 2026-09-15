@@ -180,13 +180,7 @@ describe('Privacy bypass mitigation - getFollowersHandler', () => {
     });
 
     // Verify that requestingAuth0Id is passed to the repository function
-    expect(findFollowers).toHaveBeenCalledWith(
-      'user-2',
-      0,
-      10,
-      undefined,
-      'user-1'
-    );
+    expect(findFollowers).toHaveBeenCalledWith('user-2', 0, 10, undefined, 'user-1');
   });
 
   it('passes undefined requestingAuth0Id to findFollowers when unauthenticated', async () => {
@@ -200,25 +194,19 @@ describe('Privacy bypass mitigation - getFollowersHandler', () => {
     });
 
     // Verify that requestingAuth0Id is undefined for unauthenticated requests
-    expect(findFollowers).toHaveBeenCalledWith(
-      'user-2',
-      0,
-      10,
-      undefined,
-      undefined
-    );
+    expect(findFollowers).toHaveBeenCalledWith('user-2', 0, 10, undefined, undefined);
   });
 
   it('does not expose private user profiles in followers list to unrelated users', async () => {
     const publicTarget = publicUser({ auth0Id: 'user-2', userName: 'bob', isPrivate: false });
-    const privateFollower = publicUser({ 
-      auth0Id: 'user-3', 
-      userName: 'charlie', 
+    const privateFollower = publicUser({
+      auth0Id: 'user-3',
+      userName: 'charlie',
       displayName: 'Charlie Private',
       bio: 'Secret bio',
-      isPrivate: true 
+      isPrivate: true,
     });
-    
+
     vi.mocked(findByUsername).mockResolvedValue(publicTarget as any);
     // The repository should filter out private users, so we simulate that
     vi.mocked(findFollowers).mockResolvedValue({ rows: [], count: 0 });
@@ -231,7 +219,7 @@ describe('Privacy bypass mitigation - getFollowersHandler', () => {
 
     // Verify the repository was called with the requesting user's auth0Id
     expect(findFollowers).toHaveBeenCalledWith('user-2', 0, 10, undefined, 'user-1');
-    
+
     // The result should not contain private users (repository filters them)
     expect(result.users).toEqual([]);
     expect(result.totalCount).toBe(0);
@@ -239,18 +227,18 @@ describe('Privacy bypass mitigation - getFollowersHandler', () => {
 
   it('allows private users to see themselves in followers list', async () => {
     const publicTarget = publicUser({ auth0Id: 'user-2', userName: 'bob', isPrivate: false });
-    const privateFollowerSelf = publicUser({ 
-      auth0Id: 'user-1', 
-      userName: 'alice', 
+    const privateFollowerSelf = publicUser({
+      auth0Id: 'user-1',
+      userName: 'alice',
       displayName: 'Alice Private',
-      isPrivate: true 
+      isPrivate: true,
     });
-    
+
     vi.mocked(findByUsername).mockResolvedValue(publicTarget as any);
     // When the private user queries, they should see themselves
-    vi.mocked(findFollowers).mockResolvedValue({ 
-      rows: [privateFollowerSelf as any], 
-      count: 1 
+    vi.mocked(findFollowers).mockResolvedValue({
+      rows: [privateFollowerSelf as any],
+      count: 1,
     });
 
     const result = await getFollowersHandler({
@@ -261,7 +249,7 @@ describe('Privacy bypass mitigation - getFollowersHandler', () => {
 
     // Verify the repository was called with the requesting user's auth0Id
     expect(findFollowers).toHaveBeenCalledWith('user-2', 0, 10, undefined, 'user-1');
-    
+
     // The result should contain the private user (themselves)
     expect(result.users).toHaveLength(1);
     expect(result.users?.[0].userName).toBe('alice');
@@ -286,13 +274,7 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
     });
 
     // Verify that requestingAuth0Id is passed to the repository function
-    expect(findFollowing).toHaveBeenCalledWith(
-      'user-2',
-      0,
-      10,
-      undefined,
-      'user-1'
-    );
+    expect(findFollowing).toHaveBeenCalledWith('user-2', 0, 10, undefined, 'user-1');
   });
 
   it('passes undefined requestingAuth0Id to findFollowing when unauthenticated', async () => {
@@ -306,25 +288,19 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
     });
 
     // Verify that requestingAuth0Id is undefined for unauthenticated requests
-    expect(findFollowing).toHaveBeenCalledWith(
-      'user-2',
-      0,
-      10,
-      undefined,
-      undefined
-    );
+    expect(findFollowing).toHaveBeenCalledWith('user-2', 0, 10, undefined, undefined);
   });
 
   it('does not expose private user profiles in following list to unrelated users', async () => {
     const publicTarget = publicUser({ auth0Id: 'user-2', userName: 'bob', isPrivate: false });
-    const privateFollowing = publicUser({ 
-      auth0Id: 'user-3', 
-      userName: 'charlie', 
+    const privateFollowing = publicUser({
+      auth0Id: 'user-3',
+      userName: 'charlie',
       displayName: 'Charlie Private',
       bio: 'Secret bio',
-      isPrivate: true 
+      isPrivate: true,
     });
-    
+
     vi.mocked(findByUsername).mockResolvedValue(publicTarget as any);
     // The repository should filter out private users, so we simulate that
     vi.mocked(findFollowing).mockResolvedValue({ rows: [], count: 0 });
@@ -337,7 +313,7 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
 
     // Verify the repository was called with the requesting user's auth0Id
     expect(findFollowing).toHaveBeenCalledWith('user-2', 0, 10, undefined, 'user-1');
-    
+
     // The result should not contain private users (repository filters them)
     expect(result.users).toEqual([]);
     expect(result.totalCount).toBe(0);
@@ -345,18 +321,18 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
 
   it('allows private users to see themselves in following list', async () => {
     const publicTarget = publicUser({ auth0Id: 'user-2', userName: 'bob', isPrivate: false });
-    const privateFollowingSelf = publicUser({ 
-      auth0Id: 'user-1', 
-      userName: 'alice', 
+    const privateFollowingSelf = publicUser({
+      auth0Id: 'user-1',
+      userName: 'alice',
       displayName: 'Alice Private',
-      isPrivate: true 
+      isPrivate: true,
     });
-    
+
     vi.mocked(findByUsername).mockResolvedValue(publicTarget as any);
     // When the private user queries, they should see themselves
-    vi.mocked(findFollowing).mockResolvedValue({ 
-      rows: [privateFollowingSelf as any], 
-      count: 1 
+    vi.mocked(findFollowing).mockResolvedValue({
+      rows: [privateFollowingSelf as any],
+      count: 1,
     });
 
     const result = await getFollowingHandler({
@@ -367,7 +343,7 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
 
     // Verify the repository was called with the requesting user's auth0Id
     expect(findFollowing).toHaveBeenCalledWith('user-2', 0, 10, undefined, 'user-1');
-    
+
     // The result should contain the private user (themselves)
     expect(result.users).toHaveLength(1);
     expect(result.users?.[0].userName).toBe('alice');
@@ -376,18 +352,18 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
 
   it('exposes only public users in following list to unauthenticated requests', async () => {
     const publicTarget = publicUser({ auth0Id: 'user-2', userName: 'bob', isPrivate: false });
-    const publicFollowing = publicUser({ 
-      auth0Id: 'user-4', 
-      userName: 'dave', 
+    const publicFollowing = publicUser({
+      auth0Id: 'user-4',
+      userName: 'dave',
       displayName: 'Dave Public',
-      isPrivate: false 
+      isPrivate: false,
     });
-    
+
     vi.mocked(findByUsername).mockResolvedValue(publicTarget as any);
     // Repository should only return public users for unauthenticated requests
-    vi.mocked(findFollowing).mockResolvedValue({ 
-      rows: [publicFollowing as any], 
-      count: 1 
+    vi.mocked(findFollowing).mockResolvedValue({
+      rows: [publicFollowing as any],
+      count: 1,
     });
 
     const result = await getFollowingHandler({
@@ -397,7 +373,7 @@ describe('Privacy bypass mitigation - getFollowingHandler', () => {
 
     // Verify the repository was called without requestingAuth0Id
     expect(findFollowing).toHaveBeenCalledWith('user-2', 0, 10, undefined, undefined);
-    
+
     // The result should only contain public users
     expect(result.users).toHaveLength(1);
     expect(result.users?.[0].userName).toBe('dave');
