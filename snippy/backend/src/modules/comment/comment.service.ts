@@ -186,8 +186,10 @@ export async function deleteCommentHandler(
       if (replyCount > 0) {
         await updateComment(commentId, { isDeleted: true, content: '' } as any, t);
       } else {
-        await deleteComment(commentId, t);
-        await decrementSnippetCommentCount(comment.snippetId, t);
+        const deletedCount = await deleteComment(commentId, t);
+        if (deletedCount > 0) {
+          await decrementSnippetCommentCount(comment.snippetId, t);
+        }
       }
 
       return { message: 'Comment deleted successfully' };
