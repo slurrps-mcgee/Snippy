@@ -102,9 +102,14 @@ export async function updateSnippet(
 export async function updateSnippetFiles(
   snippetFileID: string,
   patch: Partial<SnippetFiles>,
-  transaction?: Transaction
+  transaction?: Transaction,
+  snippetId?: string
 ): Promise<void> {
-  const [updated] = await SnippetFiles.update(patch, { where: { snippetFileID }, transaction });
+  const where: any = { snippetFileID };
+  if (snippetId) {
+    where.snippetId = snippetId;
+  }
+  const [updated] = await SnippetFiles.update(patch, { where, transaction });
   if (updated === 0) {
     throw new Error('Snippet file not found or no changes made');
   }
